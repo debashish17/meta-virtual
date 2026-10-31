@@ -1,8 +1,9 @@
 # Virtual Office
 
 Real-time, fixed-isometric 3D office where meetings update shared operational
-and customer records. See `AGENTS.md` first, then `docs/PROJECT_BRIEF.md`,
-`docs/ARCHITECTURE.md`, `docs/DESIGN_SPEC.md`, `docs/IMPLEMENTATION_PLAN.md`.
+and customer records. Agents: read `AGENTS.md` first, then `docs/HANDOFF.md` (state, team
+workflow), `docs/PROJECT_BRIEF.md`, `docs/ARCHITECTURE.md`, `docs/DESIGN_SPEC.md`,
+`docs/IMPLEMENTATION_PLAN.md` (phases, gates) and `docs/WORK_PACKAGES.md` (the packages).
 
 ## Layout (M0)
 

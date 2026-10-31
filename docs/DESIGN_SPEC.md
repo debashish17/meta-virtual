@@ -79,7 +79,7 @@ Each takes position and rotation props; placements come from `FURNITURE` in `pac
 
 ## 7. Avatars
 
-**Changed at the owner's request (M2):** people are Mixamo characters (a woman in a blouse, a man in a blazer, a man in a suit and tie) with Mixamo moves on the same skeleton (idle, walk, jog, talk, phone, counter, sit, sit and talk, type), converted by `apps/web/scripts/people/bake.mjs`. Each person's clothes are recoloured from a muted palette and their height set from their look (validated in `packages/shared/src/people/look.ts`), so a team does not look like copies. Seated, the hands are kept on the desk.
+**Changed at the owner's request (M2):** people are Mixamo characters (a woman in a blouse, a man in a blazer, a man in a suit and tie) with Mixamo moves on the same skeleton (idle, walk, jog, talk, phone, counter, sit down, seated, stand up, sit and talk, type), converted by `apps/web/scripts/people/bake.mjs`. Each person's clothes are recoloured from a muted palette and their height set from their look (validated in `packages/shared/src/people/look.ts`), so a team does not look like copies. People sit down from beside the chair and swivel to the desk, and get up the same way; while typing, the hands are kept on the desk.
 
 - Gentle walk with the stride matched to speed, and a small facing indicator.
 - Name label above the head: small, dark text on a soft white pill, readable at the walking zoom.
