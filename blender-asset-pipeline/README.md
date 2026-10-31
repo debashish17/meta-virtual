@@ -123,9 +123,8 @@ To review builds, run `pnpm dev` and open `http://localhost:5173/assets/catalogu
 | `catalog/` | OCR, label parsing, segmentation, association, catalogue, build driver, QA, review pages |
 | `blender_kit/` | runs inside Blender: materials, primitives, export, fixed-scale render, `families/` builders |
 | `tests/` | unit tests for everything outside Blender |
-| `scripts/asset_builders.py`, `run_pipeline.py`, `update_manifest_ts.py` | **v1**, still generate the office's 34 GLBs and `assetManifest.ts` |
-| `_archive/` | the v2 pipeline, v1 scripts that patched app source in place, and pre-change originals (see its README) |
-| `AGENT_TASK.md`, `PIPELINE.md`, `ASSET_INVENTORY.md`, `QA_CHECKLIST.md`, `templates/` | the earlier handoff plan; superseded by this README where they disagree |
+| `data/` | hand-kept inputs: boards, families, sprites, label corrections and `reviews.json` |
+| `generated/` | rebuilt by `run.py`; only the OCR cache and the review baseline are tracked |
 
 ## Hard rules
 
