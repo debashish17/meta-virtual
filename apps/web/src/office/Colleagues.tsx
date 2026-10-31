@@ -2,10 +2,11 @@ import { Html } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { BODIES, FURNITURE, LOOK_PRESETS, OFFICE_WALK, zoneAt, type AvatarLook } from '@office/shared'
+import { FURNITURE, LOOK_PRESETS, OFFICE_WALK, zoneAt, type AvatarLook } from '@office/shared'
 import Person, { type Motion } from './Person'
 import { useMe } from './me'
 import { TAKEN, seatKey } from './interactions'
+import { riseOf, secondsOf } from './moves'
 import { OFFICE_SPOTS, advance, routineAtDesk, routineAway, seatFor, type Routine, type RoutineWorld } from './routine'
 
 /**
@@ -49,7 +50,7 @@ function Colleague({ name, look, routine, world, seed }: { name: string; look: A
     motion.current.speed = routine.speed
     group.current?.position.set(routine.x, 0, routine.z)
     if (group.current) group.current.rotation.y = routine.facing
-    const seated = routine.pose === 'type' || routine.pose === 'sit_talk' || routine.pose === 'sit'
+    const seated = routine.pose === 'type' || routine.pose === 'sit_talk' || routine.pose === 'seated'
     label.current?.position.setY(seated ? 1.45 : look.height + 0.3)
   })
   return (
@@ -71,18 +72,18 @@ export default function Colleagues() {
     const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
     const others = LOOK_PRESETS.filter((p) => p.name.toLowerCase() !== myName.trim().toLowerCase())
     const chairs = seats(others.length)
-    // one shared world for the reservations; sitting down and standing up are blends of about a second
-    const interact = BODIES.moves.clips.find((c) => c.name === 'interact')?.seconds ?? 3
+    // one shared world for the reservations
     const world: RoutineWorld = {
       walk: OFFICE_WALK, spots: OFFICE_SPOTS, taken: TAKEN, rand,   // shared with you, so neither takes the other's place
-      clips: { sit_down: 0.9, stand_up: 0.9, interact },
+      clips: { sit_down: secondsOf('sit_down'), stand_up: secondsOf('stand_up'), interact: secondsOf('interact') },
     }
     const people = others.map((person, i) => {
       const seat = seatFor(chairs[i], i === 2 ? 'sit_talk' : 'type', OFFICE_WALK)
       TAKEN.add(seatKey(chairs[i]))   // their desk is theirs
       const away = STARTS_AWAY[person.id]
       const spot = away && OFFICE_SPOTS.find((s) => s.id === away[0])
-      const routine = spot ? routineAway(seat, spot, away[1], world) : routineAtDesk(seat, 6 + i * 9 + rand() * 10)
+      const rise = riseOf(person.look)
+      const routine = spot ? routineAway(seat, spot, away[1], rise, world) : routineAtDesk(seat, 6 + i * 9 + rand() * 10, rise)
       return { person, routine }
     })
     return { world, people }

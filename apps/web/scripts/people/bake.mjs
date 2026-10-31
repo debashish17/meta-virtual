@@ -8,7 +8,7 @@
 //
 // <folder> holds Ch13_nonPBR.fbx, Ch23_nonPBR.fbx, Ch33_nonPBR.fbx and the move files listed in
 // bake.html (Idle, walking, standard run, Acknowledging, Dismissing Gesture, Talking On Phone,
-// Button Pushing, Male Sitting Pose, "Having A Meeting, Male", Typing). The work runs in headless
+// Button Pushing, Stand To Sit, Sit To Stand, "Having A Meeting, Male", Typing). The work runs in headless
 // Chrome (bake.html) so the files are read by the same three.js the app plays them with.
 
 import { spawn } from 'node:child_process'

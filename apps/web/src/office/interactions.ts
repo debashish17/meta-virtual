@@ -1,11 +1,12 @@
 import { FURNITURE, OFFICE_WALK, zoneAt, type Point } from '@office/shared'
 import type { Pose } from './Person'
-import { OFFICE_SPOTS, seatFor, type Seat, type Spot } from './routine'
+import { OFFICE_SPOTS, besideOf, roundTheChair, seatFor, type Seat, type Spot } from './routine'
 
 /**
  * What you can do besides walking: sit at a free desk chair and type, or make a drink at the tea
  * counter. Clicking a chair or the counter (or pressing E beside one) walks you to it; moving off
- * stands you up again. Seats and counter spots are reserved in one set shared with the colleagues,
+ * stands you up again. You sit down as the colleagues do (routine.ts): round beside the chair, back
+ * onto it, swivel to the desk; and stand up the same way in reverse. Seats and counter spots are reserved in one set shared with the colleagues,
  * so nobody takes a place someone else holds. Pure state, advanced by time, so it can be tested;
  * Avatar.tsx drives it.
  */
@@ -24,8 +25,10 @@ export type Target = { kind: 'seat'; id: string; seat: Seat } | { kind: 'counter
 export type Body = { x: number; z: number; facing: number }
 
 const REACH = { seat: 0.8, counter: 1.4 }   // how far from a chair or counter spot a click still means it
-const STEP_SPEED = 1.0                       // m/s stepping into or out of the chair
+const STEP_SPEED = 1.0                       // m/s stepping round the chair
 const TURN = 8
+const SWIVEL = 0.8                           // seconds turning in the chair between the desk and the side
+const STEADY = 0.4                           // ... standing still after getting up
 
 /** The free chair or counter a floor point (a click, or where you stand) is meant for, if any. */
 export function targetNear(p: Point, taken: ReadonlySet<string>, scale = 1): Target | null {
@@ -39,22 +42,28 @@ export function targetNear(p: Point, taken: ReadonlySet<string>, scale = 1): Tar
 /** Where you walk to before the activity starts: behind the chair, or onto the counter spot. */
 export const approachOf = (t: Target): Point => (t.kind === 'seat' ? t.seat.aisle : { x: t.spot.x, z: t.spot.z })
 
+type SeatTarget = Extract<Target, { kind: 'seat' }>
 export type Activity =
   | { kind: 'free' }
-  | { kind: 'entering'; target: Extract<Target, { kind: 'seat' }> }
-  | { kind: 'sitting_down'; target: Extract<Target, { kind: 'seat' }>; left: number }
-  | { kind: 'seated'; target: Extract<Target, { kind: 'seat' }> }
-  | { kind: 'standing_up'; target: Extract<Target, { kind: 'seat' }>; left: number }
-  | { kind: 'leaving'; target: Extract<Target, { kind: 'seat' }> }
+  | { kind: 'entering'; target: SeatTarget; i: number }      // round beside the chair (path point i), then back to it
+  | { kind: 'sitting_down'; target: SeatTarget; left: number }
+  | { kind: 'swivelling'; target: SeatTarget; left: number; to: 'desk' | 'side' }
+  | { kind: 'seated'; target: SeatTarget }
+  | { kind: 'standing_up'; target: SeatTarget; left: number }
+  | { kind: 'leaving'; target: SeatTarget; i: number; wait: number }
   | { kind: 'using'; target: Extract<Target, { kind: 'counter' }>; left: number; done: number }
+
+/** Seconds of the one-shot moves, and metres from the seat to where you stand to sit down (the
+ * moves' stand-to-seat distance at your height). */
+export type Moves = { sit_down: number; stand_up: number; interact: number; rise: number }
 
 /** Begin at the approach point. */
 export const startActivity = (t: Target): Activity =>
-  t.kind === 'seat' ? { kind: 'entering', target: t } : { kind: 'using', target: t, left: -1, done: 0 }
+  t.kind === 'seat' ? { kind: 'entering', target: t, i: 0 } : { kind: 'using', target: t, left: -1, done: 0 }
 
+const off = (me: Body, to: number) => Math.atan2(Math.sin(to - me.facing), Math.cos(to - me.facing))
 function turn(me: Body, to: number, dt: number) {
-  const d = Math.atan2(Math.sin(to - me.facing), Math.cos(to - me.facing))
-  me.facing += d * Math.min(1, dt * TURN)
+  me.facing += off(me, to) * Math.min(1, dt * TURN)
 }
 
 /** Move `me` towards `to`; true once there. */
@@ -74,39 +83,60 @@ function stepTo(me: Body, to: Point, dt: number) {
  * to show (null once free, when ordinary walking takes over); the caller frees `TAKEN` on 'free'.
  */
 export function advanceActivity(a: Activity, me: Body, dt: number, wantsToMove: boolean,
-  seconds: { blend: number; interact: number }): { activity: Activity; pose: Pose | null; speed: number } {
+  moves: Moves): { activity: Activity; pose: Pose | null; speed: number } {
+  if (a.kind === 'free') return { activity: a, pose: null, speed: 0 }
+  if (a.kind === 'using') return useCounter(a, me, dt, wantsToMove, moves)
+  const seat = a.target.seat, away = Math.atan2(seat.side.x, seat.side.z)
   switch (a.kind) {
-    case 'free':
-      return { activity: a, pose: null, speed: 0 }
     case 'entering': {
-      const there = stepTo(me, a.target.seat, dt)
-      if (!there) return { activity: a, pose: 'walk', speed: STEP_SPEED }
-      return { activity: { kind: 'sitting_down', target: a.target, left: seconds.blend }, pose: 'walk', speed: STEP_SPEED }
+      const path = roundTheChair(seat, moves.rise)
+      if (a.i < path.length) return { activity: stepTo(me, path[a.i], dt) ? { ...a, i: a.i + 1 } : a, pose: 'walk', speed: STEP_SPEED }
+      turn(me, away, dt)                                          // your back to the chair
+      if (Math.abs(off(me, away)) > 0.03) return { activity: a, pose: 'stand', speed: 0 }
+      me.x = seat.x                                               // the move carries you from beside the chair onto it
+      me.z = seat.z
+      return { activity: { kind: 'sitting_down', target: a.target, left: moves.sit_down }, pose: 'sit_down', speed: 0 }
     }
     case 'sitting_down': {
-      turn(me, a.target.seat.facing, dt)
+      turn(me, away, dt)
       const left = a.left - dt
-      return left > 0 ? { activity: { ...a, left }, pose: 'sit_down', speed: 0 } : { activity: { kind: 'seated', target: a.target }, pose: 'type', speed: 0 }
+      return left > 0 ? { activity: { ...a, left }, pose: 'sit_down', speed: 0 }
+        : { activity: { kind: 'swivelling', target: a.target, left: SWIVEL, to: 'desk' }, pose: 'seated', speed: 0 }
+    }
+    case 'swivelling': {
+      turn(me, a.to === 'desk' ? seat.facing : away, dt)
+      const left = a.left - dt
+      if (left > 0) return { activity: { ...a, left }, pose: 'seated', speed: 0 }
+      return a.to === 'desk' ? { activity: { kind: 'seated', target: a.target }, pose: 'type', speed: 0 }
+        : { activity: { kind: 'standing_up', target: a.target, left: moves.stand_up }, pose: 'stand_up', speed: 0 }
     }
     case 'seated':
-      turn(me, a.target.seat.facing, dt)
-      if (wantsToMove) return { activity: { kind: 'standing_up', target: a.target, left: seconds.blend }, pose: 'stand_up', speed: 0 }
+      turn(me, seat.facing, dt)
+      if (wantsToMove) return { activity: { kind: 'swivelling', target: a.target, left: SWIVEL, to: 'side' }, pose: 'seated', speed: 0 }
       return { activity: a, pose: 'type', speed: 0 }
     case 'standing_up': {
       const left = a.left - dt
-      return left > 0 ? { activity: { ...a, left }, pose: 'stand_up', speed: 0 } : { activity: { kind: 'leaving', target: a.target }, pose: 'walk', speed: STEP_SPEED }
+      if (left > 0) return { activity: { ...a, left }, pose: 'stand_up', speed: 0 }
+      const beside = besideOf(seat, moves.rise)                   // where the move has carried you
+      me.x = beside.x
+      me.z = beside.z
+      return { activity: { kind: 'leaving', target: a.target, i: 1, wait: STEADY }, pose: 'stand', speed: 0 }
     }
     case 'leaving': {
-      const there = stepTo(me, a.target.seat.aisle, dt)
-      return there ? { activity: { kind: 'free' }, pose: 'walk', speed: STEP_SPEED } : { activity: a, pose: 'walk', speed: STEP_SPEED }
-    }
-    case 'using': {
-      if (wantsToMove) return { activity: { kind: 'free' }, pose: null, speed: 0 }
-      const left = a.left < 0 ? seconds.interact : a.left - dt
-      turn(me, a.target.spot.facing, dt)
-      if (left > 0) return { activity: { ...a, left }, pose: 'interact', speed: 0 }
-      const done = a.done + dt                                   // a moment with the drink before moving on
-      return done < 1.2 ? { activity: { ...a, left: 0, done }, pose: 'stand', speed: 0 } : { activity: { kind: 'free' }, pose: 'stand', speed: 0 }
+      if (a.wait > 0) return { activity: { ...a, wait: a.wait - dt }, pose: 'stand', speed: 0 }
+      const path = roundTheChair(seat, moves.rise).reverse()
+      if (a.i >= path.length) return { activity: { kind: 'free' }, pose: 'walk', speed: STEP_SPEED }
+      return { activity: stepTo(me, path[a.i], dt) ? { ...a, i: a.i + 1 } : a, pose: 'walk', speed: STEP_SPEED }
     }
   }
+}
+
+function useCounter(a: Extract<Activity, { kind: 'using' }>, me: Body, dt: number, wantsToMove: boolean,
+  moves: Moves): { activity: Activity; pose: Pose | null; speed: number } {
+  if (wantsToMove) return { activity: { kind: 'free' }, pose: null, speed: 0 }
+  const left = a.left < 0 ? moves.interact : a.left - dt
+  turn(me, a.target.spot.facing, dt)
+  if (left > 0) return { activity: { ...a, left }, pose: 'interact', speed: 0 }
+  const done = a.done + dt                                   // a moment with the drink before moving on
+  return done < 1.2 ? { activity: { ...a, left: 0, done }, pose: 'stand', speed: 0 } : { activity: { kind: 'free' }, pose: 'stand', speed: 0 }
 }

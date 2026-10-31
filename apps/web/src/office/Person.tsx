@@ -9,24 +9,27 @@ import { keepHandsOnDesk } from './deskReach'
 /**
  * One person in the office: a Mixamo character (apps/web/scripts/people/bake.mjs) at the look's
  * height, its clothes in the look's colours (face, skin and hair keep their textures), playing the
- * Mixamo moves, which share the characters' skeleton and so play exactly as made (seated, the
- * hands are kept on the desk: deskReach.ts). `motion` is
+ * Mixamo moves, which share the characters' skeleton and so play exactly as made (at the desk, the
+ * hands are kept on it: deskReach.ts). `motion` is
  * written by whoever moves the person and read every frame: a pose, and the speed while walking so
  * the stride matches the ground covered.
+ *
+ * Sitting down and standing up play with the person placed on the seat, facing away from it to the
+ * side: the moves carry the body between the seat and the spot beside it (routine.ts). Whoever moves
+ * the person jumps them between the two as the move starts or ends, so those changes cut instead of
+ * blending (a blend would slide the body across the step).
  */
 
-export type Pose = 'stand' | 'walk' | 'jog' | 'talk' | 'phone' | 'interact' | 'sit' | 'sit_talk' | 'type' | 'sit_down' | 'stand_up'
+export type Pose = 'stand' | 'walk' | 'jog' | 'talk' | 'phone' | 'interact' | 'sit_down' | 'seated' | 'stand_up' | 'sit_talk' | 'type'
 export type Motion = { pose: Pose; speed: number }
 
-// sitting down and standing up are blends between the standing and the seated moves
 const CLIP: Record<Pose, Move> = {
   stand: 'idle', walk: 'walk', jog: 'jog', talk: 'talk', phone: 'phone', interact: 'interact',
-  sit: 'sit', sit_talk: 'sit_talk', type: 'type', sit_down: 'sit', stand_up: 'idle',
+  sit_down: 'sit_down', seated: 'seated', stand_up: 'stand_up', sit_talk: 'sit_talk', type: 'type',
 }
 const FADE = 0.25        // seconds to blend from one move to the next
-const SIT_FADE = 0.8     // ... between standing and sitting
-const ONCE = new Set<Move>(['interact'])
-const SEATED = new Set<Pose>(['sit', 'sit_talk', 'type', 'sit_down'])
+const ONCE = new Set<Move>(['interact', 'sit_down', 'stand_up'])
+const AT_DESK = new Set<Pose>(['type', 'sit_talk'])
 
 for (const b of BODIES.bodies) useGLTF.preload(b.url)
 useGLTF.preload(BODIES.moves.url)
@@ -90,16 +93,18 @@ export default function Person({ look, motion, seed = 0 }: { look: AvatarLook; m
     const next = actions[name]
     const was = current.current
     if (next && next !== was?.action) {
+      const cut = motion.pose === 'sit_down' || was?.pose === 'stand_up'   // the person has just jumped
+      if (cut) mixer.stopAllAction()
       next.reset().play()
-      if (was) next.crossFadeFrom(was.action, SEATED.has(motion.pose) !== SEATED.has(was.pose) ? SIT_FADE : FADE, false)
-      else if (!ONCE.has(name)) next.time = (seed * 7.31) % next.getClip().duration   // people do not all move in step
+      if (was && !cut) next.crossFadeFrom(was.action, FADE, false)
+      else if (!was && !ONCE.has(name)) next.time = (seed * 7.31) % next.getClip().duration   // people do not all move in step
       current.current = { action: next, pose: motion.pose }
     } else if (was) was.pose = motion.pose
     if (next && (motion.pose === 'walk' || motion.pose === 'jog')) {
       next.timeScale = motion.speed / ((BODIES.moves.metresPerSecond[motion.pose] ?? 1.4) * scale)
     } else if (next) next.timeScale = 1
     mixer.update(Math.min(dt, 0.1))
-    if (SEATED.has(motion.pose) || motion.pose === 'stand_up') keepHandsOnDesk(root, root.parent ?? root)   // seated poses are at a desk
+    if (AT_DESK.has(motion.pose)) keepHandsOnDesk(root, root.parent ?? root)
   })
 
   return <primitive object={root} scale={scale} />

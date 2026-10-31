@@ -11,15 +11,16 @@ import bodies from "./bodies.generated.json";
 export const BODY_IDS = ["casual", "suit", "suit_tie"] as const;   // a woman in a blouse; men in a blazer, and a suit and tie
 export type BodyId = (typeof BODY_IDS)[number];
 
-/** The moves (clip names in the moves GLB). */
-export const MOVES = ["idle", "walk", "jog", "talk", "talk_2", "phone", "interact", "sit", "sit_talk", "type"] as const;
+/** The moves (clip names in the moves GLB). Sitting down and standing up play on the seat; `seated`
+ * holds the end of sitting down, for turning in the chair. */
+export const MOVES = ["idle", "walk", "jog", "talk", "talk_2", "phone", "interact", "sit_down", "seated", "stand_up", "sit_talk", "type"] as const;
 export type Move = (typeof MOVES)[number];
 
 const Role = z.enum(["top", "accent", "bottom", "shoes", "fixed"]);
 
 /** bodies.generated.json, written by the bake. */
 export const BodyManifest = z.object({
-  schemaVersion: z.literal(2),
+  schemaVersion: z.literal(3),
   bodies: z.array(z.object({
     id: z.enum(BODY_IDS),
     height: z.number().positive(),            // metres, as baked
@@ -31,6 +32,7 @@ export const BodyManifest = z.object({
     url: z.string().startsWith("/assets/people/"),
     clips: z.array(z.object({ name: z.string(), seconds: z.number().positive() }).strict()),
     metresPerSecond: z.record(z.string(), z.number().positive()),   // ground covered by walk / jog before they were pinned in place
+    standToSeat: z.number().positive(),   // metres the hips travel between standing and the seat, sitting down or getting up
   }).strict(),
 }).strict();
 

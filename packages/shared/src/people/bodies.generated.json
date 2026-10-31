@@ -1,5 +1,5 @@
 {
- "schemaVersion": 2,
+ "schemaVersion": 3,
  "bodies": [
   {
    "id": "casual",
@@ -173,8 +173,16 @@
     "seconds": 3.233
    },
    {
-    "name": "sit",
-    "seconds": 0.033
+    "name": "sit_down",
+    "seconds": 2.233
+   },
+   {
+    "name": "seated",
+    "seconds": 1
+   },
+   {
+    "name": "stand_up",
+    "seconds": 2.267
    },
    {
     "name": "sit_talk",
@@ -188,6 +196,7 @@
   "metresPerSecond": {
    "walk": 1.612,
    "jog": 4.266
-  }
+  },
+  "standToSeat": 0.485
  }
 }

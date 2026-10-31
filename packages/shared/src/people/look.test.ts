@@ -46,4 +46,11 @@ describe("baked bodies and moves", () => {
     expect(BODIES.moves.metresPerSecond.walk).toBeGreaterThan(0.6);
     expect(BODIES.moves.metresPerSecond.jog).toBeGreaterThan(BODIES.moves.metresPerSecond.walk);
   });
+
+  it("sits down and stands up from where people stand beside a chair", () => {
+    const seconds = (name: string) => BODIES.moves.clips.find((c) => c.name === name)?.seconds ?? 0;
+    for (const m of ["sit_down", "stand_up"]) expect(seconds(m), m).toBeGreaterThan(1);
+    expect(BODIES.moves.standToSeat).toBeGreaterThan(0.3);   // a step back onto the seat, in metres
+    expect(BODIES.moves.standToSeat).toBeLessThan(0.7);
+  });
 });

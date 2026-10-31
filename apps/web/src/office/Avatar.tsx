@@ -2,10 +2,11 @@ import { Html } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { BODIES, OFFICE_WALK, WalkMap, findPath, zoneAt, type Point } from '@office/shared'
+import { OFFICE_WALK, WalkMap, findPath, zoneAt, type Point } from '@office/shared'
 import { TAKEN, advanceActivity, approachOf, startActivity, targetNear, type Activity, type Target } from './interactions'
 import Person, { type Motion } from './Person'
 import { useMe } from './me'
+import { riseOf, secondsOf } from './moves'
 import { avatar, useOfficeUi } from './state'
 
 /**
@@ -35,7 +36,7 @@ export const route: { points: Point[] } = { points: [] }
  * there, and where to go once you have stood up. */
 const doing: { activity: Activity; pending: Target | null; after: Point | null; standUp: boolean } =
   { activity: { kind: 'free' }, pending: null, after: null, standUp: false }
-const SECONDS = { blend: 0.9, interact: BODIES.moves.clips.find((c) => c.name === 'interact')?.seconds ?? 3 }
+const SECONDS = { sit_down: secondsOf('sit_down'), stand_up: secondsOf('stand_up'), interact: secondsOf('interact') }
 const holding = (): string | null => doing.pending?.id ?? (doing.activity.kind === 'free' ? null : doing.activity.target.id)
 function letGo() {
   const id = holding()
@@ -123,7 +124,7 @@ export default function Avatar() {
     if (doing.activity.kind !== 'free') {
       // sitting, typing, standing up or at the counter: the activity moves you; keys or a click end it
       const using = holding()
-      const out = advanceActivity(doing.activity, avatar, dt, !!(sx || sy) || doing.after !== null || doing.standUp, SECONDS)
+      const out = advanceActivity(doing.activity, avatar, dt, !!(sx || sy) || doing.after !== null || doing.standUp, { ...SECONDS, rise: riseOf(look) })
       doing.activity = out.activity
       m.pose = out.pose ?? 'stand'
       m.speed = out.speed

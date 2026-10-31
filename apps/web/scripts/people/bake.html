@@ -10,8 +10,10 @@
 // Runs in headless Chrome, driven by bake.mjs. Loads the Mixamo characters and moves (FBX), which
 // all share Mixamo's skeleton, and exports one GLB per character (metres, facing +z, textures shrunk
 // to 1024 px) and one GLB of moves. Moves are used as made: bone names are only normalised (Mixamo
-// prefixes them "mixamorig" or "mixamorig7"), and walk / run are pinned in place with their speed
-// measured from the ground they cover. Each file is uploaded to the driver as it is finished.
+// prefixes them "mixamorig" or "mixamorig7"), walk / run are pinned in place with their speed
+// measured from the ground they cover, and sitting down / standing up are shifted so the seat is at
+// the origin, with the step between standing and the seat measured. Each file is uploaded to the
+// driver as it is finished.
 import * as THREE from 'three'
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js'
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js'
@@ -20,14 +22,17 @@ import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js'
 const TEXTURE = 1024
 // character file -> id
 const BODIES = { 'Ch13_nonPBR.fbx': 'casual', 'Ch23_nonPBR.fbx': 'suit', 'Ch33_nonPBR.fbx': 'suit_tie' }
-// move file -> [name, kind]; 'travel' moves have their forward travel removed and measured
+// move file -> [name, kind]; 'travel' moves have their forward travel removed and measured; 'sit'
+// (backing onto a seat) is shifted to end on the origin and 'rise' (getting up from it, forwards) to
+// start there, and both measure how far the hips travel between standing and the seat
 const MOVES = {
   'Idle.fbx': ['idle', 'loop'], 'walking.fbx': ['walk', 'travel'], 'standard run.fbx': ['jog', 'travel'],
   'Acknowledging.fbx': ['talk', 'loop'], 'Dismissing Gesture.fbx': ['talk_2', 'loop'],
   'Talking On Phone.fbx': ['phone', 'loop'], 'Button Pushing.fbx': ['interact', 'once'],
-  'Male Sitting Pose.fbx': ['sit', 'loop'], 'Having A Meeting, Male.fbx': ['sit_talk', 'loop'],
-  'Typing.fbx': ['type', 'loop'],
+  'Stand To Sit.fbx': ['sit_down', 'sit'], 'Sit To Stand.fbx': ['stand_up', 'rise'],
+  'Having A Meeting, Male.fbx': ['sit_talk', 'loop'], 'Typing.fbx': ['type', 'loop'],
 }
+const SEATED = 'seated'   // a held pose: the last frame of sitting down, for turning in the chair
 // clothing pieces people can recolour, by mesh name
 const ROLE = (body, mesh) => {
   if (/Suit$/.test(mesh)) return 'top'
@@ -88,21 +93,38 @@ async function loadBody(file, id) {
   return { root, meshes, height: +(box.max.y - box.min.y).toFixed(3) }
 }
 
-/** A move with its bones renamed; travelling moves are pinned in place and their speed measured. */
+/** A move with its bones renamed; travelling moves are pinned in place and their speed measured,
+ * sitting down and getting up are put on the seat and the step to it measured (metres). */
 function prepare(clip, name, kind) {
-  let metresPerSecond = null
+  let metresPerSecond = null, step = null
   const tracks = clip.tracks.map((t) => {
     const [target, prop] = t.name.split('.')
     const track = t.clone()
     track.name = `${bone(target)}.${prop}`
-    if (kind === 'travel' && bone(target) === 'Hips' && prop === 'position') {
-      const v = track.values, n = v.length / 3
+    if (bone(target) !== 'Hips' || prop !== 'position') return track
+    const v = track.values, n = v.length / 3
+    if (kind === 'travel') {
       metresPerSecond = Math.hypot(v[3 * n - 3] - v[0], v[3 * n - 1] - v[2]) / 100 / clip.duration
       for (let i = 0; i < n; i++) { v[3 * i] = v[0]; v[3 * i + 2] = v[2] }   // keep the bob, drop the travel
     }
+    if (kind === 'sit' || kind === 'rise') {
+      const [seated, standing] = kind === 'sit' ? [n - 1, 0] : [0, n - 1]
+      const [x, z] = [v[3 * seated], v[3 * seated + 2]]
+      step = Math.hypot(v[3 * standing] - x, v[3 * standing + 2] - z) / 100
+      for (let i = 0; i < n; i++) { v[3 * i] -= x; v[3 * i + 2] -= z }       // the seat at the origin
+    }
     return track
   }).filter((t) => !t.name.endsWith('.scale'))
-  return { clip: new THREE.AnimationClip(name, clip.duration, tracks), metresPerSecond }
+  return { clip: new THREE.AnimationClip(name, clip.duration, tracks), metresPerSecond, step }
+}
+
+/** A clip holding `clip`'s last frame. */
+function lastFrame(clip, name) {
+  const tracks = clip.tracks.map((t) => {
+    const size = t.getValueSize(), last = Array.from(t.values.slice(-size))
+    return new t.constructor(t.name, [0, 1], [...last, ...last])
+  })
+  return new THREE.AnimationClip(name, 1, tracks)
 }
 
 const toBinary = (object, animations = []) => new Promise((ok, no) =>
@@ -122,21 +144,24 @@ window.bake = async () => {
     report.push(`${id}: ${height} m, ${meshes.map((m) => `${m.name}=${m.role}`).join(' ')}`)
     if (!skeleton) skeleton = root
   }
-  const clips = [], speeds = {}
+  const clips = [], speeds = {}, steps = {}
   for (const [file, [name, kind]] of Object.entries(MOVES)) {
     console.log(`move ${file}`)
     const source = await load(file)
-    const { clip, metresPerSecond } = prepare(source.animations[0], name, kind)
+    const { clip, metresPerSecond, step } = prepare(source.animations[0], name, kind)
     clips.push(clip)
+    if (kind === 'sit') clips.push(lastFrame(clip, SEATED))
     if (metresPerSecond) speeds[name] = +metresPerSecond.toFixed(3)
-    report.push(`${name}: ${clip.duration.toFixed(2)} s, ${clip.tracks.length} tracks${metresPerSecond ? `, ${metresPerSecond.toFixed(2)} m/s` : ''}`)
+    if (step) steps[name] = step
+    report.push(`${name}: ${clip.duration.toFixed(2)} s, ${clip.tracks.length} tracks${metresPerSecond ? `, ${metresPerSecond.toFixed(2)} m/s` : ''}${step ? `, ${step.toFixed(3)} m from standing to the seat` : ''}`)
   }
+  if (Math.abs(steps.sit_down - steps.stand_up) > 0.03) report.push(`WARNING: sitting down and getting up step ${steps.sit_down.toFixed(3)} and ${steps.stand_up.toFixed(3)} m`)
   skeleton.traverse((o) => { if (o.isMesh) o.visible = false })
   console.log('exporting moves')
   await upload('moves.glb', await toBinary(skeleton, clips))
   files.push('moves.glb')
   return {
-    manifest: { schemaVersion: 2, bodies, moves: { url: '/assets/people/moves.glb', clips: clips.map((c) => ({ name: c.name, seconds: +c.duration.toFixed(3) })), metresPerSecond: speeds } },
+    manifest: { schemaVersion: 3, bodies, moves: { url: '/assets/people/moves.glb', clips: clips.map((c) => ({ name: c.name, seconds: +c.duration.toFixed(3) })), metresPerSecond: speeds, standToSeat: +steps.sit_down.toFixed(3) } },
     report, files,
   }
 }
