@@ -22,7 +22,7 @@ before the next phase.
 | Beyond M2 (owner requests) | Mixamo people with recoloured clothes; colleagues on daily routines; sitting down and standing up (Stand To Sit / Sit To Stand), typing with hands kept on the desk, the tea counter; the asset pipeline and its review sheet. |
 | M3 to M6 | Not started. The server is still the M0 hello room. No client networking, database, LLM or product UI yet. |
 
-The original M0 to M2 task lists are in git history (commit `a5d9085`).
+The original M0 to M2 task lists are in git history: this file as of the repository's first commit (`git log --reverse --format=%h | head -1`).
 
 ## 2. Principles for M3 to M6
 
