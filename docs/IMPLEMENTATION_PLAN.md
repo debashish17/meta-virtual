@@ -55,12 +55,14 @@ The original M0 to M2 task lists are in git history: this file as of the reposit
 | 2 Parallel lanes | P2-A room server ‖ P2-B web networking ‖ P2-C database ‖ P2-D LLM and meetings ‖ P2-E ask and status ‖ P2-F panels ‖ P2-G wall displays | G3 (local items) |
 | 3 Integration | P3-A shared colleagues ‖ P3-B HTTP API and auth ‖ P3-D deploy smoke test; then P3-C web wiring; then P3-E demo e2e | G3 (public URL), G4, G5 |
 | 4 Deploy and harden | P4-A production deploy ‖ P4-B hardening; then P4-C rehearsal | G6 |
-| 5 Final review | Reviewer (owner hands over) | Sign-off |
+| 5 Live meetings (optional, if time permits; decision D9) | P5-A call service ‖ P5-B call UI; then P5-C transcript from the call; then P5-D rehearsal | G7 |
+| 6 Final review | Reviewer (owner hands over) | Sign-off |
 
 **Team size and time.** The packages add up to roughly 20 agent-days. With one agent that is
 three to four weeks; with four agents, about eight working days; with seven lanes in Phase 2, about
 six. Phase 1 is sequential whatever the team size (one to two days), and Phase 3 to 4 cannot
-usefully run more than three agents.
+usefully run more than three agents. Phase 5 adds about six agent-days when it runs; it is the
+first thing cut when time is short, and the demo then uses the fixture transcript.
 
 ### Dependencies
 
@@ -83,6 +85,10 @@ A package starts when everything in its row is merged into `main` (and its phase
 | P4-A production deploy | Phase 3, decision D4 (hosted Supabase) |
 | P4-B hardening | Phase 3 |
 | P4-C rehearsal | P4-A, P4-B |
+| P5-A call service | Phase 4, decision D9 (a LiveKit project) |
+| P5-B call UI | Phase 4 to start; P5-A to finish |
+| P5-C transcript from the call | P5-A, P5-B |
+| P5-D live-meeting rehearsal | P5-C |
 
 **Critical path:** P1-A, P1-C, P2-C, P3-B, P3-C, P3-E, P4-A, P4-C. Start P2-C as early as
 possible: it is the longest Phase 2 lane on that path.
@@ -123,6 +129,12 @@ possible: it is the longest Phase 2 lane on that path.
 - [ ] The reset script restores the starting state. (P4-B)
 - [ ] Known limitations are documented. (P4-B)
 
+**Gate G7: live meetings** (only if Phase 5 runs)
+- [ ] Two browsers in the Acme room hear and see each other; a shared screen shows on the room's wall display. (P5-B)
+- [ ] Tokens are issued only for the room the player is in; a test proves it. (P5-A)
+- [ ] Microphone denied gives listen-only with a notice; with no LiveKit keys the office is unchanged. (P5-A, P5-B)
+- [ ] A transcript captured from a live call produces proposed changes through the same pipeline, and the fixture demo still passes unchanged. (P5-C, P5-D)
+
 ## 5. Owner decisions
 
 The lead must have these answered, or the default accepted, before the phase that needs them.
@@ -138,25 +150,28 @@ Record the answers in `docs/HANDOFF.md` section 3.
 | D6 | Colleagues once multiplayer works | Keep them, run on the server, the same for everyone (P3-A); the alternative is to remove them when online | P3-A |
 | D7 | Player contract adds look, pose, speed, activity and the seat reservations | Accept (P1-A) | Phase 1 |
 | D8 | Demo sign-in | Supabase Auth with two seeded test users and a "Join as Maya / Arjun" picker locally; email and password when deployed | P3-C |
+| D9 | Live meetings: voice, video, screen share and the transcript of a real meeting, with LiveKit | Yes, as the optional Phase 5 after G6, if time permits; the fixture transcript stays the demo's fallback and must keep working. The owner creates a LiveKit Cloud project before Phase 5 | Phase 5 |
 
 ## 6. If time runs short
 
 Cut in this order, never the memory loop or the demo script:
-1. M7 stretch.
-2. P3-A shared colleagues: hide colleagues when online instead.
-3. P2-G wall displays: show the status in a DOM panel instead.
-4. P4-B performance pass.
-5. The real LLM adapter (P2-D task 2): demo on `FixtureLlm`, with the notice shown.
+1. Phase 5, live meetings: the demo uses the fixture transcript (the static demo).
+2. M7 stretch.
+3. P3-A shared colleagues: hide colleagues when online instead.
+4. P2-G wall displays: show the status in a DOM panel instead.
+5. P4-B performance pass.
+6. The real LLM adapter (P2-D task 2): demo on `FixtureLlm`, with the notice shown.
 
 ## 7. M7: stretch (only after G6, one at a time, each with owner approval)
 
-1. Live captions or a pasted-transcript upload instead of the fixture only.
-2. Voice with LiveKit in meeting rooms (server-issued tokens, mute, mic-denied handling).
-3. Semantic search with pgvector for decision-history questions.
-4. Engineering room: GitHub status on the project wall, screen share.
-5. Shared snippet pad (Yjs plus CodeMirror, no execution).
-6. Supabase Realtime in place of Colyseus invalidation broadcasts.
-7. People polish: the unused "Sit To Type" / "Type To Sit" Mixamo moves for the seated-to-typing transition.
+Voice, captions, the transcript upload and screen share, which used to be here, are Phase 5.
+
+1. Semantic search with pgvector for decision-history questions.
+2. Engineering room: GitHub status on the project wall.
+3. Shared snippet pad (Yjs plus CodeMirror, no execution).
+4. Supabase Realtime in place of Colyseus invalidation broadcasts.
+5. People polish: the unused "Sit To Type" / "Type To Sit" Mixamo moves for the seated-to-typing transition.
+6. Captions through a speech-to-text provider in a LiveKit agent, if the browser route of P5-C is not good enough (a new account and a second process).
 
 ## 8. Stop conditions (every package and phase)
 

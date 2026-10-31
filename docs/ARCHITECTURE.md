@@ -326,3 +326,25 @@ Checked against the installed libraries: Colyseus 0.18 (`@colyseus/core` 0.18.24
 - Component tests: Vitest with `// @vitest-environment jsdom` per file, so the node tests stay fast.
 - e2e: Playwright with two browser contexts. Its stack runs on its own ports (`WEB_PORT=5190`,
   `PORT=2590`).
+
+### 12.9 Live meetings (Phase 5, optional; decision D9)
+
+- Provider: LiveKit (WebRTC: audio, video, screen share); LiveKit Cloud for the demo. The server
+  holds `LIVEKIT_URL`, `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET`; the browser gets the URL with
+  each token, so it needs no LiveKit configuration of its own.
+- One LiveKit room per meeting-room zone per workspace, named `${workspaceId}--${zoneId}`.
+  Presence in the office decides membership: `POST /calls/token { zoneId }` is honoured only when
+  the office room's state shows the caller in that zone and the zone is a meeting, customer or
+  project room. Tokens (`livekit-server-sdk`) carry the user id as identity, grant join, publish
+  and subscribe for that room only, and expire after an hour.
+- The browser (`livekit-client`) connects when the avatar enters the zone and disconnects when it
+  leaves: microphone on if allowed, listen-only with a notice if denied; camera and screen share
+  are toggles. Tiles live in the right drawer; a shared screen is drawn on the room's wall display
+  as a `VideoTexture`. The player's status is `in_meeting` during the call.
+- Transcript: each browser captions its own speaker with the Web Speech API and sends final
+  segments through the office room (`caption_send`); the server assembles the zone's transcript
+  with speaker names and, on "End meeting", feeds it to the meetings pipeline exactly as a pasted
+  transcript. A speech-to-text provider in a LiveKit agent is the upgrade if the browser route is
+  not good enough.
+- Failure behaviour: no keys, or LiveKit unreachable, gives "Calls unavailable"; the office, the
+  fixture demo and the pasted-transcript route are unaffected. `/health` reports `calls`.

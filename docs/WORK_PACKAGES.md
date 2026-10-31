@@ -1,6 +1,7 @@
 # WORK_PACKAGES.md
 
-The work for M3 to M6, cut into packages that separate agents can build at the same time. Read
+The work for M3 to M6, and the optional live meetings after them, cut into packages that separate
+agents can build at the same time. Read
 `AGENTS.md`, `docs/HANDOFF.md` and `docs/IMPLEMENTATION_PLAN.md` first; this file is the detail.
 
 **How to read a package**
@@ -668,4 +669,115 @@ after P3-B. P3-E comes last.
 
 Two devices or networks, a reconnect, and the LLM-unavailable case (key unset). Results go in the report.
 
-**Gate G6** closes Phase 4. Then Phase 5, the final review (`docs/HANDOFF.md` section 8).
+**Gate G6** closes Phase 4. Then Phase 5 if time permits, and Phase 6, the final review.
+
+---
+
+## Phase 5: Live meetings (optional; after G6; decision D9)
+
+Voice, video and screen share in the meeting rooms, and the transcript of a real meeting into the
+memory pipeline, with LiveKit (`ARCHITECTURE.md` 12.9). This phase runs only if time permits after
+Gate G6, with the owner's go-ahead. Otherwise the demo uses the fixture transcript (the static
+demo), which must keep working unchanged whether or not this phase ships. P5-A and P5-B run in
+parallel; P5-C needs both; P5-D closes the phase.
+
+### P5-A Call service [M]
+
+**Depends on:** Phase 4; decision D9 (a LiveKit Cloud project, with its URL, API key and secret in
+the server's env only).
+
+**Owns:** `apps/server/src/calls/**`, the `/calls` lines of `apps/server/src/http/routes.ts`, the
+`LIVEKIT_*` names in `.env.example` and `apps/server/src/env.ts`, the `calls` field of `/health`.
+The `CallTokenRequest` schema in `packages/shared/src/api` is added by the lead.
+
+**Tasks**
+
+1. `POST /calls/token { zoneId }`:
+   - the caller must be in that zone right now according to the office room (look the player up
+     through the room registry; the client's claim is not trusted), and the zone's type must be
+     `meeting_room`, `customer_room` or `project_room`;
+   - the LiveKit room is `${workspaceId}--${zoneId}`; the identity is the user id, the name the
+     display name;
+   - the token (`livekit-server-sdk`, `AccessToken`) grants join, publish and subscribe for that
+     one room, with a one-hour TTL; the response is `{ url, token }`;
+   - rate limited per user.
+2. With no `LIVEKIT_*` set, the endpoint answers 503 `calls_off` and `/health` reports
+   `calls: "off"`; the office works as before.
+3. Tests: in the room gives a token whose grants decode to that room only; another zone, the open
+   plan, or not connected gives 403; no keys gives 503.
+
+**Acceptance:** G7 "tokens are issued only for the room the player is in" is proven by tests.
+Checks pass.
+
+### P5-B Call UI [L]
+
+**Depends on:** Phase 4 to start; P5-A to finish.
+
+**Owns:** `apps/web/src/calls/**`, a `<CallPanel />` slot line in `apps/web/src/ui/Panels.tsx`,
+`apps/web/src/office/displays/LiveShare.tsx`, `e2e/calls.spec.ts`.
+
+**Tasks**
+
+1. Join and leave follow the avatar: entering a meeting-room zone (the net store's zone) asks the
+   server for a token and connects (`livekit-client`, `Room`); leaving the zone disconnects. The
+   first join asks for the microphone; if it is denied, the person is in the call listen-only with
+   a notice, never blocked. (The browser needs a user gesture before it plays audio; walking there
+   is one.)
+2. A call bar (mute, camera, screen share, leave) and tiles for the participants' cameras in the
+   right drawer area, collapsible, never over the centre of the floor (`DESIGN_SPEC.md` section 9).
+   While in a call the player's status is `in_meeting`.
+3. A shared screen is drawn on the room's wall display (a `VideoTexture` on the existing display
+   mesh; `LiveShare.tsx` beside P2-G's status displays); clicking it opens the larger overlay.
+4. If LiveKit cannot be reached, the bar says "Calls unavailable" and nothing else changes.
+5. e2e: two contexts (Chromium with `--use-fake-ui-for-media-stream` and
+   `--use-fake-device-for-media-stream`, `permissions: ["microphone", "camera"]`) walk into the
+   Acme room and each sees the other's tile; one leaves the room and its tile disappears.
+
+**Acceptance:** G7 "two browsers in the Acme room hear and see each other; a shared screen shows
+on the wall display", and microphone denied gives listen-only. The frame rate during a call is
+reported from a real browser. Checks pass.
+
+### P5-C Transcript from the call [M]
+
+**Depends on:** P5-A, P5-B.
+
+**Owns:** `apps/web/src/calls/captions/**`, `apps/server/src/calls/transcript.ts`,
+`e2e/live-meeting.spec.ts`. The `caption_send` and `caption` messages in `packages/shared/src/net`
+are added by the lead.
+
+**Tasks**
+
+1. Captions in the browser with the Web Speech API (`SpeechRecognition`, continuous, interim
+   results; Chrome). Each participant's own speech becomes caption segments sent as
+   `caption_send { text, final, ts }` over the office room. The server broadcasts `caption` to the
+   people in that zone and appends final segments, with the speaker's name, to a transcript buffer
+   per zone.
+2. "End meeting" in the call bar (or the last participant leaving) posts the assembled transcript
+   to `POST /meetings` with the zone, so the existing pipeline proposes the changes. An empty
+   buffer gives the notice "no speech was captured" instead of a meeting.
+3. Paste a transcript: the same panel accepts pasted text for `POST /meetings`. This is the
+   no-microphone route, and it stays for the static demo.
+4. e2e (fake media): captions sent through the room arrive at the other participant; ending the
+   meeting with a seeded transcript yields the pending changes in the drawer.
+
+If the browser route is not good enough, the upgrade is a LiveKit agent worker with a
+speech-to-text provider (`IMPLEMENTATION_PLAN.md` section 7). That is a new account and a second
+process; the owner decides.
+
+**Acceptance:** G7 "a transcript captured from a live call produces proposed changes through the
+same pipeline". Checks pass.
+
+### P5-D Live-meeting rehearsal [S] (owner and agent)
+
+The demo script with step 3 done live: Maya and Arjun hold the meeting in the Acme room, end it,
+and approve the proposed changes. Then the same script on the fixture transcript, to prove the
+fallback. Both on the deployed app, with the microphone-denied case. The results, and the owner's
+choice of which version to show, go in the report.
+
+**Gate G7** closes Phase 5.
+
+---
+
+## Phase 6: Final review
+
+The reviewer's checklist is `docs/HANDOFF.md` section 8.

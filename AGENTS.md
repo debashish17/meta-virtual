@@ -88,7 +88,7 @@ Rules:
 - AI writes to records only through approved `proposed_changes`. No autonomous writes.
 - Tests: Vitest for unit and integration, Playwright for e2e.
 - No physics engine.
-- Voice (LiveKit), GitHub, calendar, screen share and the snippet pad are out of scope until the memory demo passes.
+- Live meetings (LiveKit: voice, video, screen share, the transcript of a real meeting) come only after the memory demo passes, as the optional Phase 5 (decision D9); the fixture demo must keep working without them. GitHub, calendar and the snippet pad stay out of scope.
 
 ## 5. Commands
 

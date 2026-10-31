@@ -62,6 +62,7 @@ The defaults and what each decision blocks are in `docs/IMPLEMENTATION_PLAN.md` 
 | D6 | Colleagues run on the server (or are removed when online) | |
 | D7 | Player contract additions (look, pose, speed, activity) | |
 | D8 | Demo sign-in (seeded test users locally, email and password deployed) | |
+| D9 | Live meetings with LiveKit after G6, if time permits; the fixture transcript stays the fallback | Yes, if time permits (2026-11-01) |
 
 **What the owner prepares, and when**
 
@@ -73,6 +74,8 @@ The defaults and what each decision blocks are in `docs/IMPLEMENTATION_PLAN.md` 
 - For P3-D: the web host and the WebSocket host accounts (D3), with deploy access for the lead.
 - For Phase 4: the hosted Supabase project (D4). Its URL and keys go into the hosts' secret
   settings and the lead's local `.env`, not into chat or the repo.
+- For Phase 5, only if it runs: a LiveKit Cloud project (D9). Its URL, API key and secret go into
+  the server's env only.
 
 ## 4. Machine and setup
 
@@ -182,7 +185,8 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 | 4 | Their dependencies merged | P3-A, P3-B, P3-D (P3-D needs D3); P3-C starts against the contract |
 | 5 | P3-B, P3-C merged | P3-E; G3, G4 and G5 are reported to the owner |
 | 6 | G5 approved, D4 hosted project ready | P4-A, P4-B, then P4-C; G6 |
-| 7 | G6 approved | Final review (section 8) |
+| 7 | G6 approved, time permits, D9 | P5-A ‖ P5-B, then P5-C, then P5-D; Gate G7 |
+| 8 | G6 approved (and G7 if Phase 5 ran) | Final review (section 8) |
 
 **With fewer agents**, run these chains instead of one package per agent:
 
@@ -246,10 +250,14 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 | P4-A production deploy | | | not started | |
 | P4-B hardening | | | not started | |
 | P4-C rehearsal | | | not started | |
+| P5-A call service (optional) | | | not started | |
+| P5-B call UI (optional) | | | not started | |
+| P5-C transcript from the call (optional) | | | not started | |
+| P5-D live-meeting rehearsal (optional) | | | not started | |
 
 States: not started, in progress, blocked (say why), in review, merged.
 
-## 8. Final review (the owner hands this to the reviewer after G6)
+## 8. Final review (the owner hands this to the reviewer after G6, or after G7 if Phase 5 ran)
 
 **What the reviewer gets:**
 - `main` at the final commit;
@@ -269,8 +277,9 @@ States: not started, in progress, blocked (say why), in review, merged.
 
 **Checklist**
 
-1. **Completeness.** Every package on the status board is merged, with a report. Every gate item
-   (P1, G3 to G6) is checked, with evidence.
+1. **Completeness.** Every package on the status board is merged, with a report (the Phase 5
+   packages only if the phase ran). Every gate item (P1, G3 to G6, and G7 if Phase 5 ran) is
+   checked, with evidence.
 2. **Fresh checks.** In a clean clone or worktree: `pnpm install`, `pnpm typecheck`, `pnpm lint`,
    `pnpm test`, `pnpm test:e2e`, `python blender-asset-pipeline/run.py test`, `pnpm db:reset`
    followed by the database tests, and `pnpm build` followed by `node apps/server/dist/index.js`
@@ -311,6 +320,9 @@ States: not started, in progress, blocked (say why), in review, merged.
     copy); `apps/web/public/assets/people/LICENSE.txt` is present.
 11. **History.** `main` is the baseline plus `--no-ff` merges of package branches and the lead's own
     commits; nothing was force-pushed; every merged package has a report.
+12. **Live meetings** (only if Phase 5 ran). Tokens are issued only for the room the player is in
+    (test); with no LiveKit keys the office and the fixture demo are unchanged; microphone denied
+    gives listen-only; a live transcript went through the same pipeline as the fixture one.
 
 The reviewer's report: one line per gate (pass, fail or not verified), then findings ordered by
 severity, each with the file, the evidence and the fix suggested.
@@ -335,3 +347,8 @@ tightened where lanes would otherwise have guessed:
   contract test suite shared by the mock and the HTTP API.
 - Owner preparation list (section 3), more quirks (section 4), more reviewer checks (section 8),
   a team-size estimate (`IMPLEMENTATION_PLAN.md` section 3).
+
+**2026-11-01, later.** Live meetings (voice, video, screen share and the transcript of a real meeting,
+with LiveKit) added as the optional Phase 5 after G6 (decision D9), with the fixture transcript as
+the standing fallback; the final review is now Phase 6. `ARCHITECTURE.md` 12.9, packages P5-A to
+P5-D, Gate G7, and the locked decision in `AGENTS.md` section 4 updated to match.

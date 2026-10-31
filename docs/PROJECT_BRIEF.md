@@ -83,4 +83,5 @@ Voice (LiveKit), live transcription, semantic search with embeddings, GitHub int
 - Customer scenario above is recommended, not yet confirmed.
 - AI provider: not chosen. Use any one provider behind `LlmClient`; if the hackathon requires a specific model, use that one.
 - Hosting: one web host and one persistent WebSocket host, to be chosen before the deployment milestone.
+- Live meetings (voice, video, screen share and a real transcript, through LiveKit): after the MVP passes, if time permits (plan decision D9, Phase 5). The scripted transcript remains the demo's fallback either way.
 
