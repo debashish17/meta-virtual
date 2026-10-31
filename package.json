@@ -1,0 +1,23 @@
+{
+  "name": "virtual-office",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@12.8.1",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "test": "turbo run test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.24.0",
+    "eslint": "^9.24.0",
+    "prettier": "^3.5.3",
+    "turbo": "^2.5.4",
+    "typescript": "~5.9.0",
+    "typescript-eslint": "^8.29.0",
+    "vitest": "^3.2.4"
+  }
+}

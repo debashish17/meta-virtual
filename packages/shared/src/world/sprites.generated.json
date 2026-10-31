@@ -1,0 +1,1641 @@
+{
+ "schemaVersion": 1,
+ "sprites": {
+  "architecture.arched-door": {
+   "url": "/assets/sprites/architecture.arched-door.png",
+   "px": [
+    66,
+    149
+   ],
+   "dimsMm": null
+  },
+  "architecture.arched-frame": {
+   "url": "/assets/sprites/architecture.arched-frame.png",
+   "px": [
+    64,
+    139
+   ],
+   "dimsMm": null
+  },
+  "architecture.arched-window": {
+   "url": "/assets/sprites/architecture.arched-window.png",
+   "px": [
+    77,
+    146
+   ],
+   "dimsMm": null
+  },
+  "architecture.biometric-scanner": {
+   "url": "/assets/sprites/architecture.biometric-scanner.png",
+   "px": [
+    46,
+    131
+   ],
+   "dimsMm": null
+  },
+  "architecture.city-skyline-day": {
+   "url": "/assets/sprites/architecture.city-skyline-day.png",
+   "px": [
+    140,
+    133
+   ],
+   "dimsMm": null
+  },
+  "architecture.city-skyline-sunset": {
+   "url": "/assets/sprites/architecture.city-skyline-sunset.png",
+   "px": [
+    142,
+    133
+   ],
+   "dimsMm": null
+  },
+  "architecture.dense-urban-view": {
+   "url": "/assets/sprites/architecture.dense-urban-view.png",
+   "px": [
+    144,
+    133
+   ],
+   "dimsMm": null
+  },
+  "architecture.foggy-view": {
+   "url": "/assets/sprites/architecture.foggy-view.png",
+   "px": [
+    146,
+    133
+   ],
+   "dimsMm": null
+  },
+  "architecture.green-campus-view": {
+   "url": "/assets/sprites/architecture.green-campus-view.png",
+   "px": [
+    143,
+    133
+   ],
+   "dimsMm": null
+  },
+  "architecture.high-rise-view": {
+   "url": "/assets/sprites/architecture.high-rise-view.png",
+   "px": [
+    144,
+    133
+   ],
+   "dimsMm": null
+  },
+  "architecture.keycard-reader": {
+   "url": "/assets/sprites/architecture.keycard-reader.png",
+   "px": [
+    44,
+    132
+   ],
+   "dimsMm": null
+  },
+  "architecture.keypad": {
+   "url": "/assets/sprites/architecture.keypad.png",
+   "px": [
+    46,
+    105
+   ],
+   "dimsMm": null
+  },
+  "architecture.low-rise-residential": {
+   "url": "/assets/sprites/architecture.low-rise-residential.png",
+   "px": [
+    147,
+    133
+   ],
+   "dimsMm": null
+  },
+  "architecture.night-city-view": {
+   "url": "/assets/sprites/architecture.night-city-view.png",
+   "px": [
+    145,
+    133
+   ],
+   "dimsMm": null
+  },
+  "architecture.rainy-view": {
+   "url": "/assets/sprites/architecture.rainy-view.png",
+   "px": [
+    144,
+    133
+   ],
+   "dimsMm": null
+  },
+  "architecture.smart-lock-handle": {
+   "url": "/assets/sprites/architecture.smart-lock-handle.png",
+   "px": [
+    59,
+    100
+   ],
+   "dimsMm": null
+  },
+  "architecture.tree-line-view": {
+   "url": "/assets/sprites/architecture.tree-line-view.png",
+   "px": [
+    146,
+    133
+   ],
+   "dimsMm": null
+  },
+  "decor.blinds-closed": {
+   "url": "/assets/sprites/decor.blinds-closed.png",
+   "px": [
+    82,
+    131
+   ],
+   "dimsMm": null
+  },
+  "decor.blinds-open": {
+   "url": "/assets/sprites/decor.blinds-open.png",
+   "px": [
+    79,
+    130
+   ],
+   "dimsMm": null
+  },
+  "decor.book-stack": {
+   "url": "/assets/sprites/decor.book-stack.png",
+   "px": [
+    128,
+    61
+   ],
+   "dimsMm": null
+  },
+  "decor.books-magazine": {
+   "url": "/assets/sprites/decor.books-magazine.png",
+   "px": [
+    62,
+    56
+   ],
+   "dimsMm": null
+  },
+  "decor.coat-stand": {
+   "url": "/assets/sprites/decor.coat-stand.png",
+   "px": [
+    41,
+    132
+   ],
+   "dimsMm": {
+    "w": 400,
+    "d": 400,
+    "h": 1800
+   }
+  },
+  "decor.curtain-panel": {
+   "url": "/assets/sprites/decor.curtain-panel.png",
+   "px": [
+    86,
+    135
+   ],
+   "dimsMm": null
+  },
+  "decor.cushion-rect": {
+   "url": "/assets/sprites/decor.cushion-rect.png",
+   "px": [
+    60,
+    64
+   ],
+   "dimsMm": null
+  },
+  "decor.cushion-square": {
+   "url": "/assets/sprites/decor.cushion-square.png",
+   "px": [
+    61,
+    79
+   ],
+   "dimsMm": null
+  },
+  "decor.desk-mat-with-keyboard-and-mouse": {
+   "url": "/assets/sprites/decor.desk-mat-with-keyboard-and-mouse.png",
+   "px": [
+    135,
+    80
+   ],
+   "dimsMm": null
+  },
+  "decor.desktop-organizer": {
+   "url": "/assets/sprites/decor.desktop-organizer.png",
+   "px": [
+    77,
+    71
+   ],
+   "dimsMm": null
+  },
+  "decor.directory-panel": {
+   "url": "/assets/sprites/decor.directory-panel.png",
+   "px": [
+    74,
+    102
+   ],
+   "dimsMm": {
+    "w": 400,
+    "d": 600,
+    "h": null
+   }
+  },
+  "decor.document-tray-stacked": {
+   "url": "/assets/sprites/decor.document-tray-stacked.png",
+   "px": [
+    77,
+    86
+   ],
+   "dimsMm": null
+  },
+  "decor.glass-marker-holder": {
+   "url": "/assets/sprites/decor.glass-marker-holder.png",
+   "px": [
+    79,
+    78
+   ],
+   "dimsMm": {
+    "w": 200,
+    "d": 100,
+    "h": null
+   }
+  },
+  "decor.headphone-stand": {
+   "url": "/assets/sprites/decor.headphone-stand.png",
+   "px": [
+    78,
+    97
+   ],
+   "dimsMm": null
+  },
+  "decor.headphones": {
+   "url": "/assets/sprites/decor.headphones.png",
+   "px": [
+    52,
+    64
+   ],
+   "dimsMm": {
+    "w": 180,
+    "d": 180,
+    "h": null
+   }
+  },
+  "decor.keyboard": {
+   "url": "/assets/sprites/decor.keyboard.png",
+   "px": [
+    91,
+    46
+   ],
+   "dimsMm": {
+    "w": 450,
+    "d": 150,
+    "h": null
+   }
+  },
+  "decor.label-box": {
+   "url": "/assets/sprites/decor.label-box.png",
+   "px": [
+    70,
+    65
+   ],
+   "dimsMm": null
+  },
+  "decor.label-tags": {
+   "url": "/assets/sprites/decor.label-tags.png",
+   "px": [
+    79,
+    82
+   ],
+   "dimsMm": null
+  },
+  "decor.laptop": {
+   "url": "/assets/sprites/decor.laptop.png",
+   "px": [
+    66,
+    66
+   ],
+   "dimsMm": {
+    "w": 320,
+    "d": 220,
+    "h": null
+   }
+  },
+  "decor.laptop-dock": {
+   "url": "/assets/sprites/decor.laptop-dock.png",
+   "px": [
+    64,
+    38
+   ],
+   "dimsMm": {
+    "w": 150,
+    "d": 80,
+    "h": 30
+   }
+  },
+  "decor.laptop-open": {
+   "url": "/assets/sprites/decor.laptop-open.png",
+   "px": [
+    78,
+    73
+   ],
+   "dimsMm": {
+    "w": 320,
+    "d": 220,
+    "h": null
+   }
+  },
+  "decor.laptop-riser": {
+   "url": "/assets/sprites/decor.laptop-riser.png",
+   "px": [
+    66,
+    49
+   ],
+   "dimsMm": null
+  },
+  "decor.magazine-file": {
+   "url": "/assets/sprites/decor.magazine-file.png",
+   "px": [
+    55,
+    95
+   ],
+   "dimsMm": null
+  },
+  "decor.mouse": {
+   "url": "/assets/sprites/decor.mouse.png",
+   "px": [
+    41,
+    30
+   ],
+   "dimsMm": {
+    "w": 100,
+    "d": 60,
+    "h": null
+   }
+  },
+  "decor.mouse-pad": {
+   "url": "/assets/sprites/decor.mouse-pad.png",
+   "px": [
+    78,
+    43
+   ],
+   "dimsMm": {
+    "w": 250,
+    "d": 200,
+    "h": null
+   }
+  },
+  "decor.mug": {
+   "url": "/assets/sprites/decor.mug.png",
+   "px": [
+    34,
+    48
+   ],
+   "dimsMm": null
+  },
+  "decor.notebook": {
+   "url": "/assets/sprites/decor.notebook.png",
+   "px": [
+    69,
+    40
+   ],
+   "dimsMm": null
+  },
+  "decor.pen-cup-and-desk-organizer": {
+   "url": "/assets/sprites/decor.pen-cup-and-desk-organizer.png",
+   "px": [
+    64,
+    58
+   ],
+   "dimsMm": null
+  },
+  "decor.pen-holder": {
+   "url": "/assets/sprites/decor.pen-holder.png",
+   "px": [
+    44,
+    69
+   ],
+   "dimsMm": null
+  },
+  "decor.roller-shade": {
+   "url": "/assets/sprites/decor.roller-shade.png",
+   "px": [
+    81,
+    127
+   ],
+   "dimsMm": null
+  },
+  "decor.room-sign": {
+   "url": "/assets/sprites/decor.room-sign.png",
+   "px": [
+    100,
+    64
+   ],
+   "dimsMm": {
+    "w": 300,
+    "d": 150,
+    "h": null
+   }
+  },
+  "decor.throw-blanket": {
+   "url": "/assets/sprites/decor.throw-blanket.png",
+   "px": [
+    79,
+    78
+   ],
+   "dimsMm": null
+  },
+  "decor.water-bottle": {
+   "url": "/assets/sprites/decor.water-bottle.png",
+   "px": [
+    30,
+    84
+   ],
+   "dimsMm": null
+  },
+  "decor.window-frame-detail": {
+   "url": "/assets/sprites/decor.window-frame-detail.png",
+   "px": [
+    81,
+    146
+   ],
+   "dimsMm": null
+  },
+  "kitchen.cereal-jar": {
+   "url": "/assets/sprites/kitchen.cereal-jar.png",
+   "px": [
+    43,
+    73
+   ],
+   "dimsMm": null
+  },
+  "kitchen.clock": {
+   "url": "/assets/sprites/kitchen.clock.png",
+   "px": [
+    65,
+    66
+   ],
+   "dimsMm": null
+  },
+  "kitchen.coffee-beans": {
+   "url": "/assets/sprites/kitchen.coffee-beans.png",
+   "px": [
+    61,
+    76
+   ],
+   "dimsMm": null
+  },
+  "kitchen.coffee-brewer-drip": {
+   "url": "/assets/sprites/kitchen.coffee-brewer-drip.png",
+   "px": [
+    57,
+    92
+   ],
+   "dimsMm": null
+  },
+  "kitchen.coffee-machine-espresso": {
+   "url": "/assets/sprites/kitchen.coffee-machine-espresso.png",
+   "px": [
+    75,
+    96
+   ],
+   "dimsMm": null
+  },
+  "kitchen.condiment-set": {
+   "url": "/assets/sprites/kitchen.condiment-set.png",
+   "px": [
+    67,
+    70
+   ],
+   "dimsMm": null
+  },
+  "kitchen.condiment-tray": {
+   "url": "/assets/sprites/kitchen.condiment-tray.png",
+   "px": [
+    81,
+    74
+   ],
+   "dimsMm": null
+  },
+  "kitchen.cutlery-organizer": {
+   "url": "/assets/sprites/kitchen.cutlery-organizer.png",
+   "px": [
+    95,
+    59
+   ],
+   "dimsMm": null
+  },
+  "kitchen.electric-kettle": {
+   "url": "/assets/sprites/kitchen.electric-kettle.png",
+   "px": [
+    51,
+    70
+   ],
+   "dimsMm": null
+  },
+  "kitchen.fruit-bowl": {
+   "url": "/assets/sprites/kitchen.fruit-bowl.png",
+   "px": [
+    70,
+    61
+   ],
+   "dimsMm": null
+  },
+  "kitchen.mug": {
+   "url": "/assets/sprites/kitchen.mug.png",
+   "px": [
+    44,
+    55
+   ],
+   "dimsMm": null
+  },
+  "kitchen.napkin-holder": {
+   "url": "/assets/sprites/kitchen.napkin-holder.png",
+   "px": [
+    82,
+    43
+   ],
+   "dimsMm": null
+  },
+  "kitchen.paper-towels": {
+   "url": "/assets/sprites/kitchen.paper-towels.png",
+   "px": [
+    47,
+    82
+   ],
+   "dimsMm": null
+  },
+  "kitchen.plate-stack": {
+   "url": "/assets/sprites/kitchen.plate-stack.png",
+   "px": [
+    57,
+    36
+   ],
+   "dimsMm": null
+  },
+  "kitchen.snack-jar": {
+   "url": "/assets/sprites/kitchen.snack-jar.png",
+   "px": [
+    56,
+    74
+   ],
+   "dimsMm": null
+  },
+  "kitchen.sugar-jar": {
+   "url": "/assets/sprites/kitchen.sugar-jar.png",
+   "px": [
+    54,
+    59
+   ],
+   "dimsMm": null
+  },
+  "kitchen.tea-box": {
+   "url": "/assets/sprites/kitchen.tea-box.png",
+   "px": [
+    52,
+    65
+   ],
+   "dimsMm": null
+  },
+  "kitchen.toaster": {
+   "url": "/assets/sprites/kitchen.toaster.png",
+   "px": [
+    61,
+    63
+   ],
+   "dimsMm": null
+  },
+  "kitchen.utensil-holder": {
+   "url": "/assets/sprites/kitchen.utensil-holder.png",
+   "px": [
+    46,
+    82
+   ],
+   "dimsMm": null
+  },
+  "kitchen.wall-art-menu-board": {
+   "url": "/assets/sprites/kitchen.wall-art-menu-board.png",
+   "px": [
+    103,
+    75
+   ],
+   "dimsMm": null
+  },
+  "kitchen.water-dispenser": {
+   "url": "/assets/sprites/kitchen.water-dispenser.png",
+   "px": [
+    43,
+    105
+   ],
+   "dimsMm": null
+  },
+  "lighting.linear-pendant": {
+   "url": "/assets/sprites/lighting.linear-pendant.png",
+   "px": [
+    92,
+    51
+   ],
+   "dimsMm": {
+    "w": 1200,
+    "d": 50,
+    "h": null
+   }
+  },
+  "lighting.track-light": {
+   "url": "/assets/sprites/lighting.track-light.png",
+   "px": [
+    80,
+    58
+   ],
+   "dimsMm": {
+    "w": 200,
+    "d": 60,
+    "h": null
+   }
+  },
+  "lounge.bean-bag-large": {
+   "url": "/assets/sprites/lounge.bean-bag-large.png",
+   "px": [
+    81,
+    87
+   ],
+   "dimsMm": null
+  },
+  "lounge.bean-bag-small": {
+   "url": "/assets/sprites/lounge.bean-bag-small.png",
+   "px": [
+    68,
+    65
+   ],
+   "dimsMm": null
+  },
+  "lounge.c-shaped-table": {
+   "url": "/assets/sprites/lounge.c-shaped-table.png",
+   "px": [
+    79,
+    108
+   ],
+   "dimsMm": null
+  },
+  "lounge.egg-chair": {
+   "url": "/assets/sprites/lounge.egg-chair.png",
+   "px": [
+    77,
+    107
+   ],
+   "dimsMm": null
+  },
+  "lounge.nested-tables": {
+   "url": "/assets/sprites/lounge.nested-tables.png",
+   "px": [
+    109,
+    85
+   ],
+   "dimsMm": null
+  },
+  "partition.acoustic-curtain": {
+   "url": "/assets/sprites/partition.acoustic-curtain.png",
+   "px": [
+    110,
+    92
+   ],
+   "dimsMm": {
+    "w": 2400,
+    "d": 1200,
+    "h": null
+   }
+  },
+  "partition.corner-connector-90": {
+   "url": "/assets/sprites/partition.corner-connector-90.png",
+   "px": [
+    69,
+    51
+   ],
+   "dimsMm": null
+  },
+  "partition.glass-room-curtain": {
+   "url": "/assets/sprites/partition.glass-room-curtain.png",
+   "px": [
+    106,
+    91
+   ],
+   "dimsMm": {
+    "w": 2400,
+    "d": 1200,
+    "h": null
+   }
+  },
+  "partition.mixed-slat-plus-planter": {
+   "url": "/assets/sprites/partition.mixed-slat-plus-planter.png",
+   "px": [
+    134,
+    151
+   ],
+   "dimsMm": {
+    "w": 2400,
+    "d": 1200,
+    "h": null
+   }
+  },
+  "partition.straight-connector": {
+   "url": "/assets/sprites/partition.straight-connector.png",
+   "px": [
+    39,
+    61
+   ],
+   "dimsMm": null
+  },
+  "partition.t-junction": {
+   "url": "/assets/sprites/partition.t-junction.png",
+   "px": [
+    54,
+    58
+   ],
+   "dimsMm": null
+  },
+  "partition.track-divider-curtain": {
+   "url": "/assets/sprites/partition.track-divider-curtain.png",
+   "px": [
+    114,
+    93
+   ],
+   "dimsMm": {
+    "w": 2400,
+    "d": 1200,
+    "h": null
+   }
+  },
+  "partition.x-junction": {
+   "url": "/assets/sprites/partition.x-junction.png",
+   "px": [
+    59,
+    52
+   ],
+   "dimsMm": null
+  },
+  "storage.coat-rack-stand": {
+   "url": "/assets/sprites/storage.coat-rack-stand.png",
+   "px": [
+    46,
+    145
+   ],
+   "dimsMm": {
+    "w": 400,
+    "d": 400,
+    "h": 1800
+   }
+  },
+  "storage.document-holder": {
+   "url": "/assets/sprites/storage.document-holder.png",
+   "px": [
+    68,
+    111
+   ],
+   "dimsMm": {
+    "w": 100,
+    "d": 250,
+    "h": 320
+   }
+  },
+  "storage.fabric-box": {
+   "url": "/assets/sprites/storage.fabric-box.png",
+   "px": [
+    78,
+    107
+   ],
+   "dimsMm": {
+    "w": 350,
+    "d": 300,
+    "h": 300
+   }
+  },
+  "storage.labeled-box": {
+   "url": "/assets/sprites/storage.labeled-box.png",
+   "px": [
+    133,
+    95
+   ],
+   "dimsMm": {
+    "w": 400,
+    "d": 300,
+    "h": 300
+   }
+  },
+  "storage.magazine-rack": {
+   "url": "/assets/sprites/storage.magazine-rack.png",
+   "px": [
+    88,
+    148
+   ],
+   "dimsMm": {
+    "w": 600,
+    "d": 300,
+    "h": 1200
+   }
+  },
+  "storage.storage-box-medium": {
+   "url": "/assets/sprites/storage.storage-box-medium.png",
+   "px": [
+    91,
+    95
+   ],
+   "dimsMm": {
+    "w": 400,
+    "d": 300,
+    "h": 300
+   }
+  },
+  "storage.storage-box-small": {
+   "url": "/assets/sprites/storage.storage-box-small.png",
+   "px": [
+    72,
+    60
+   ],
+   "dimsMm": {
+    "w": 300,
+    "d": 200,
+    "h": 200
+   }
+  },
+  "storage.umbrella-stand": {
+   "url": "/assets/sprites/storage.umbrella-stand.png",
+   "px": [
+    39,
+    114
+   ],
+   "dimsMm": {
+    "w": 300,
+    "d": 300,
+    "h": 600
+   }
+  },
+  "storage.wall-hooks": {
+   "url": "/assets/sprites/storage.wall-hooks.png",
+   "px": [
+    114,
+    75
+   ],
+   "dimsMm": {
+    "w": 600,
+    "d": 100,
+    "h": 200
+   }
+  },
+  "tech.cable-clip": {
+   "url": "/assets/sprites/tech.cable-clip.png",
+   "px": [
+    42,
+    35
+   ],
+   "dimsMm": {
+    "w": 50,
+    "d": 20,
+    "h": null
+   }
+  },
+  "tech.cable-grommet": {
+   "url": "/assets/sprites/tech.cable-grommet.png",
+   "px": [
+    77,
+    49
+   ],
+   "dimsMm": null
+  },
+  "tech.cable-organizer": {
+   "url": "/assets/sprites/tech.cable-organizer.png",
+   "px": [
+    79,
+    60
+   ],
+   "dimsMm": {
+    "w": 200,
+    "d": 50,
+    "h": 50
+   }
+  },
+  "tech.cable-spine": {
+   "url": "/assets/sprites/tech.cable-spine.png",
+   "px": [
+    38,
+    111
+   ],
+   "dimsMm": {
+    "w": null,
+    "d": null,
+    "h": 700
+   }
+  },
+  "tech.cables-hdmi-usb-c": {
+   "url": "/assets/sprites/tech.cables-hdmi-usb-c.png",
+   "px": [
+    65,
+    54
+   ],
+   "dimsMm": null
+  },
+  "tech.ceiling-projector": {
+   "url": "/assets/sprites/tech.ceiling-projector.png",
+   "px": [
+    72,
+    61
+   ],
+   "dimsMm": {
+    "w": 300,
+    "d": 250,
+    "h": 100
+   }
+  },
+  "tech.ceiling-speaker": {
+   "url": "/assets/sprites/tech.ceiling-speaker.png",
+   "px": [
+    73,
+    73
+   ],
+   "dimsMm": {
+    "w": 250,
+    "d": 250,
+    "h": null
+   }
+  },
+  "tech.conference-camera": {
+   "url": "/assets/sprites/tech.conference-camera.png",
+   "px": [
+    59,
+    74
+   ],
+   "dimsMm": {
+    "w": 200,
+    "d": 100,
+    "h": 100
+   }
+  },
+  "tech.conference-hub": {
+   "url": "/assets/sprites/tech.conference-hub.png",
+   "px": [
+    73,
+    46
+   ],
+   "dimsMm": {
+    "w": 150,
+    "d": 150,
+    "h": 40
+   }
+  },
+  "tech.conference-mic": {
+   "url": "/assets/sprites/tech.conference-mic.png",
+   "px": [
+    54,
+    39
+   ],
+   "dimsMm": {
+    "w": 120,
+    "d": 120,
+    "h": null
+   }
+  },
+  "tech.desk-power-module": {
+   "url": "/assets/sprites/tech.desk-power-module.png",
+   "px": [
+    84,
+    46
+   ],
+   "dimsMm": {
+    "w": 200,
+    "d": 80,
+    "h": null
+   }
+  },
+  "tech.floor-power-box": {
+   "url": "/assets/sprites/tech.floor-power-box.png",
+   "px": [
+    75,
+    51
+   ],
+   "dimsMm": {
+    "w": 200,
+    "d": 200,
+    "h": null
+   }
+  },
+  "tech.hdmi-usb-c-hub": {
+   "url": "/assets/sprites/tech.hdmi-usb-c-hub.png",
+   "px": [
+    84,
+    42
+   ],
+   "dimsMm": {
+    "w": 100,
+    "d": 50,
+    "h": 20
+   }
+  },
+  "tech.laptop-open": {
+   "url": "/assets/sprites/tech.laptop-open.png",
+   "px": [
+    87,
+    77
+   ],
+   "dimsMm": null
+  },
+  "tech.laptop-stand-small": {
+   "url": "/assets/sprites/tech.laptop-stand-small.png",
+   "px": [
+    51,
+    88
+   ],
+   "dimsMm": {
+    "w": 400,
+    "d": 400,
+    "h": 750
+   }
+  },
+  "tech.laptop-stand-tall": {
+   "url": "/assets/sprites/tech.laptop-stand-tall.png",
+   "px": [
+    106,
+    140
+   ],
+   "dimsMm": {
+    "w": 400,
+    "d": 400,
+    "h": 1050
+   }
+  },
+  "tech.monitor-stand": {
+   "url": "/assets/sprites/tech.monitor-stand.png",
+   "px": [
+    86,
+    131
+   ],
+   "dimsMm": {
+    "w": 800,
+    "d": 500,
+    "h": 1500
+   }
+  },
+  "tech.network-port-wall": {
+   "url": "/assets/sprites/tech.network-port-wall.png",
+   "px": [
+    50,
+    57
+   ],
+   "dimsMm": {
+    "w": 86,
+    "d": 86,
+    "h": null
+   }
+  },
+  "tech.occupancy-sensor": {
+   "url": "/assets/sprites/tech.occupancy-sensor.png",
+   "px": [
+    41,
+    40
+   ],
+   "dimsMm": {
+    "w": 100,
+    "d": 100,
+    "h": null
+   }
+  },
+  "tech.podium-lectern": {
+   "url": "/assets/sprites/tech.podium-lectern.png",
+   "px": [
+    100,
+    143
+   ],
+   "dimsMm": {
+    "w": 600,
+    "d": 400,
+    "h": 1200
+   }
+  },
+  "tech.power-module": {
+   "url": "/assets/sprites/tech.power-module.png",
+   "px": [
+    74,
+    57
+   ],
+   "dimsMm": null
+  },
+  "tech.power-strip": {
+   "url": "/assets/sprites/tech.power-strip.png",
+   "px": [
+    82,
+    58
+   ],
+   "dimsMm": {
+    "w": 250,
+    "d": 60,
+    "h": 40
+   }
+  },
+  "tech.projector-screen": {
+   "url": "/assets/sprites/tech.projector-screen.png",
+   "px": [
+    115,
+    110
+   ],
+   "dimsMm": {
+    "w": 1800,
+    "d": 1200,
+    "h": null
+   }
+  },
+  "tech.room-booking-tablet": {
+   "url": "/assets/sprites/tech.room-booking-tablet.png",
+   "px": [
+    84,
+    63
+   ],
+   "dimsMm": {
+    "w": 250,
+    "d": 180,
+    "h": null
+   }
+  },
+  "tech.speaker-bar": {
+   "url": "/assets/sprites/tech.speaker-bar.png",
+   "px": [
+    92,
+    45
+   ],
+   "dimsMm": {
+    "w": 700,
+    "d": 100,
+    "h": 100
+   }
+  },
+  "tech.table-booking-panel": {
+   "url": "/assets/sprites/tech.table-booking-panel.png",
+   "px": [
+    79,
+    62
+   ],
+   "dimsMm": {
+    "w": 200,
+    "d": 120,
+    "h": null
+   }
+  },
+  "tech.tabletop-projector": {
+   "url": "/assets/sprites/tech.tabletop-projector.png",
+   "px": [
+    79,
+    40
+   ],
+   "dimsMm": {
+    "w": 300,
+    "d": 250,
+    "h": 100
+   }
+  },
+  "tech.under-desk-cable-tray": {
+   "url": "/assets/sprites/tech.under-desk-cable-tray.png",
+   "px": [
+    142,
+    47
+   ],
+   "dimsMm": {
+    "w": 600,
+    "d": 150,
+    "h": null
+   }
+  },
+  "tech.video-conference-speaker": {
+   "url": "/assets/sprites/tech.video-conference-speaker.png",
+   "px": [
+    76,
+    53
+   ],
+   "dimsMm": {
+    "w": 200,
+    "d": 200,
+    "h": 50
+   }
+  },
+  "tech.webcam": {
+   "url": "/assets/sprites/tech.webcam.png",
+   "px": [
+    60,
+    38
+   ],
+   "dimsMm": {
+    "w": 100,
+    "d": 50,
+    "h": 50
+   }
+  },
+  "tech.wireless-mic": {
+   "url": "/assets/sprites/tech.wireless-mic.png",
+   "px": [
+    60,
+    42
+   ],
+   "dimsMm": {
+    "w": 100,
+    "d": 40,
+    "h": 20
+   }
+  },
+  "tech.wireless-presenter": {
+   "url": "/assets/sprites/tech.wireless-presenter.png",
+   "px": [
+    48,
+    56
+   ],
+   "dimsMm": {
+    "w": 120,
+    "d": 30,
+    "h": 20
+   }
+  },
+  "utility.access-control": {
+   "url": "/assets/sprites/utility.access-control.png",
+   "px": [
+    43,
+    78
+   ],
+   "dimsMm": {
+    "w": 100,
+    "d": 150,
+    "h": null
+   }
+  },
+  "utility.aed-defibrillator": {
+   "url": "/assets/sprites/utility.aed-defibrillator.png",
+   "px": [
+    78,
+    81
+   ],
+   "dimsMm": {
+    "w": 400,
+    "d": 200,
+    "h": 400
+   }
+  },
+  "utility.broom-and-dustpan": {
+   "url": "/assets/sprites/utility.broom-and-dustpan.png",
+   "px": [
+    49,
+    119
+   ],
+   "dimsMm": null
+  },
+  "utility.cctv-camera": {
+   "url": "/assets/sprites/utility.cctv-camera.png",
+   "px": [
+    63,
+    64
+   ],
+   "dimsMm": {
+    "w": 120,
+    "d": 120,
+    "h": null
+   }
+  },
+  "utility.cleaning-cart": {
+   "url": "/assets/sprites/utility.cleaning-cart.png",
+   "px": [
+    92,
+    154
+   ],
+   "dimsMm": {
+    "w": 700,
+    "d": 500,
+    "h": 1000
+   }
+  },
+  "utility.cleaning-sprays": {
+   "url": "/assets/sprites/utility.cleaning-sprays.png",
+   "px": [
+    51,
+    71
+   ],
+   "dimsMm": null
+  },
+  "utility.cleaning-trolley": {
+   "url": "/assets/sprites/utility.cleaning-trolley.png",
+   "px": [
+    109,
+    119
+   ],
+   "dimsMm": null
+  },
+  "utility.coat-rack": {
+   "url": "/assets/sprites/utility.coat-rack.png",
+   "px": [
+    36,
+    106
+   ],
+   "dimsMm": {
+    "w": 400,
+    "d": 400,
+    "h": 800
+   }
+  },
+  "utility.document-sorter": {
+   "url": "/assets/sprites/utility.document-sorter.png",
+   "px": [
+    54,
+    53
+   ],
+   "dimsMm": null
+  },
+  "utility.emergency-light": {
+   "url": "/assets/sprites/utility.emergency-light.png",
+   "px": [
+    66,
+    78
+   ],
+   "dimsMm": {
+    "w": 300,
+    "d": 100,
+    "h": 200
+   }
+  },
+  "utility.fire-extinguisher": {
+   "url": "/assets/sprites/utility.fire-extinguisher.png",
+   "px": [
+    38,
+    104
+   ],
+   "dimsMm": {
+    "w": 200,
+    "d": 200,
+    "h": 600
+   }
+  },
+  "utility.fire-hose-cabinet": {
+   "url": "/assets/sprites/utility.fire-hose-cabinet.png",
+   "px": [
+    80,
+    103
+   ],
+   "dimsMm": {
+    "w": 600,
+    "d": 250,
+    "h": 600
+   }
+  },
+  "utility.first-aid-kit": {
+   "url": "/assets/sprites/utility.first-aid-kit.png",
+   "px": [
+    67,
+    84
+   ],
+   "dimsMm": {
+    "w": 300,
+    "d": 200,
+    "h": 500
+   }
+  },
+  "utility.heater-portable": {
+   "url": "/assets/sprites/utility.heater-portable.png",
+   "px": [
+    42,
+    73
+   ],
+   "dimsMm": {
+    "w": 400,
+    "d": 200,
+    "h": 600
+   }
+  },
+  "utility.hole-punch": {
+   "url": "/assets/sprites/utility.hole-punch.png",
+   "px": [
+    42,
+    38
+   ],
+   "dimsMm": null
+  },
+  "utility.light-switch": {
+   "url": "/assets/sprites/utility.light-switch.png",
+   "px": [
+    42,
+    49
+   ],
+   "dimsMm": {
+    "w": 86,
+    "d": 86,
+    "h": null
+   }
+  },
+  "utility.mop-and-bucket": {
+   "url": "/assets/sprites/utility.mop-and-bucket.png",
+   "px": [
+    45,
+    107
+   ],
+   "dimsMm": null
+  },
+  "utility.motion-sensor": {
+   "url": "/assets/sprites/utility.motion-sensor.png",
+   "px": [
+    42,
+    42
+   ],
+   "dimsMm": {
+    "w": 80,
+    "d": 80,
+    "h": null
+   }
+  },
+  "utility.network-port": {
+   "url": "/assets/sprites/utility.network-port.png",
+   "px": [
+    42,
+    53
+   ],
+   "dimsMm": {
+    "w": 86,
+    "d": 86,
+    "h": null
+   }
+  },
+  "utility.network-switch": {
+   "url": "/assets/sprites/utility.network-switch.png",
+   "px": [
+    90,
+    68
+   ],
+   "dimsMm": {
+    "w": 300,
+    "d": 200,
+    "h": 100
+   }
+  },
+  "utility.paper-ream": {
+   "url": "/assets/sprites/utility.paper-ream.png",
+   "px": [
+    57,
+    39
+   ],
+   "dimsMm": null
+  },
+  "utility.paper-towels": {
+   "url": "/assets/sprites/utility.paper-towels.png",
+   "px": [
+    38,
+    70
+   ],
+   "dimsMm": null
+  },
+  "utility.paper-tray": {
+   "url": "/assets/sprites/utility.paper-tray.png",
+   "px": [
+    52,
+    43
+   ],
+   "dimsMm": null
+  },
+  "utility.power-outlet": {
+   "url": "/assets/sprites/utility.power-outlet.png",
+   "px": [
+    42,
+    50
+   ],
+   "dimsMm": {
+    "w": 86,
+    "d": 86,
+    "h": null
+   }
+  },
+  "utility.safety-signage": {
+   "url": "/assets/sprites/utility.safety-signage.png",
+   "px": [
+    133,
+    72
+   ],
+   "dimsMm": {
+    "w": 300,
+    "d": 200,
+    "h": null
+   }
+  },
+  "utility.stacked-water-bottles": {
+   "url": "/assets/sprites/utility.stacked-water-bottles.png",
+   "px": [
+    56,
+    66
+   ],
+   "dimsMm": {
+    "w": 300,
+    "d": 300,
+    "h": 400
+   }
+  },
+  "utility.standing-fan": {
+   "url": "/assets/sprites/utility.standing-fan.png",
+   "px": [
+    43,
+    97
+   ],
+   "dimsMm": {
+    "w": 400,
+    "d": 400,
+    "h": 1200
+   }
+  },
+  "utility.stapler": {
+   "url": "/assets/sprites/utility.stapler.png",
+   "px": [
+    44,
+    40
+   ],
+   "dimsMm": null
+  },
+  "utility.tape-dispenser": {
+   "url": "/assets/sprites/utility.tape-dispenser.png",
+   "px": [
+    50,
+    45
+   ],
+   "dimsMm": null
+  },
+  "utility.thermostat": {
+   "url": "/assets/sprites/utility.thermostat.png",
+   "px": [
+    45,
+    51
+   ],
+   "dimsMm": {
+    "w": 100,
+    "d": 100,
+    "h": null
+   }
+  },
+  "utility.toner-cartridge": {
+   "url": "/assets/sprites/utility.toner-cartridge.png",
+   "px": [
+    54,
+    40
+   ],
+   "dimsMm": null
+  },
+  "utility.tool-rack": {
+   "url": "/assets/sprites/utility.tool-rack.png",
+   "px": [
+    101,
+    134
+   ],
+   "dimsMm": {
+    "w": 900,
+    "d": 300,
+    "h": 1200
+   }
+  },
+  "utility.trash-bags": {
+   "url": "/assets/sprites/utility.trash-bags.png",
+   "px": [
+    39,
+    64
+   ],
+   "dimsMm": null
+  },
+  "utility.umbrella-stand": {
+   "url": "/assets/sprites/utility.umbrella-stand.png",
+   "px": [
+    34,
+    79
+   ],
+   "dimsMm": {
+    "w": 300,
+    "d": 300,
+    "h": 600
+   }
+  },
+  "utility.vacuum-cleaner": {
+   "url": "/assets/sprites/utility.vacuum-cleaner.png",
+   "px": [
+    71,
+    129
+   ],
+   "dimsMm": null
+  },
+  "utility.water-dispenser": {
+   "url": "/assets/sprites/utility.water-dispenser.png",
+   "px": [
+    38,
+    94
+   ],
+   "dimsMm": {
+    "w": 300,
+    "d": 300,
+    "h": 1000
+   }
+  },
+  "utility.wet-floor-sign": {
+   "url": "/assets/sprites/utility.wet-floor-sign.png",
+   "px": [
+    64,
+    94
+   ],
+   "dimsMm": null
+  },
+  "utility.wi-fi-router": {
+   "url": "/assets/sprites/utility.wi-fi-router.png",
+   "px": [
+    84,
+    80
+   ],
+   "dimsMm": {
+    "w": 200,
+    "d": 200,
+    "h": 50
+   }
+  }
+ }
+}

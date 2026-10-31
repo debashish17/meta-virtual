@@ -1,0 +1,53 @@
+{
+  "pipeline_version": "1.0.0",
+  "asset_name": "ai.tech-monitor",
+  "category": "tech_monitor",
+  "quality_preset": "standard",
+  "seed": 42,
+  "source_image": {
+    "path": "blender-asset-pipeline/inputs/extracted_all/cutout_tech_monitor.png",
+    "hash": "48624b41aaaf",
+    "original_dimensions": [
+      65,
+      117
+    ]
+  },
+  "target_dimensions_meters": [
+    0.75,
+    0.35,
+    0.45
+  ],
+  "processing_timings_sec": {
+    "stage_a_preprocessing": 0.3635,
+    "stages_b_to_g_execution": 2.3962,
+    "total_elapsed": 2.7649
+  },
+  "geometry_stats": {
+    "vertices": 144,
+    "triangles": 80,
+    "bounding_box_meters": [
+      0.8071,
+      0.45,
+      0.1615
+    ],
+    "file_size_bytes": 8176
+  },
+  "validation": {
+    "valid": true,
+    "vertices": 144,
+    "triangles": 80,
+    "extents_meters": [
+      0.8071,
+      0.45,
+      0.1615
+    ],
+    "ground_level_y": 0.0,
+    "height_y": 0.45,
+    "center_xz": [
+      0.0,
+      0.0
+    ],
+    "file_size_bytes": 8176,
+    "is_watertight": false
+  }
+}

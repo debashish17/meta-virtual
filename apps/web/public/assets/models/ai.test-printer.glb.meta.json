@@ -1,0 +1,53 @@
+{
+  "pipeline_version": "1.0.0",
+  "asset_name": "ai.test-printer",
+  "category": "printer",
+  "quality_preset": "standard",
+  "seed": 42,
+  "source_image": {
+    "path": "blender-asset-pipeline/inputs/test_printer_station.png",
+    "hash": "482189c849ad",
+    "original_dimensions": [
+      65,
+      85
+    ]
+  },
+  "target_dimensions_meters": [
+    0.68,
+    0.62,
+    0.98
+  ],
+  "processing_timings_sec": {
+    "stage_a_preprocessing": 0.5953,
+    "stages_b_to_g_execution": 2.683,
+    "total_elapsed": 3.2884
+  },
+  "geometry_stats": {
+    "vertices": 264,
+    "triangles": 132,
+    "bounding_box_meters": [
+      0.7083,
+      0.98,
+      0.6458
+    ],
+    "file_size_bytes": 12352
+  },
+  "validation": {
+    "valid": true,
+    "vertices": 264,
+    "triangles": 132,
+    "extents_meters": [
+      0.7083,
+      0.98,
+      0.6458
+    ],
+    "ground_level_y": 0.0,
+    "height_y": 0.98,
+    "center_xz": [
+      0.0,
+      0.0
+    ],
+    "file_size_bytes": 12352,
+    "is_watertight": false
+  }
+}

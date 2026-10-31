@@ -1,0 +1,135 @@
+{
+  "reviewer_agent": "AssetFidelityReviewer/v2.0",
+  "asset_name": "doors__entries___window_views_asset_sheet_25",
+  "asset_class": "arch_doorway_wood",
+  "category": "architecture",
+  "overall_score": 75.3,
+  "verdict": "GOOD",
+  "metrics": {
+    "silhouette_iou_percent": 43.3,
+    "color_fidelity_percent": 98.3,
+    "component_completeness_percent": 95.0
+  },
+  "mesh_validation": {
+    "vertices": 1308,
+    "faces": 684,
+    "actual_dims": [
+      1.048,
+      2.31,
+      0.14
+    ]
+  },
+  "component_audit": [
+    {
+      "component": "vertical_wood_jambs",
+      "status": "verified",
+      "confidence": 0.95
+    },
+    {
+      "component": "curved_arch_top",
+      "status": "verified",
+      "confidence": 0.95
+    },
+    {
+      "component": "inner_reveal_casing",
+      "status": "verified",
+      "confidence": 0.95
+    },
+    {
+      "component": "beveled_wood_trim",
+      "status": "verified",
+      "confidence": 0.95
+    }
+  ],
+  "critique": [
+    "IDENTIFIED WHAT IT IS: Architectural Wood Portal Archway [arch_doorway_wood] \u2014 Open walk-through spatial threshold and architectural room entrance.",
+    "HOW IT IS (Structure): Free-standing portal frame with vertical jamb columns transitioning into a smooth semicircular barrel arch header.",
+    "HOW IT IS (Materials): Warm natural oak or beech timber with satin polyurethane clearcoat and beveled reveal moldings.",
+    "HOW IT IS (Form): Balanced proportional cubic form factor (1.10m \u00d7 0.20m \u00d7 2.25m, Aspect Ratio: 0.87:1, Solidity: 72%).",
+    "HOW IT IS (Pose & Viewpoint): Positioned vertically along room diagonal in 45\u00b0 isometric perspective, providing clear through-passage.",
+    "Silhouette overlap achieved 43.3% IoU alignment with reference cutout.",
+    "PBR palette color fidelity scored 98.3% matching primary tone.",
+    "Verified 4 physical subcomponents with 684 faces.",
+    "Marginal silhouette variance along boundary edges."
+  ],
+  "comparison_image": "blender-asset-pipeline/output/pipeline_v2\\doors__entries___window_views_asset_sheet_25_iter_2_comparison.png",
+  "refinement_loop": {
+    "converged": false,
+    "total_iterations": 3,
+    "initial_score": 74.1,
+    "final_score": 75.3,
+    "score_delta": 1.2,
+    "iterations": [
+      {
+        "iteration": 0,
+        "score": 74.1,
+        "verdict": "GOOD",
+        "iou": 40.7,
+        "color": 97.7,
+        "applied_adjustments": [],
+        "proposed_adjustments": [
+          "Expanded width from 1.1m to 1.21m (+10%) to match reference aspect ratio",
+          "Adjusted model yaw rotation to 45\u00b0 for improved facet alignment"
+        ],
+        "comparison_image": "/assets/comparisons/doors__entries___window_views_asset_sheet_25_iter_0_comparison.png",
+        "glb_url": "/assets/models/cutouts/doors__entries___window_views_asset_sheet_25_iter_0.glb"
+      },
+      {
+        "iteration": 1,
+        "score": 72.9,
+        "verdict": "GOOD",
+        "iou": 37.2,
+        "color": 98.3,
+        "applied_adjustments": [
+          "Expanded width from 1.1m to 1.21m (+10%) to match reference aspect ratio",
+          "Adjusted model yaw rotation to 45\u00b0 for improved facet alignment"
+        ],
+        "proposed_adjustments": [
+          "Narrowed width from 1.21m to 1.048m (-13%) to match slender profile",
+          "Calibrated primary PBR color to match reference luminance & hue"
+        ],
+        "comparison_image": "/assets/comparisons/doors__entries___window_views_asset_sheet_25_iter_1_comparison.png",
+        "glb_url": "/assets/models/cutouts/doors__entries___window_views_asset_sheet_25_iter_1.glb"
+      },
+      {
+        "iteration": 2,
+        "score": 75.3,
+        "verdict": "GOOD",
+        "iou": 43.3,
+        "color": 98.3,
+        "applied_adjustments": [
+          "Narrowed width from 1.21m to 1.048m (-13%) to match slender profile",
+          "Calibrated primary PBR color to match reference luminance & hue"
+        ],
+        "proposed_adjustments": [],
+        "comparison_image": "/assets/comparisons/doors__entries___window_views_asset_sheet_25_iter_2_comparison.png",
+        "glb_url": "/assets/models/cutouts/doors__entries___window_views_asset_sheet_25_iter_2.glb"
+      }
+    ]
+  },
+  "identification_breakdown": {
+    "what_it_is": {
+      "display_name": "Architectural Wood Portal Archway",
+      "asset_class": "arch_doorway_wood",
+      "category": "architecture",
+      "primary_function": "Open walk-through spatial threshold and architectural room entrance",
+      "target_dimensions_m": [
+        1.1,
+        0.2,
+        2.25
+      ]
+    },
+    "how_it_is": {
+      "structural_composition": "Free-standing portal frame with vertical jamb columns transitioning into a smooth semicircular barrel arch header.",
+      "materials_and_finishes": "Warm natural oak or beech timber with satin polyurethane clearcoat and beveled reveal moldings.",
+      "form_and_silhouette": "Balanced proportional cubic form factor (1.10m \u00d7 0.20m \u00d7 2.25m, Aspect Ratio: 0.87:1, Solidity: 72%).",
+      "spatial_orientation_and_pose": "Positioned vertically along room diagonal in 45\u00b0 isometric perspective, providing clear through-passage.",
+      "color_profile": "Primary palette RGB(191, 140, 89) exhibiting warm natural woodgrain reflectance.",
+      "detected_visual_cues": [
+        "High center negative space / interior void indicating an open walk-through archway",
+        "Symmetric vertical side jambs with curved upper arch transition",
+        "Warm amber wood reflectance profile across exterior casing"
+      ]
+    }
+  }
+}

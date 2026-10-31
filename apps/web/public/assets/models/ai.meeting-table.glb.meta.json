@@ -1,0 +1,53 @@
+{
+  "pipeline_version": "1.0.0",
+  "asset_name": "ai.meeting-table",
+  "category": "meeting_table",
+  "quality_preset": "standard",
+  "seed": 42,
+  "source_image": {
+    "path": "blender-asset-pipeline/inputs/extracted_all/cutout_meeting_table.png",
+    "hash": "cb3d11e96a08",
+    "original_dimensions": [
+      80,
+      117
+    ]
+  },
+  "target_dimensions_meters": [
+    2.4,
+    1.1,
+    0.75
+  ],
+  "processing_timings_sec": {
+    "stage_a_preprocessing": 0.4212,
+    "stages_b_to_g_execution": 2.3652,
+    "total_elapsed": 2.7899
+  },
+  "geometry_stats": {
+    "vertices": 240,
+    "triangles": 120,
+    "bounding_box_meters": [
+      2.392,
+      0.75,
+      1.0963
+    ],
+    "file_size_bytes": 10560
+  },
+  "validation": {
+    "valid": true,
+    "vertices": 240,
+    "triangles": 120,
+    "extents_meters": [
+      2.392,
+      0.75,
+      1.0963
+    ],
+    "ground_level_y": 0.0,
+    "height_y": 0.75,
+    "center_xz": [
+      0.0,
+      0.0
+    ],
+    "file_size_bytes": 10560,
+    "is_watertight": false
+  }
+}

@@ -1,0 +1,8 @@
+# Reference sprites for `run.py catalog` (catalog/sprites.py).
+#
+# Sprite preparation keeps everything the object's outline encloses, because that is usually pale parts
+# of the object that segmentation dropped (a white clock face, a white mug). Items listed here
+# enclose real background instead, so their board-coloured holes stay transparent.
+open_holes = [
+  "decor.headphones",   # the space between the headband and the ear cups
+]

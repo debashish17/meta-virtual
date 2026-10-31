@@ -1,0 +1,120 @@
+.office-pill {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translate(-50%, -8px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 4px 18px rgba(30, 33, 38, 0.12);
+  color: #1e2126;
+  font: 600 14px/1.2 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.office-pill.on { opacity: 1; transform: translate(-50%, 0); }
+.office-pill span {
+  color: #8a5a2b;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.office-hint {
+  position: fixed;
+  left: 16px;
+  bottom: 12px;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.8);
+  color: #4a4d52;
+  font: 12px/1.3 system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+.office-name {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 8px rgba(30, 33, 38, 0.15);
+  color: #1e2126;
+  font: 600 12px/1.2 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.office-name.colleague {
+  padding: 2px 7px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #4a4d52;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* "Your look" (LookEditor) */
+.look-open {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 4px 18px rgba(30, 33, 38, 0.12);
+  color: #1e2126;
+  font: 600 13px/1.2 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  cursor: pointer;
+}
+.look-open:hover { background: #fff; }
+.look-open:focus-visible, .look-panel button:focus-visible, .look-panel input:focus-visible { outline: 2px solid #c9803f; outline-offset: 2px; }
+
+.look-panel {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  bottom: 16px;
+  width: 300px;
+  overflow-y: auto;
+  padding: 14px 16px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 30px rgba(30, 33, 38, 0.16);
+  color: #1e2126;
+  font: 13px/1.35 system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+.look-panel header { display: flex; align-items: center; justify-content: space-between; }
+.look-panel h2 { margin: 0; font-size: 16px; }
+.look-panel h3 { margin: 14px 0 6px; color: #6b6e73; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.look-close { border: 0; background: none; color: #6b6e73; font-size: 22px; line-height: 1; cursor: pointer; }
+.look-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.look-swatch {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(30, 33, 38, 0.12);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.look-swatch.on { border-color: #1e2126; box-shadow: 0 0 0 2px #fff inset; }
+.look-chip {
+  padding: 4px 10px;
+  border: 1px solid #d9dadc;
+  border-radius: 999px;
+  background: #fff;
+  color: #1e2126;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.look-chip:hover { border-color: #b9bbbe; }
+.look-chip.on { border-color: #1e2126; background: #1e2126; color: #fff; }
+.look-field { display: grid; gap: 4px; margin-top: 12px; }
+.look-field span { color: #6b6e73; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.look-field input[type='text'], .look-field input:not([type]) { padding: 6px 8px; border: 1px solid #d9dadc; border-radius: 6px; font: inherit; }
+.look-field input[type='range'] { width: 100%; accent-color: #c9803f; }
+.look-toggle { display: flex; align-items: center; gap: 8px; margin-top: 12px; cursor: pointer; }
+.look-toggle input { accent-color: #c9803f; }

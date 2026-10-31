@@ -1,0 +1,53 @@
+{
+  "pipeline_version": "1.0.0",
+  "asset_name": "ai.storage-shelf",
+  "category": "storage",
+  "quality_preset": "standard",
+  "seed": 42,
+  "source_image": {
+    "path": "blender-asset-pipeline/inputs/extracted_all/cutout_storage_shelf.png",
+    "hash": "4d8d7527d687",
+    "original_dimensions": [
+      70,
+      117
+    ]
+  },
+  "target_dimensions_meters": [
+    0.85,
+    0.42,
+    1.75
+  ],
+  "processing_timings_sec": {
+    "stage_a_preprocessing": 0.3747,
+    "stages_b_to_g_execution": 2.3851,
+    "total_elapsed": 2.7644
+  },
+  "geometry_stats": {
+    "vertices": 1032,
+    "triangles": 516,
+    "bounding_box_meters": [
+      0.84,
+      1.75,
+      0.42
+    ],
+    "file_size_bytes": 38288
+  },
+  "validation": {
+    "valid": true,
+    "vertices": 1032,
+    "triangles": 516,
+    "extents_meters": [
+      0.84,
+      1.75,
+      0.42
+    ],
+    "ground_level_y": 0.0,
+    "height_y": 1.75,
+    "center_xz": [
+      0.0,
+      0.0
+    ],
+    "file_size_bytes": 38288,
+    "is_watertight": false
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "pipeline_version": "1.0.0",
+  "asset_name": "ai.chair-lounge",
+  "category": "armchair",
+  "quality_preset": "standard",
+  "seed": 42,
+  "source_image": {
+    "path": "blender-asset-pipeline/inputs/extracted_all/cutout_chair_lounge.png",
+    "hash": "c9ec30ca853b",
+    "original_dimensions": [
+      68,
+      117
+    ]
+  },
+  "target_dimensions_meters": [
+    0.85,
+    0.82,
+    0.78
+  ],
+  "processing_timings_sec": {
+    "stage_a_preprocessing": 0.3744,
+    "stages_b_to_g_execution": 2.3654,
+    "total_elapsed": 2.7439
+  },
+  "geometry_stats": {
+    "vertices": 1152,
+    "triangles": 608,
+    "bounding_box_meters": [
+      0.7745,
+      0.78,
+      0.6815
+    ],
+    "file_size_bytes": 42688
+  },
+  "validation": {
+    "valid": true,
+    "vertices": 1152,
+    "triangles": 608,
+    "extents_meters": [
+      0.7745,
+      0.78,
+      0.6815
+    ],
+    "ground_level_y": 0.0,
+    "height_y": 0.78,
+    "center_xz": [
+      0.0,
+      0.0
+    ],
+    "file_size_bytes": 42688,
+    "is_watertight": false
+  }
+}

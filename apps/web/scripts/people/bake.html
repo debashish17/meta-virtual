@@ -1,0 +1,147 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Bake people</title>
+<script type="importmap">{ "imports": { "three": "/three/build/three.module.js", "three/addons/": "/three/examples/jsm/" } }</script>
+</head>
+<body>
+<script type="module">
+// Runs in headless Chrome, driven by bake.mjs. Loads the Mixamo characters and moves (FBX), which
+// all share Mixamo's skeleton, and exports one GLB per character (metres, facing +z, textures shrunk
+// to 1024 px) and one GLB of moves. Moves are used as made: bone names are only normalised (Mixamo
+// prefixes them "mixamorig" or "mixamorig7"), and walk / run are pinned in place with their speed
+// measured from the ground they cover. Each file is uploaded to the driver as it is finished.
+import * as THREE from 'three'
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js'
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js'
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js'
+
+const TEXTURE = 1024
+// character file -> id
+const BODIES = { 'Ch13_nonPBR.fbx': 'casual', 'Ch23_nonPBR.fbx': 'suit', 'Ch33_nonPBR.fbx': 'suit_tie' }
+// move file -> [name, kind]; 'travel' moves have their forward travel removed and measured
+const MOVES = {
+  'Idle.fbx': ['idle', 'loop'], 'walking.fbx': ['walk', 'travel'], 'standard run.fbx': ['jog', 'travel'],
+  'Acknowledging.fbx': ['talk', 'loop'], 'Dismissing Gesture.fbx': ['talk_2', 'loop'],
+  'Talking On Phone.fbx': ['phone', 'loop'], 'Button Pushing.fbx': ['interact', 'once'],
+  'Male Sitting Pose.fbx': ['sit', 'loop'], 'Having A Meeting, Male.fbx': ['sit_talk', 'loop'],
+  'Typing.fbx': ['type', 'loop'],
+}
+// clothing pieces people can recolour, by mesh name
+const ROLE = (body, mesh) => {
+  if (/Suit$/.test(mesh)) return 'top'
+  if (/Shirt$/.test(mesh)) return body === 'casual' ? 'top' : 'accent'
+  if (/Tie$/.test(mesh)) return 'accent'
+  if (/Pants$/.test(mesh)) return 'bottom'
+  if (/Shoes?$/.test(mesh)) return 'shoes'
+  return 'fixed'
+}
+
+const bone = (name) => name.replace(/^mixamorig\d*:?/, '')
+const load = (file) => new Promise((ok, no) => new FBXLoader().load('/in/' + encodeURIComponent(file), ok, undefined, no))
+
+function shrink(texture) {
+  const image = texture.image
+  if (!image || !image.width) return texture
+  const k = Math.min(1, TEXTURE / Math.max(image.width, image.height))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(image.width * k)
+  canvas.height = Math.round(image.height * k)
+  canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height)
+  const t = new THREE.CanvasTexture(canvas)
+  t.flipY = texture.flipY
+  t.colorSpace = THREE.SRGBColorSpace
+  t.userData.mimeType = 'image/jpeg'
+  return t
+}
+
+/** FBX textures arrive after the model: wait until every map has its image. */
+async function texturesLoaded(root) {
+  const maps = []
+  root.traverse((o) => { if (o.isMesh) for (const m of [o.material].flat()) if (m.map) maps.push(m.map) })
+  for (let i = 0; i < 200 && maps.some((t) => !(t.image && t.image.width)); i++) await new Promise((r) => setTimeout(r, 100))
+}
+
+async function loadBody(file, id) {
+  const root = await load(file)
+  root.animations = []
+  await texturesLoaded(root)
+  const textures = new Map()
+  const meshes = []
+  root.traverse((o) => {
+    if (o.isBone) o.name = bone(o.name)
+    if (!o.isMesh) return
+    o.geometry = mergeVertices(o.geometry, 1e-4)   // the loader gives every triangle its own corners
+    const piece = o.name.replace(/^Ch\d+_/, '')
+    o.name = piece
+    const role = ROLE(id, piece)
+    const m = Array.isArray(o.material) ? o.material[0] : o.material
+    if (m.map && !textures.has(m.map)) textures.set(m.map, shrink(m.map))
+    o.material = new THREE.MeshStandardMaterial({ name: piece, map: m.map ? textures.get(m.map) : null, color: 0xffffff, roughness: 0.8, metalness: 0 })
+    const tris = (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3
+    meshes.push({ name: piece, role, tris: Math.round(tris) })
+  })
+  root.scale.setScalar(0.01)          // centimetres -> metres
+  root.updateMatrixWorld(true)
+  const box = new THREE.Box3().setFromObject(root)
+  return { root, meshes, height: +(box.max.y - box.min.y).toFixed(3) }
+}
+
+/** A move with its bones renamed; travelling moves are pinned in place and their speed measured. */
+function prepare(clip, name, kind) {
+  let metresPerSecond = null
+  const tracks = clip.tracks.map((t) => {
+    const [target, prop] = t.name.split('.')
+    const track = t.clone()
+    track.name = `${bone(target)}.${prop}`
+    if (kind === 'travel' && bone(target) === 'Hips' && prop === 'position') {
+      const v = track.values, n = v.length / 3
+      metresPerSecond = Math.hypot(v[3 * n - 3] - v[0], v[3 * n - 1] - v[2]) / 100 / clip.duration
+      for (let i = 0; i < n; i++) { v[3 * i] = v[0]; v[3 * i + 2] = v[2] }   // keep the bob, drop the travel
+    }
+    return track
+  }).filter((t) => !t.name.endsWith('.scale'))
+  return { clip: new THREE.AnimationClip(name, clip.duration, tracks), metresPerSecond }
+}
+
+const toBinary = (object, animations = []) => new Promise((ok, no) =>
+  new GLTFExporter().parse(object, ok, no, { binary: true, animations, onlyVisible: true }))
+const upload = (name, buf) => fetch('/out/' + name, { method: 'PUT', body: buf })   // to bake.mjs, which writes it
+
+window.bake = async () => {
+  const files = [], bodies = [], report = []
+  let skeleton = null
+  for (const [file, id] of Object.entries(BODIES)) {
+    console.log(`loading ${file}`)
+    const { root, meshes, height } = await loadBody(file, id)
+    console.log(`exporting ${id}`)
+    await upload(`${id}.glb`, await toBinary(root))
+    files.push(`${id}.glb`)
+    bodies.push({ id, height, url: `/assets/people/${id}.glb`, meshes, tris: meshes.reduce((n, m) => n + m.tris, 0) })
+    report.push(`${id}: ${height} m, ${meshes.map((m) => `${m.name}=${m.role}`).join(' ')}`)
+    if (!skeleton) skeleton = root
+  }
+  const clips = [], speeds = {}
+  for (const [file, [name, kind]] of Object.entries(MOVES)) {
+    console.log(`move ${file}`)
+    const source = await load(file)
+    const { clip, metresPerSecond } = prepare(source.animations[0], name, kind)
+    clips.push(clip)
+    if (metresPerSecond) speeds[name] = +metresPerSecond.toFixed(3)
+    report.push(`${name}: ${clip.duration.toFixed(2)} s, ${clip.tracks.length} tracks${metresPerSecond ? `, ${metresPerSecond.toFixed(2)} m/s` : ''}`)
+  }
+  skeleton.traverse((o) => { if (o.isMesh) o.visible = false })
+  console.log('exporting moves')
+  await upload('moves.glb', await toBinary(skeleton, clips))
+  files.push('moves.glb')
+  return {
+    manifest: { schemaVersion: 2, bodies, moves: { url: '/assets/people/moves.glb', clips: clips.map((c) => ({ name: c.name, seconds: +c.duration.toFixed(3) })), metresPerSecond: speeds } },
+    report, files,
+  }
+}
+
+window.__ready = true
+</script>
+</body>
+</html>

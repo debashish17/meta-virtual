@@ -1,0 +1,847 @@
+# Label -> builder family rules for `run.py catalog`; family settings read by `run.py build`.
+#
+# [families.<id>]  one parametric Blender builder each (../blender_kit/families/).
+#   category  default catalogue category for items built by this family
+#   dims      how 1-2 printed values map onto axes: "wdh" (default), "wd", "wh", "h",
+#             or "wh_max" (larger value is the height: boards print partitions as "2400 x 1200").
+#             Three printed values are w x d x h unless a 3-letter order says otherwise.
+#   tris      triangle budget QA enforces (props 2k, furniture 10k)
+#   qa_h      "exact" (default) or "min": the printed height covers only part of the asset
+#             (a planter box under its foliage, a screen panel above its stand)
+# [[rule]]         first match wins. `match` is a regex on the lower-case corrected name;
+#                  optional `section` regex narrows it to a board section. A rule names a
+#                  `family` (+ `params` for the builder) or a `kind` ("composite" = layout
+#                  of parts, "reference" = catalogued with its crop but not built).
+#                  Colour and variant params were read off the board artwork.
+# [sections] / [boards]  category for items no family claims (first section regex wins).
+
+[families.desk]
+category = "workstation"
+[families.task_chair]
+category = "seating"
+[families.side_chair]
+category = "seating"
+[families.armchair]
+category = "lounge"
+[families.sofa]
+category = "lounge"
+[families.stool]
+category = "seating"
+tris = 2000
+[families.pouf]
+category = "lounge"
+dims = "wd"
+tris = 2000
+[families.table]
+category = "meeting"
+dims = "wd"
+[families.cabinet]
+category = "storage"
+[families.shelf]
+category = "storage"
+[families.planter]
+category = "greenery"
+qa_h = "min"
+qa_wd = "min"         # the printed size is the box; greenery spills over its edges
+tris = 16000          # dense greenery across up to 1.8 m of trough or shelving
+[families.plant]
+category = "greenery"
+[families.partition]
+category = "partition"
+dims = "wh_max"
+[families.door]
+category = "architecture"
+dims = "wh_max"
+[families.window]
+category = "architecture"
+dims = "wh"
+[families.screen]
+category = "tech"
+dims = "wh"
+tris = 2000
+qa_h = "min"
+[families.board]
+category = "tech"
+dims = "wh"
+tris = 2000
+qa_h = "min"
+[families.stand]
+category = "tech"
+tris = 2000
+[families.bin]
+category = "utility"
+tris = 2000
+[families.appliance]
+category = "utility"
+[families.rug]
+category = "lounge"
+dims = "wd"
+tris = 2000
+[families.booth]
+category = "architecture"
+[families.lamp]
+category = "lighting"
+dims = "h"
+tris = 2000
+
+# ---------------------------------------------------------------- composites (layouts) ----
+[[rule]]
+match = '.'
+section = 'kitchenette layouts|presentation setups|print station setups|entrance setups'
+kind = "composite"
+
+[[rule]]
+match = '^(single workstation|benching \(.*\)|back-to-back cluster|executive desk|hot desk / flex)$'
+kind = "composite"
+category = "workstation"
+
+[[rule]]
+match = '^(small meeting room|medium meeting room|large conference room|focus room \(personal\)|huddle room|executive office)$'
+kind = "composite"
+category = "meeting"
+
+[[rule]]
+match = '\bset$'
+section = 'collaboration'
+kind = "composite"
+
+[[rule]]
+match = '^open focus nook$'
+kind = "composite"
+
+# ---------------------------------------------------------------------------- desks -------
+[[rule]]
+match = '^standard desk$'
+family = "desk"
+params = { shape = "rect" }
+[[rule]]
+match = '^l-shape desk$'
+family = "desk"
+params = { shape = "l" }
+[[rule]]
+match = '^bench desk \(2\)$'
+family = "desk"
+params = { shape = "bench", seats = 2 }
+[[rule]]
+match = '^bench desk \(4\)$'
+family = "desk"
+params = { shape = "bench", seats = 4 }
+[[rule]]
+match = '^standing desk$'
+family = "desk"
+params = { shape = "rect", standing = true }
+
+# --------------------------------------------------------------------------- seating ------
+[[rule]]
+match = '^task chair \(black\)$'
+family = "task_chair"
+params = { fabric = "charcoal" }
+[[rule]]
+match = '^task chair \(grey\)$'
+family = "task_chair"
+params = { fabric = "grey_light" }
+[[rule]]
+match = '^executive chair$'
+family = "task_chair"
+params = { fabric = "charcoal", back = "high" }
+[[rule]]
+match = '^visitor chair$'
+family = "side_chair"
+params = { frame = "oak", upholstery = "charcoal" }
+[[rule]]
+match = '^conference chair$'
+family = "task_chair"
+params = { fabric = "charcoal" }
+[[rule]]
+match = '^lounge chair \(leather\)$'
+family = "armchair"
+params = { upholstery = "leather", frame = "black_metal", tufted = true }
+[[rule]]
+match = '^(accent chair \(dark\)|modern armchair)$'
+family = "armchair"
+params = { upholstery = "charcoal" }
+[[rule]]
+match = '^accent chair \(light\)$'
+family = "armchair"
+params = { upholstery = "sage" }
+[[rule]]
+match = '^lounge chair \(fabric\)$'
+family = "armchair"
+params = { upholstery = "light_fabric", tufted = true }
+[[rule]]
+match = '^(lounge chair|armchair)$'
+family = "armchair"
+params = { upholstery = "charcoal" }
+[[rule]]
+match = '^2 seater sofa$'
+family = "sofa"
+params = { seats = 2, upholstery = "leather" }
+[[rule]]
+match = '^sofa \(2 seater\)$'
+family = "sofa"
+params = { seats = 2, upholstery = "grey" }
+[[rule]]
+match = '^3 seater sofa$'
+family = "sofa"
+params = { seats = 3, upholstery = "grey" }
+[[rule]]
+match = '^modular sofa \(straight\)$'
+family = "sofa"
+params = { seats = 3, upholstery = "sage", legs = "black" }
+[[rule]]
+match = '^modular sofa \(corner\)$'
+family = "sofa"
+params = { seats = 2, style = "corner", upholstery = "sage", legs = "black" }
+[[rule]]
+match = '^bench sofa$'
+family = "sofa"
+params = { seats = 3, style = "bench", upholstery = "light_fabric" }
+[[rule]]
+match = '^high-back sofa$'
+family = "sofa"
+params = { seats = 2, style = "high_back", upholstery = "charcoal", legs = "black" }
+[[rule]]
+match = '^l-shaped sofa \(left\)$'
+family = "sofa"
+params = { seats = 3, style = "l", hand = "left", upholstery = "light_fabric" }
+[[rule]]
+match = '^l-shaped sofa \(right\)$'
+family = "sofa"
+params = { seats = 3, style = "l", hand = "right", upholstery = "light_fabric" }
+[[rule]]
+match = '^stool \(low\)$'
+family = "pouf"
+params = { shape = "round", upholstery = "light_fabric" }
+[[rule]]
+match = '^(stool \(high\)|bar stool \(backless\))$'
+family = "stool"
+params = { height = "bar" }
+[[rule]]
+match = '^bar stool \(with back\)$'
+family = "stool"
+params = { height = "bar", back = true }
+[[rule]]
+match = '^(ottoman / pouf|round pouf)$'
+family = "pouf"
+params = { shape = "round", upholstery = "sage" }
+[[rule]]
+match = '^cube pouf$'
+family = "pouf"
+params = { shape = "cube", upholstery = "light_fabric" }
+[[rule]]
+match = '^ottoman$'
+family = "pouf"
+params = { shape = "cube", upholstery = "grey" }
+
+# ---------------------------------------------------------------------------- tables ------
+[[rule]]
+match = '^(round coffee table|coffee table)$'
+family = "table"
+category = "lounge"
+params = { shape = "round", height = "coffee" }
+[[rule]]
+match = '^rectangular coffee table$'
+family = "table"
+category = "lounge"
+params = { shape = "rect", height = "coffee" }
+[[rule]]
+match = '^side table$'
+family = "table"
+category = "lounge"
+params = { shape = "round", height = "side" }
+[[rule]]
+match = '^round casual table$'
+family = "table"
+category = "lounge"
+params = { shape = "round", height = "dining" }
+[[rule]]
+match = '^square casual table$'
+family = "table"
+category = "lounge"
+params = { shape = "rect", height = "dining" }
+[[rule]]
+match = '^round high table$'
+family = "table"
+category = "lounge"
+params = { shape = "round", height = "bar" }
+[[rule]]
+match = '^round table \((4|6)\)$'
+family = "table"
+params = { shape = "round", height = "dining" }
+[[rule]]
+match = '^(rectangular table \(6\)|conference table \(10\))$'
+family = "table"
+params = { shape = "rect", height = "dining", base = "trestle" }
+[[rule]]
+match = '^standing table$'
+family = "table"
+params = { shape = "rect", height = "bar" }
+[[rule]]
+match = '^dining table \((4|6)\)$'
+family = "table"
+category = "kitchen"
+params = { shape = "rect", height = "dining" }
+[[rule]]
+match = '^counter table$'
+family = "table"
+category = "kitchen"
+params = { shape = "rect", height = "bar" }
+
+# ------------------------------------------------------------------- cabinets & storage -----
+[[rule]]
+match = '^base cabinet$'
+family = "cabinet"
+category = "kitchen"
+params = { fronts = "doors", worktop = true }
+[[rule]]
+match = '^sink cabinet$'
+family = "cabinet"
+category = "kitchen"
+params = { fronts = "doors", worktop = true, sink = true }
+[[rule]]
+match = '^drawer cabinet$'
+family = "cabinet"
+category = "kitchen"
+params = { fronts = "drawers", worktop = true }
+[[rule]]
+match = '^corner cabinet$'
+family = "cabinet"
+category = "kitchen"
+params = { fronts = "doors", worktop = true, corner = true }
+[[rule]]
+match = '^upper cabinet$'
+family = "cabinet"
+category = "kitchen"
+params = { fronts = "doors", wall = true, carcass = "oak" }
+[[rule]]
+match = '^bar counter$'
+family = "cabinet"
+category = "lounge"
+params = { fronts = "panel", worktop = true, carcass = "oak" }
+[[rule]]
+match = '^(storage cabinet \((low|medium|tall)\)|credenza \(low\)|cabinet \(tall\))$'
+family = "cabinet"
+params = { fronts = "doors" }
+[[rule]]
+match = '^glass door cabinet$'
+family = "cabinet"
+params = { fronts = "glass", carcass = "grey_metal", face = "grey_metal" }
+[[rule]]
+match = '^employee locker$'
+family = "cabinet"
+params = { fronts = "lockers", columns = 1, rows = 3, carcass = "charcoal", face = "charcoal" }
+[[rule]]
+match = '^personal locker$'
+family = "cabinet"
+params = { fronts = "lockers", columns = 1, rows = 3 }
+[[rule]]
+match = '^coat cabinet$'
+family = "cabinet"
+params = { fronts = "doors", carcass = "charcoal" }
+[[rule]]
+match = '^small locker \(2x2\)$'
+family = "cabinet"
+params = { fronts = "lockers", columns = 2, rows = 2, carcass = "charcoal" }
+[[rule]]
+match = '^(vertical file cabinet \((2|3) drawer\)|lateral file cabinet)$'
+family = "cabinet"
+params = { fronts = "drawers", carcass = "grey_metal", face = "grey_metal" }
+[[rule]]
+match = '^pedestal drawer$'
+family = "cabinet"
+params = { fronts = "drawers", casters = true, carcass = "off_white", face = "off_white" }
+[[rule]]
+match = '^mobile pedestal$'
+family = "cabinet"
+params = { fronts = "drawers", casters = true, carcass = "charcoal", face = "charcoal" }
+[[rule]]
+match = '^mobile file cabinet$'
+family = "cabinet"
+params = { fronts = "drawers", casters = true }
+[[rule]]
+match = '^wall shelf$'
+family = "shelf"
+params = { wall = true }
+[[rule]]
+match = '^bookshelf$'
+family = "shelf"
+dims = "wh"
+[[rule]]
+match = '^(utility shelf \(metal\)|cleaning supply shelf)$'
+family = "shelf"
+params = { board = "grey_light" }
+[[rule]]
+match = '^(open shelf.*|bookcase \(.*\)|low shelf \(console\)|divider shelf|partition shelf|modular divider shelf|shelf divider \(.*\)|shoe rack)$'
+family = "shelf"
+[[rule]]
+match = '^(supply|it|av|rolling) cart$'
+family = "shelf"
+category = "utility"
+params = { casters = true, board = "charcoal" }
+
+# ------------------------------------------------------------------------- greenery -------
+[[rule]]
+match = '^(planter box.*|rectangular planter)$'
+family = "planter"
+params = { base = "box" }
+[[rule]]
+match = '^tall planter$'
+family = "planter"
+params = { base = "box", tall = true }
+[[rule]]
+match = '^hanging planter divider$'
+family = "planter"
+params = { base = "box", trough = "oak" }
+[[rule]]
+match = '^(planter divider.*|planter with divider|partition with planter|low partition with planter)$'
+family = "planter"
+params = { base = "cabinet" }
+[[rule]]
+match = '^mobile planter divider$'
+family = "planter"
+params = { base = "cabinet", casters = true }
+[[rule]]
+match = '^(modular planter shelf|shelf with planter)$'
+family = "planter"
+params = { base = "shelf" }
+# plants: species and pot read off each board picture (pot = square | round | bowl)
+[[rule]]
+match = '^(hanging plant|hanging planter)$'
+family = "plant"
+params = { hanging = true }
+[[rule]]
+match = '^large floor plant$'
+family = "plant"
+params = { size = "large", species = "broadleaf", pot = "round" }
+[[rule]]
+match = '^large plant$'
+family = "plant"
+params = { size = "large", species = "broadleaf", pot = "square" }
+[[rule]]
+match = '^medium plant$'
+family = "plant"
+params = { size = "medium", species = "bushy", pot = "square", pot_material = "charcoal" }
+[[rule]]
+match = '^plant \(medium\)$'
+family = "plant"
+params = { size = "medium", species = "bushy", pot = "square", pot_material = "charcoal" }
+[[rule]]
+match = '^plant \(small\)$'
+family = "plant"
+params = { size = "small", species = "broadleaf", pot = "round", pot_material = "concrete_light" }
+[[rule]]
+match = '^plant$'
+family = "plant"
+params = { size = "small", species = "bushy", pot = "round" }
+[[rule]]
+match = '^small plant$'
+family = "plant"
+params = { size = "small", species = "rosette", pot = "square" }
+[[rule]]
+match = '^(table plant|desk plant \(broadleaf\))$'
+family = "plant"
+params = { size = "small", species = "broadleaf", pot = "square" }
+[[rule]]
+match = '^desk plant \(fern\)$'
+family = "plant"
+params = { size = "small", species = "fern", pot = "square", pot_material = "charcoal" }
+[[rule]]
+match = '^desk plant \(small\)$'
+family = "plant"
+params = { size = "small", species = "rosette", pot = "square", pot_material = "concrete_light" }
+[[rule]]
+match = '^desk plant \(snake\)$'
+family = "plant"
+params = { size = "small", species = "snake", pot = "square", pot_h = 0.45 }
+
+# --------------------------------------------------------------- partitions & walls -------
+[[rule]]
+match = '^(full glass wall|glass wall panel)$'
+family = "partition"
+params = { material = "glass", frame = "black" }
+[[rule]]
+match = '^t-junction glass$'
+family = "partition"
+params = { material = "glass", frame = "black", junction = "t" }
+[[rule]]
+match = '^(corner glass wall|corner glass)$'
+family = "partition"
+params = { material = "glass", frame = "black", corner = true }
+[[rule]]
+match = '^glass wall with door$'
+family = "partition"
+params = { material = "glass", frame = "black", door = true }
+[[rule]]
+match = '^frameless glass wall$'
+family = "partition"
+params = { material = "glass", frame = "none" }
+[[rule]]
+match = '^frameless with door$'
+family = "partition"
+params = { material = "glass", frame = "none", door = true }
+[[rule]]
+match = '^glass corner \(frameless\)$'
+family = "partition"
+params = { material = "glass", frame = "none", corner = true }
+[[rule]]
+match = '^(frosted glass panel|gradient frosted|patterned glass|whiteboard glass)$'
+family = "partition"
+params = { material = "frosted", frame = "none" }
+[[rule]]
+match = '^(solid wall|half wall|wall with screen)$'
+family = "partition"
+category = "architecture"
+params = { material = "solid" }
+[[rule]]
+match = '^(solid wall panel|low partition \(solid\))$'
+family = "partition"
+params = { material = "solid" }
+[[rule]]
+match = '^(wood panel partition|low partition \(wood\))$'
+family = "partition"
+params = { material = "wood" }
+[[rule]]
+match = '^low partition \(glass\)$'
+family = "partition"
+params = { material = "glass", frame = "black" }
+[[rule]]
+match = '^glass divider$'
+family = "partition"
+params = { material = "glass", frame = "black", default_h = 0.45 }
+[[rule]]
+match = '^side screen \(glass\)$'
+family = "partition"
+params = { material = "glass", frame = "none" }
+[[rule]]
+match = '^mobile partition \(glass\)$'
+family = "partition"
+params = { material = "glass", frame = "black", casters = true }
+[[rule]]
+match = '^mobile partition \(solid\)$'
+family = "partition"
+params = { material = "fabric", fabric = "light", casters = true }
+[[rule]]
+match = '^mobile acoustic panel$'
+family = "partition"
+params = { material = "fabric", fabric = "grey", casters = true }
+[[rule]]
+match = '^fabric divider \(light\)$'
+family = "partition"
+params = { material = "fabric", fabric = "light", default_h = 0.45 }
+[[rule]]
+match = '^fabric divider \(dark\)$'
+family = "partition"
+params = { material = "fabric", fabric = "dark", default_h = 0.45 }
+[[rule]]
+match = '^fabric divider \(medium\)$'
+family = "partition"
+params = { material = "fabric", fabric = "sage", feet = true }
+[[rule]]
+match = '^fabric divider \((low|tall)\)$'
+family = "partition"
+params = { material = "fabric", fabric = "grey", feet = true }
+[[rule]]
+match = '^front screen \(fabric\)$'
+family = "partition"
+params = { material = "fabric", fabric = "sage" }
+[[rule]]
+match = '^hanging acoustic panel$'
+family = "partition"
+dims = "whd"
+params = { material = "fabric", fabric = "dark" }
+[[rule]]
+match = '^(acoustic fabric panel|acoustic panel.*|low partition \(fabric\)|side screen \(fabric\))$'
+family = "partition"
+params = { material = "fabric", fabric = "grey" }
+[[rule]]
+match = '^(wood slat panel|wood slat divider)$'
+family = "partition"
+params = { material = "wood_slats" }
+[[rule]]
+match = '^hanging slat divider$'
+family = "partition"
+dims = "wh"
+params = { material = "wood_slats" }
+[[rule]]
+match = '^black metal slat$'
+family = "partition"
+params = { material = "metal_slats" }
+
+# --------------------------------------------------------------- doors & windows ----------
+[[rule]]
+match = '^(standard frame|glass frame)$'
+family = "door"
+params = { leaf = "none" }
+[[rule]]
+match = '^recessed frame$'
+family = "door"
+params = { leaf = "none", frame = "oak" }
+[[rule]]
+match = '^(arched door|arched frame|arched window)$'
+kind = "reference"
+category = "architecture"
+[[rule]]
+match = '^(full glass door|glass door( \(single\))?|swing door \(glass\)|pivot door)$'
+family = "door"
+params = { leaf = "glass" }
+[[rule]]
+match = '^frosted glass door$'
+family = "door"
+params = { leaf = "frosted" }
+[[rule]]
+match = '^(sliding door( \(glass\))?|sliding glass door)$'
+family = "door"
+params = { leaf = "glass", track = true }
+[[rule]]
+match = '^barn sliding door$'
+family = "door"
+params = { leaf = "wood", track = true }
+[[rule]]
+match = '^glass door \(double\)$'
+family = "door"
+params = { leaf = "glass", leaves = 2 }
+[[rule]]
+match = '^double door$'
+family = "door"
+params = { leaf = "wood_glass", leaves = 2 }
+[[rule]]
+match = '^(solid door|swing door \(solid\))$'
+family = "door"
+params = { leaf = "wood" }
+[[rule]]
+match = '^wood door with vertical glass$'
+family = "door"
+params = { leaf = "vision" }
+[[rule]]
+match = '^door with louvers$'
+family = "door"
+params = { leaf = "louvers" }
+[[rule]]
+match = '^acoustic door$'
+family = "door"
+params = { leaf = "acoustic" }
+[[rule]]
+match = '^(service door|dark frame door)$'
+family = "door"
+params = { leaf = "dark" }
+[[rule]]
+match = '^standard window$'
+family = "window"
+[[rule]]
+match = '^large window$'
+family = "window"
+params = { style = "large" }
+[[rule]]
+match = '^corner window$'
+family = "window"
+params = { style = "corner" }
+[[rule]]
+match = '^floor-to-ceiling window$'
+family = "window"
+params = { style = "floor" }
+[[rule]]
+match = '^operable window$'
+family = "window"
+params = { operable = true }
+[[rule]]
+match = '^frosted window$'
+family = "window"
+params = { frosted = true }
+[[rule]]
+match = '^window with blinds$'
+family = "window"
+params = { blinds = true }
+[[rule]]
+match = '^window with planters$'
+family = "window"
+params = { planters = true }
+[[rule]]
+match = '^interior window \(to room\)$'
+family = "window"
+params = { style = "large" }
+
+# --------------------------------------------------------------------- tech & boards ------
+[[rule]]
+match = '^tv / display.*$'
+family = "screen"
+params = { kind = "tv" }
+[[rule]]
+match = '^(standard monitor|ultra-wide monitor|monitor \(single\))$'
+family = "screen"
+params = { kind = "monitor" }
+[[rule]]
+match = '^dual monitor setup$'
+family = "screen"
+params = { kind = "monitor", count = 2 }
+[[rule]]
+match = '^dual monitor arm$'
+family = "screen"
+params = { kind = "monitor", count = 2, arm = true }
+[[rule]]
+match = '^(whiteboard|wall whiteboard|wall board)$'
+family = "board"
+params = { surface = "white" }
+[[rule]]
+match = '^mobile whiteboard$'
+family = "board"
+params = { surface = "white", stand = true }
+[[rule]]
+match = '^glass whiteboard$'
+family = "board"
+params = { surface = "glass" }
+[[rule]]
+match = '^cork board$'
+family = "board"
+params = { surface = "cork" }
+[[rule]]
+match = '^(grid / pin board|grid panel)$'
+family = "board"
+params = { surface = "grid" }
+[[rule]]
+match = '^screen stand$'
+family = "stand"
+
+# ------------------------------------------------------------------ bins & appliances -----
+[[rule]]
+match = '^multi-stream station$'
+family = "bin"
+params = { count = 3 }
+[[rule]]
+match = '^(recycling \(blue\)|recycle bin)$'
+family = "bin"
+params = { colour = "blue" }
+[[rule]]
+match = '^(compost \(green\)|compost bin)$'
+family = "bin"
+params = { colour = "green" }
+[[rule]]
+match = '^paper recycling$'
+family = "bin"
+params = { colour = "grey_light" }
+[[rule]]
+match = '^confidential shred bin$'
+family = "bin"
+params = { colour = "charcoal", slot = true }
+[[rule]]
+match = '^trash bin \(white\)$'
+family = "bin"
+params = { colour = "off_white", open = true }   # open-topped and hollow on the boards
+[[rule]]
+match = '^(general waste|trash bin.*)$'
+family = "bin"
+params = { colour = "charcoal", open = true }
+[[rule]]
+match = '^full height fridge$'
+family = "appliance"
+category = "kitchen"
+params = { kind = "fridge", doors = 2 }
+[[rule]]
+match = '^glass door fridge \(drinks\)$'
+family = "appliance"
+category = "kitchen"
+params = { kind = "fridge", glass = true, colour = "off_white" }   # white body on the Kitchenette board
+[[rule]]
+match = '^wine cooler$'
+family = "appliance"
+category = "kitchen"
+params = { kind = "fridge", size = "small", glass = true, colour = "charcoal" }
+[[rule]]
+match = '^mini fridge$'
+family = "appliance"
+category = "kitchen"
+params = { kind = "fridge", size = "small" }
+[[rule]]
+match = '^under counter fridge$'
+family = "appliance"
+category = "kitchen"
+params = { kind = "fridge", size = "small" }   # stainless on the Kitchenette board
+[[rule]]
+match = '^freezer$'
+family = "appliance"
+category = "kitchen"
+params = { kind = "fridge", size = "small", colour = "off_white" }
+[[rule]]
+match = '^microwave$'
+family = "appliance"
+category = "kitchen"
+params = { kind = "microwave" }
+[[rule]]
+match = '^(a4 desk printer|a3 mfp \((small|large)\)|scanner)$'
+family = "appliance"
+params = { kind = "printer" }
+[[rule]]
+match = '^(server rack \(full\)|network rack \(half\)|ups unit)$'
+family = "appliance"
+params = { kind = "rack" }
+[[rule]]
+match = '^paper shredder$'
+family = "appliance"
+params = { kind = "shredder", colour = "charcoal" }
+[[rule]]
+match = '^(dehumidifier|air purifier)$'
+family = "appliance"
+params = { kind = "box", colour = "off_white" }
+
+# ----------------------------------------------------------------- rugs, booths, lamps -----
+[[rule]]
+match = '^rug \(dark\)$'
+family = "rug"
+params = { tone = "dark" }
+[[rule]]
+match = '^rug \(pattern\)$'
+family = "rug"
+params = { tone = "pattern" }
+[[rule]]
+match = '^rug \('
+family = "rug"
+params = { tone = "neutral" }
+[[rule]]
+match = '^(single phone booth|phone booth)$'
+family = "booth"
+params = { kind = "single" }
+[[rule]]
+match = '^double focus pod$'
+family = "booth"
+params = { kind = "double" }
+[[rule]]
+match = '^privacy chair pod$'
+family = "booth"
+params = { kind = "chair" }
+[[rule]]
+match = '^floor lamp$'
+family = "lamp"
+params = { kind = "floor" }
+[[rule]]
+match = '^desk lamp$'
+family = "lamp"
+params = { kind = "desk" }
+[[rule]]
+match = '^presentation light$'
+family = "lamp"
+params = { kind = "presentation" }
+
+# ---------------------------------------------- fallback categories for unbuilt items -----
+[sections]
+'plant|planter|green' = "greenery"
+'lighting' = "lighting"
+'kitchen|pantry|countertop|refrigeration|dining' = "kitchen"
+'accessories|decor|personal items|signage|labels' = "decor"
+'clean|waste|safety|utility|it & server|print supplies|printer' = "utility"
+'tech|av|display|monitor|laptop|power|cable|conference|room booking|presentation|whiteboard' = "tech"
+'door|entr|window|frame|access control' = "architecture"
+'storage|shelving|shelves|cabinet|locker|file|boxes|bookshel|rack|clothing' = "storage"
+'partition|divider|glass|curtain|connector|slat|acoustic' = "partition"
+'meeting|room enclosures|lounge inside' = "meeting"
+'sofa|lounge|seating|coffee|casual|rugs|booth' = "lounge"
+'chairs' = "seating"
+
+[boards]
+"Doors, Entries & Window Views Asset Sheet.png" = "architecture"
+"Isometric Workstation Variations Guide.png" = "workstation"
+"Meeting Rooms & Private Spaces Catalog.png" = "meeting"
+"Modern Office Kitchenette Asset Board.png" = "kitchen"
+"Office Lounge Seating Reference Board.png" = "lounge"
+"Office Storage & Organization Asset Sheet.png" = "storage"
+"Partitions & Dividers Asset Catalog.png" = "partition"
+"Presentation & Tech Asset Catalog.png" = "tech"
+"Print & Utility Office Asset Library.png" = "utility"

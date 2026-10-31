@@ -1,0 +1,4 @@
+People and moves: Mixamo (https://www.mixamo.com), Adobe. Mixamo characters and animations are
+royalty-free to use in projects; they may not be redistributed or sold as standalone assets.
+Keep this repository private, or leave this folder out of any public copy of it.
+Converted by apps/web/scripts/people/bake.mjs.

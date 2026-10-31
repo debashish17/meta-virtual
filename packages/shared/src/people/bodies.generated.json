@@ -1,0 +1,193 @@
+{
+ "schemaVersion": 2,
+ "bodies": [
+  {
+   "id": "casual",
+   "height": 1.762,
+   "url": "/assets/people/casual.glb",
+   "meshes": [
+    {
+     "name": "Shoe",
+     "role": "shoes",
+     "tris": 2576
+    },
+    {
+     "name": "Body",
+     "role": "fixed",
+     "tris": 20092
+    },
+    {
+     "name": "Pants",
+     "role": "bottom",
+     "tris": 2822
+    },
+    {
+     "name": "Shirt",
+     "role": "top",
+     "tris": 12650
+    },
+    {
+     "name": "Eyeleashes",
+     "role": "fixed",
+     "tris": 896
+    },
+    {
+     "name": "Hair",
+     "role": "fixed",
+     "tris": 10756
+    }
+   ],
+   "tris": 49792
+  },
+  {
+   "id": "suit",
+   "height": 1.793,
+   "url": "/assets/people/suit.glb",
+   "meshes": [
+    {
+     "name": "Shoes",
+     "role": "shoes",
+     "tris": 4892
+    },
+    {
+     "name": "Body",
+     "role": "fixed",
+     "tris": 17867
+    },
+    {
+     "name": "Suit",
+     "role": "top",
+     "tris": 9970
+    },
+    {
+     "name": "Belt",
+     "role": "fixed",
+     "tris": 2476
+    },
+    {
+     "name": "Shirt",
+     "role": "accent",
+     "tris": 743
+    },
+    {
+     "name": "Pants",
+     "role": "bottom",
+     "tris": 5646
+    },
+    {
+     "name": "Eyelashes",
+     "role": "fixed",
+     "tris": 960
+    },
+    {
+     "name": "Hair",
+     "role": "fixed",
+     "tris": 9992
+    }
+   ],
+   "tris": 52546
+  },
+  {
+   "id": "suit_tie",
+   "height": 1.784,
+   "url": "/assets/people/suit_tie.glb",
+   "meshes": [
+    {
+     "name": "Shoes",
+     "role": "shoes",
+     "tris": 4892
+    },
+    {
+     "name": "Suit",
+     "role": "top",
+     "tris": 9970
+    },
+    {
+     "name": "Belt",
+     "role": "fixed",
+     "tris": 2328
+    },
+    {
+     "name": "Shirt",
+     "role": "accent",
+     "tris": 742
+    },
+    {
+     "name": "Tie",
+     "role": "accent",
+     "tris": 1172
+    },
+    {
+     "name": "Pants",
+     "role": "bottom",
+     "tris": 7100
+    },
+    {
+     "name": "Body",
+     "role": "fixed",
+     "tris": 18125
+    },
+    {
+     "name": "Eyelashes",
+     "role": "fixed",
+     "tris": 832
+    },
+    {
+     "name": "Hair",
+     "role": "fixed",
+     "tris": 9774
+    }
+   ],
+   "tris": 54935
+  }
+ ],
+ "moves": {
+  "url": "/assets/people/moves.glb",
+  "clips": [
+   {
+    "name": "idle",
+    "seconds": 7.833
+   },
+   {
+    "name": "walk",
+    "seconds": 1.033
+   },
+   {
+    "name": "jog",
+    "seconds": 0.733
+   },
+   {
+    "name": "talk",
+    "seconds": 1.933
+   },
+   {
+    "name": "talk_2",
+    "seconds": 2.233
+   },
+   {
+    "name": "phone",
+    "seconds": 38.833
+   },
+   {
+    "name": "interact",
+    "seconds": 3.233
+   },
+   {
+    "name": "sit",
+    "seconds": 0.033
+   },
+   {
+    "name": "sit_talk",
+    "seconds": 46.667
+   },
+   {
+    "name": "type",
+    "seconds": 16.467
+   }
+  ],
+  "metresPerSecond": {
+   "walk": 1.612,
+   "jog": 4.266
+  }
+ }
+}

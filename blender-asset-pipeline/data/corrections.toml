@@ -1,0 +1,230 @@
+# OCR and board-typo fixes, applied before ids are derived. Keys match case-insensitively.
+# Every entry here was checked against the board image. Rerun `run.py catalog` after editing:
+# it fails if any entry never matched. Keys must use OCR's exact characters: OCR reads the
+# bullet-like glyphs on these boards as U+2022 (•) or U+00E5 (å), not as U+FFFD.
+
+# --- names: OCR text (or a board typo) -> label as printed / intended ----------------------
+[names]
+"Cornet Window" = "Corner Window"
+"Door with Louwers" = "Door with Louvers"
+"Curtian Panel" = "Curtain Panel"
+"Foggy" = "Foggy View"
+"Wood • Vertical Gias" = "Wood Door with Vertical Glass"
+"Fua Glass Door" = "Full Glass Door"
+"Conference Table (IO)" = "Conference Table (10)"
+"Solid wall" = "Solid Wall"
+"Wtne Cooler" = "Wine Cooler"
+"Plete Stack" = "Plate Stack"                 # board typo
+"wall Shelf" = "Wall Shelf"
+"Cushion (Recti" = "Cushion (Rect)"
+"Privacy Cheir Pod" = "Privacy Chair Pod"     # board typo
+"Sman Piant" = "Small Plant"
+"Storage Box (Mediurn)" = "Storage Box (Medium)"
+"Document Hower 320 rnm" = "Document Holder"
+"Fabric BOX" = "Fabric Box"
+"Small Locker (20)" = "Small Locker (2x2)"
+"Rolling cart" = "Rolling Cart"
+"Hangir•vg Planter" = "Hanging Planter"
+"open Shelf (Tall)" = "Open Shelf (Tall)"
+"Corner Connector (W)" = "Corner Connector (90°)"
+"Straight Cornectoc" = "Straight Connector"
+"T- Jt.nction" = "T-Junction"
+"X-Junctico" = "X-Junction"
+"Acwstk Curtien" = "Acoustic Curtain"
+"Glass Rwn Cuman" = "Glass Room Curtain"      # board prints "Glass Room Curtian"
+"Modular Planter Sheff" = "Modular Planter Shelf"
+"Full Glass wall" = "Full Glass Wall"
+"Room Sign 300 x tso mm" = "Room Sign"
+"Laptop Stand (Tall) Dia 400 x toso mm" = "Laptop Stand (Tall)"
+"Cables (HOMI,'USB.C) Various lengths" = "Cables (HDMI/USB-C)"
+"Wdeo Conference Speoket" = "Video Conference Speaker"
+"Power strip" = "Power Strip"
+"AV cart" = "AV Cart"
+'Projector & Screen Setup Screen: 100" I Projector (ceiling)' = "Projector & Screen Setup"
+"Collaboration Wall Whiteboard + Cork Board" = "Collaboration Wall"
+"Presentation Corner Display + Whiteboard + Laptop Stand" = "Presentation Corner"
+"Video Conferencing Setup Display: 650 1 Cam + Speaker" = "Video Conferencing Setup"
+"Standag Fan" = "Standing Fan"
+"Light Svåtch" = "Light Switch"
+"Multi•Stream Station" = "Multi-Stream Station"
+"Document Sotter" = "Document Sorter"
+"Thermostat 100 x too mm" = "Thermostat"
+"HDMI / USB.C Hub" = "HDMI / USB-C Hub"
+
+[names."Doors, Entries & Window Views Asset Sheet.png"]
+"Reader" = "Keycard Reader"
+"Scanner" = "Biometric Scanner"
+
+[names."Print & Utility Office Asset Library.png"]
+"Camera" = "CCTV Camera"
+
+# --- dims: OCR dims text -> corrected dims text (applied to cells and to joined dims) -------
+[dims]
+"3001300 x 600 mm" = "300 x 300 x 600 mm"
+"300 x 300 x aco" = "300 x 300 x 400 mm"
+"900 x x 750 mm" = "900 x 450 x 750 mm"
+"900 x x 1800 mm" = "900 x 450 x 1800 mm"
+"400 x x 700 mm" = "400 x 400 x 700 mm"
+"1200 x x SOO mm" = "1200 x 18 x 500 mm"
+"3SO x 300 x 300 100 x" = "350 x 300 x 300 mm"
+"800 x SOO x" = "800 x 500 x 1500 mm"
+
+# --- item_dims: authoritative dims for an item (missing or misread under its label) --------
+[item_dims]
+"Bookshelf" = "1000 x 1800 mm"
+"Planter Box (Low)" = "800 x 300 x 300 mm"
+"Document Holder" = "100 x 250 x 320 mm"
+"Room Sign" = "300 x 150 mm"
+"Laptop Stand (Tall)" = "Dia 400 x 1050 mm"
+"Laptop Dock" = "150 x 80 x 30 mm"
+"Conference Hub" = "150 x 150 x 40 mm"
+"Thermostat" = "100 x 100 mm"
+"Access Control" = "100 x 150 mm"
+"Paper Shredder" = "400 x 300 x 600 mm"
+"Standing Fan" = "400 x 400 x 1200 mm"
+"Shoe Rack" = "800 x 300 x 400 mm"
+"Wireless Presenter" = "120 x 30 x 20 mm"
+
+# --- split: one OCR cell holding several neighbouring labels, by word count ------------------
+[[split]]
+board = "Doors, Entries & Window Views Asset Sheet.png"
+text = "Wood • Vertical Gias Fua Glass Door"
+words = [4, 3]
+
+[[split]]
+board = "Isometric Workstation Variations Guide.png"
+text = "Cable Grommet Power Module Cable Spine"
+words = [2, 2, 2]
+
+[[split]]
+board = "Isometric Workstation Variations Guide.png"
+text = "Mobile Pedestal Open Shelf (Small) Open Shelf (Tall)"
+words = [2, 3, 3]
+
+[[split]]
+board = "Modern Office Kitchenette Asset Board.png"
+text = "Snack Jar Sugar Jar Tea Box Coffee Beans"
+words = [2, 2, 2, 2]
+
+[[split]]
+board = "Presentation & Tech Asset Catalog.png"
+text = "Wdeo Conference Speoket Conference Mic"
+words = [3, 2]
+
+[[split]]
+board = "Print & Utility Office Asset Library.png"
+text = "3SOx2SOxSOOmm 400x400x'800mm 3COx300x600mm"
+words = [1, 1, 1]
+
+# --- drop: printed text that is not a catalogue item ----------------------------------------
+[[drop]]
+board = "Isometric Workstation Variations Guide.png"
+text = "Desk Variations (Top View)"   # 2D top-view diagrams of the desk modules
+
+[[drop]]
+board = "Print & Utility Office Asset Library.png"
+text = "Island."                      # prefix of the "Island: 2000 x 900 x 900 mm" dims line
+
+[[drop]]
+board = "Presentation & Tech Asset Catalog.png"
+text = "mm"                           # stray unit left over from split dims lines
+
+# --- ignore: board regions [x0, y0, x1, y1] holding artwork that is not an item -------------
+[[ignore]]
+board = "Isometric Workstation Variations Guide.png"
+box = [1045, 470, 1520, 605]          # "Desk Variations (Top View)" 2D diagrams
+# --- text: printed text OCR missed, as [x0, y0, x1, y1]; masked out of the artwork and read as text
+[[text]]
+board = "Partitions & Dividers Asset Catalog.png"
+text = "PRIVACY SCREENS (DESK)"            # printed "PRIVACY SCREENG (DESK)"
+box = [598, 697, 767, 711]
+# --- add: objects printed with no label at all, named by their board box [x0, y0, x1, y1] --
+[[add]]
+board = "Isometric Workstation Variations Guide.png"
+name = "Monitor (Single)"
+box = [18, 900, 113, 1006]
+
+[[add]]
+board = "Isometric Workstation Variations Guide.png"
+name = "Laptop (Open)"
+box = [119, 915, 212, 998]
+
+[[add]]
+board = "Isometric Workstation Variations Guide.png"
+name = "Dual Monitor Arm"
+box = [213, 884, 338, 1000]
+
+[[add]]
+board = "Isometric Workstation Variations Guide.png"
+name = "Desk Mat with Keyboard and Mouse"   # drawn overlapping: one object on the board
+box = [363, 915, 503, 1001]
+
+[[add]]
+board = "Isometric Workstation Variations Guide.png"
+name = "Notebook"
+box = [491, 961, 564, 1005]
+
+[[add]]
+board = "Isometric Workstation Variations Guide.png"
+name = "Laptop Riser"
+box = [515, 905, 587, 960]
+
+[[add]]
+board = "Isometric Workstation Variations Guide.png"
+name = "Mug"
+box = [586, 920, 632, 974]
+
+[[add]]
+board = "Isometric Workstation Variations Guide.png"
+name = "Pen Cup and Desk Organizer"
+box = [625, 925, 709, 993]
+
+[[add]]
+board = "Isometric Workstation Variations Guide.png"
+name = "Desk Plant (Broadleaf)"
+box = [722, 896, 789, 1006]
+
+[[add]]
+board = "Isometric Workstation Variations Guide.png"
+name = "Desk Plant (Fern)"
+box = [790, 915, 858, 1005]
+
+[[add]]
+board = "Isometric Workstation Variations Guide.png"
+name = "Desk Plant (Small)"
+box = [860, 926, 913, 1003]
+
+[[add]]
+board = "Isometric Workstation Variations Guide.png"
+name = "Desk Plant (Snake)"
+box = [917, 902, 974, 1004]
+
+[[add]]
+board = "Isometric Workstation Variations Guide.png"
+name = "Book Stack"
+box = [1000, 922, 1136, 988]
+
+[[add]]
+board = "Isometric Workstation Variations Guide.png"
+name = "Water Bottle"
+box = [1134, 900, 1184, 995]
+
+[[add]]
+board = "Isometric Workstation Variations Guide.png"
+name = "Desk Lamp"
+box = [1193, 899, 1251, 995]
+
+[[add]]
+board = "Isometric Workstation Variations Guide.png"
+name = "Headphone Stand"
+box = [1242, 899, 1324, 1002]
+
+[[add]]
+board = "Isometric Workstation Variations Guide.png"
+name = "Trash Bin (Black)"
+box = [1358, 900, 1442, 1008]
+
+[[add]]
+board = "Isometric Workstation Variations Guide.png"
+name = "Trash Bin (White)"
+box = [1444, 912, 1512, 1008]

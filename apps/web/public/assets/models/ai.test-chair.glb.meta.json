@@ -1,0 +1,53 @@
+{
+  "pipeline_version": "1.0.0",
+  "asset_name": "ai.test-chair",
+  "category": "chair",
+  "quality_preset": "standard",
+  "seed": 42,
+  "source_image": {
+    "path": "blender-asset-pipeline/inputs/test_chair.png",
+    "hash": "2f38f6fa1b3f",
+    "original_dimensions": [
+      70,
+      85
+    ]
+  },
+  "target_dimensions_meters": [
+    0.65,
+    0.62,
+    0.95
+  ],
+  "processing_timings_sec": {
+    "stage_a_preprocessing": 0.5551,
+    "stages_b_to_g_execution": 2.7816,
+    "total_elapsed": 3.3465
+  },
+  "geometry_stats": {
+    "vertices": 2328,
+    "triangles": 1416,
+    "bounding_box_meters": [
+      0.5735,
+      0.95,
+      0.549
+    ],
+    "file_size_bytes": 85196
+  },
+  "validation": {
+    "valid": true,
+    "vertices": 2328,
+    "triangles": 1416,
+    "extents_meters": [
+      0.5735,
+      0.95,
+      0.549
+    ],
+    "ground_level_y": 0.0,
+    "height_y": 0.95,
+    "center_xz": [
+      0.0,
+      0.0
+    ],
+    "file_size_bytes": 85196,
+    "is_watertight": false
+  }
+}

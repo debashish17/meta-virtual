@@ -1,0 +1,11 @@
+# Per-board settings for `run.py catalog`. Keys under [board] are file names in /reference.
+
+[defaults]
+role = "catalogue"     # labelled catalogue board: every item has a printed name under it
+header_band = 0.105    # top fraction holding the board title, palette swatches and scale key
+
+[board."Isometric Modern Office Kit.png"]
+role = "style"         # no per-item labels: style / look-dev reference only
+
+[board."Modern Office Asset Library Board.png"]
+role = "style"

@@ -1,0 +1,887 @@
+{
+ "kitchen.freezer": {
+  "decision": "rejected",
+  "specHash": "f5f748b7ab6cf742",
+  "note": "section bevels not there"
+ },
+ "kitchen.full-height-fridge": {
+  "decision": "rejected",
+  "specHash": "962f4b39f54f9f32",
+  "note": "door hinges and door beveels and lines"
+ },
+ "kitchen.glass-door-fridge-drinks": {
+  "decision": "rejected",
+  "specHash": "fe472560b56be53a",
+  "note": "cans inside the fridge "
+ },
+ "kitchen.microwave": {
+  "decision": "approved",
+  "specHash": "cef8c2ceee1e21ec",
+  "note": ""
+ },
+ "kitchen.mini-fridge": {
+  "decision": "rejected",
+  "specHash": "a8aa2dd6ea02598b",
+  "note": "lines and bevels on a mini fridge missing"
+ },
+ "kitchen.under-counter-fridge": {
+  "decision": "rejected",
+  "specHash": "7b2f5e3ce5af96fa",
+  "note": "lines and bevels on a mini fridge missing"
+ },
+ "kitchen.wine-cooler": {
+  "decision": "rejected",
+  "specHash": "ca745946eb99083f",
+  "note": "wines inside the cooler ."
+ },
+ "lounge.accent-chair-dark": {
+  "decision": "approved",
+  "specHash": "bea630d9638beda8",
+  "note": ""
+ },
+ "lounge.accent-chair-light": {
+  "decision": "approved",
+  "specHash": "04feea1ce5154572",
+  "note": ""
+ },
+ "lounge.armchair": {
+  "decision": "approved",
+  "specHash": "074d0f649b2e0809",
+  "note": ""
+ },
+ "lounge.lounge-chair": {
+  "decision": "approved",
+  "specHash": "7932c904f628c2c9",
+  "note": ""
+ },
+ "lounge.lounge-chair-fabric": {
+  "decision": "approved",
+  "specHash": "e87db372ccdd28ac",
+  "note": ""
+ },
+ "lounge.lounge-chair-leather": {
+  "decision": "approved",
+  "specHash": "db375bb484a8588b",
+  "note": ""
+ },
+ "lounge.modern-armchair": {
+  "decision": "approved",
+  "specHash": "916dcf9bcc10c796",
+  "note": ""
+ },
+ "utility.compost-bin": {
+  "decision": "rejected",
+  "specHash": "8986f71239fb451e",
+  "note": "the can cover and shape"
+ },
+ "utility.recycle-bin": {
+  "decision": "rejected",
+  "specHash": "5bd7340fc686c7f1",
+  "note": "the can cover and shape"
+ },
+ "utility.trash-bin-black": {
+  "decision": "rejected",
+  "specHash": "b6daaa906399d3d2",
+  "note": "hollow on the inside"
+ },
+ "utility.trash-bin-general": {
+  "decision": "rejected",
+  "specHash": "e9e6eabb080c1877",
+  "note": "Not hollow on the inside"
+ },
+ "utility.trash-bin-white": {
+  "decision": "rejected",
+  "specHash": "933ad5df822e635f",
+  "note": "shape is not correct of bin it should be wider in the top and smaller in te bottom and hollow on the inside"
+ },
+ "tech.wall-board": {
+  "decision": "approved",
+  "specHash": "4dc9cea787f35617",
+  "note": ""
+ },
+ "architecture.double-focus-pod": {
+  "decision": "rejected",
+  "specHash": "d02170d263732b84",
+  "note": "small stools inside missing"
+ },
+ "architecture.phone-booth": {
+  "decision": "approved",
+  "specHash": "dcf5adab64fb893c",
+  "note": ""
+ },
+ "architecture.privacy-chair-pod": {
+  "decision": "rejected",
+  "specHash": "0940b5ee0a815f9b",
+  "note": "small tabel misiing"
+ },
+ "architecture.single-phone-booth": {
+  "decision": "rejected",
+  "specHash": "37a2e12049fb54b6",
+  "note": "small stoll inside missing"
+ },
+ "storage.cabinet-tall": {
+  "decision": "approved",
+  "specHash": "fc5f47dc13069b3d",
+  "note": ""
+ },
+ "storage.mobile-pedestal": {
+  "decision": "approved",
+  "specHash": "6366ccf0b9227e89",
+  "note": ""
+ },
+ "storage.pedestal-drawer": {
+  "decision": "approved",
+  "specHash": "b133af32936a86d3",
+  "note": ""
+ },
+ "architecture.acoustic-door": {
+  "decision": "rejected",
+  "specHash": "eecc56cc2c5c7a40",
+  "note": "texture could be better"
+ },
+ "architecture.barn-sliding-door": {
+  "decision": "approved",
+  "specHash": "5695ee853c07c3ab",
+  "note": ""
+ },
+ "architecture.dark-frame-door": {
+  "decision": "rejected",
+  "specHash": "3491174e04fd7879",
+  "note": "Door knob missing"
+ },
+ "architecture.door-with-louvers": {
+  "decision": "approved",
+  "specHash": "c11139a255c36126",
+  "note": ""
+ },
+ "architecture.double-door": {
+  "decision": "approved",
+  "specHash": "b5ee7c854a40bd05",
+  "note": ""
+ },
+ "architecture.frosted-glass-door": {
+  "decision": "approved",
+  "specHash": "e6568185a1caab3a",
+  "note": ""
+ },
+ "architecture.glass-frame": {
+  "decision": "approved",
+  "specHash": "47c9f965ec311a98",
+  "note": ""
+ },
+ "architecture.pivot-door": {
+  "decision": "rejected",
+  "specHash": "3caf604f501c36c4",
+  "note": "completly wrong interpretation "
+ },
+ "architecture.recessed-frame": {
+  "decision": "approved",
+  "specHash": "080e70731994ea6f",
+  "note": ""
+ },
+ "architecture.service-door": {
+  "decision": "rejected",
+  "specHash": "bcec4eaf0e224f08",
+  "note": "small glasss see through missing "
+ },
+ "architecture.sliding-door": {
+  "decision": "rejected",
+  "specHash": "ecc3c4e00bccee70",
+  "note": "other part of sliding missing"
+ },
+ "architecture.standard-frame": {
+  "decision": "approved",
+  "specHash": "c3bd0a44aa4406b2",
+  "note": ""
+ },
+ "lighting.desk-lamp": {
+  "decision": "approved",
+  "specHash": "21b9c7e691aa445a",
+  "note": ""
+ },
+ "lighting.floor-lamp": {
+  "decision": "approved",
+  "specHash": "eb083c903edaf0b5",
+  "note": ""
+ },
+ "partition.acoustic-panel-hanging": {
+  "decision": "rejected",
+  "specHash": "f02aca1d6b8323aa",
+  "note": "texture"
+ },
+ "partition.acoustic-panel-wall": {
+  "decision": "rejected",
+  "specHash": "1132b771d330ccff",
+  "note": "texture"
+ },
+ "partition.fabric-divider-dark": {
+  "decision": "rejected",
+  "specHash": "0a7ebd0842a8dee1",
+  "note": "texture"
+ },
+ "partition.fabric-divider-light": {
+  "decision": "rejected",
+  "specHash": "7dddee5e00ddf38f",
+  "note": "texture"
+ },
+ "partition.glass-divider": {
+  "decision": "rejected",
+  "specHash": "73ba61f9e7823de2",
+  "note": "horrizontally longer "
+ },
+ "partition.wood-slat-panel": {
+  "decision": "approved",
+  "specHash": "755758acec234a25",
+  "note": ""
+ },
+ "greenery.desk-plant-small": {
+  "decision": "approved",
+  "specHash": "830d7bf60f14e2ea",
+  "note": ""
+ },
+ "greenery.large-plant": {
+  "decision": "approved",
+  "specHash": "1636097f8023011a",
+  "note": ""
+ },
+ "lounge.cube-pouf": {
+  "decision": "rejected",
+  "specHash": "b336a58d8495558a",
+  "note": "partiton on the midddle"
+ },
+ "lounge.ottoman-pouf": {
+  "decision": "rejected",
+  "specHash": "561d14260fbdecf6",
+  "note": "square partition and texture and colour "
+ },
+ "lounge.round-pouf": {
+  "decision": "rejected",
+  "specHash": "318654573f9b2a82",
+  "note": "colour texture"
+ },
+ "lounge.stool-low": {
+  "decision": "rejected",
+  "specHash": "fe0620cd238700b6",
+  "note": "texture not correct cloth material"
+ },
+ "lounge.rug-pattern": {
+  "decision": "approved",
+  "specHash": "29608194a7c1e0fa",
+  "note": ""
+ },
+ "tech.dual-monitor-arm": {
+  "decision": "rejected",
+  "specHash": "137edd727642dc76",
+  "note": "arm misssing"
+ },
+ "tech.dual-monitor-setup": {
+  "decision": "approved",
+  "specHash": "170ca3f23cafc6ab",
+  "note": ""
+ },
+ "tech.monitor-single": {
+  "decision": "approved",
+  "specHash": "c1f034e53beeee78",
+  "note": ""
+ },
+ "tech.tv-display": {
+  "decision": "approved",
+  "specHash": "539c4b5be3fc4783",
+  "note": ""
+ },
+ "storage.divider-shelf": {
+  "decision": "approved",
+  "specHash": "f34340084e957c40",
+  "note": ""
+ },
+ "storage.open-shelf-low": {
+  "decision": "rejected",
+  "specHash": "c2c9b87b7559d809",
+  "note": "horizontally longer self"
+ },
+ "seating.visitor-chair": {
+  "decision": "approved",
+  "specHash": "2d7575478ac333c1",
+  "note": ""
+ },
+ "lounge.2-seater-sofa": {
+  "decision": "rejected",
+  "specHash": "f1121ca65cbffe68",
+  "note": "bigger cution"
+ },
+ "lounge.3-seater-sofa": {
+  "decision": "rejected",
+  "specHash": "4ded8b6a94543e4c",
+  "note": "bigger cution"
+ },
+ "lounge.bench-sofa": {
+  "decision": "rejected",
+  "specHash": "95470f0620a1258c",
+  "note": "leggs and texture missing"
+ },
+ "lounge.high-back-sofa": {
+  "decision": "rejected",
+  "specHash": "9137d0b9ed5ed4a7",
+  "note": "pillow missing"
+ },
+ "lounge.l-shaped-sofa-left": {
+  "decision": "rejected",
+  "specHash": "bedbf5b679b0ae61",
+  "note": "structure could be more accurate and cution and button "
+ },
+ "lounge.l-shaped-sofa-right": {
+  "decision": "rejected",
+  "specHash": "9c6d676adb4e6e52",
+  "note": "structure could be more accurate and cution and button "
+ },
+ "lounge.modular-sofa-corner": {
+  "decision": "approved",
+  "specHash": "dadf61eda4ca9890",
+  "note": ""
+ },
+ "lounge.modular-sofa-straight": {
+  "decision": "rejected",
+  "specHash": "4dcac6e67cbf21d8",
+  "note": "bigger head rest more structurally accuracy needed "
+ },
+ "lounge.sofa-2-seater": {
+  "decision": "rejected",
+  "specHash": "4aea09f730cde520",
+  "note": "bigger head rest more structurally accuracy needed "
+ },
+ "seating.bar-stool-backless": {
+  "decision": "approved",
+  "specHash": "817c9ea918d96b33",
+  "note": ""
+ },
+ "seating.bar-stool-with-back": {
+  "decision": "approved",
+  "specHash": "4a281435ccd8e905",
+  "note": ""
+ },
+ "seating.stool-high": {
+  "decision": "approved",
+  "specHash": "4e4d8a2d4f6d8ee8",
+  "note": ""
+ },
+ "seating.conference-chair": {
+  "decision": "approved",
+  "specHash": "bb5a0091301623e2",
+  "note": ""
+ },
+ "seating.executive-chair": {
+  "decision": "approved",
+  "specHash": "18c4d87fcbff70e2",
+  "note": ""
+ },
+ "seating.task-chair-black": {
+  "decision": "approved",
+  "specHash": "1498413a4638ddc1",
+  "note": ""
+ },
+ "seating.task-chair-grey": {
+  "decision": "approved",
+  "specHash": "7f239f73ff4bcbbd",
+  "note": ""
+ },
+ "architecture.corner-window": {
+  "decision": "rejected",
+  "specHash": "367d25b70cde7289",
+  "note": "single glass coner window with city sillouate outside"
+ },
+ "architecture.floor-to-ceiling-window": {
+  "decision": "approved",
+  "specHash": "0d4f6f9842d87ae9",
+  "note": ""
+ },
+ "architecture.frosted-window": {
+  "decision": "approved",
+  "specHash": "b1e6dcf1720cf7a3",
+  "note": ""
+ },
+ "architecture.interior-window-to-room": {
+  "decision": "approved",
+  "specHash": "b8417962deb607cb",
+  "note": ""
+ },
+ "architecture.large-window": {
+  "decision": "approved",
+  "specHash": "b7a9fb597af7ecd2",
+  "note": ""
+ },
+ "architecture.operable-window": {
+  "decision": "approved",
+  "specHash": "c23251e5907a476c",
+  "note": ""
+ },
+ "architecture.standard-window": {
+  "decision": "rejected",
+  "specHash": "f65087de094d1a8e",
+  "note": "sillouate of city outside "
+ },
+ "architecture.window-with-blinds": {
+  "decision": "approved",
+  "specHash": "f0377a85819884c1",
+  "note": ""
+ },
+ "utility.a3-mfp-large": {
+  "decision": "approved",
+  "specHash": "97e17a556f192f74",
+  "note": ""
+ },
+ "utility.a3-mfp-small": {
+  "decision": "approved",
+  "specHash": "daad9ff799a59619",
+  "note": ""
+ },
+ "utility.a4-desk-printer": {
+  "decision": "approved",
+  "specHash": "4f61c4bb2adae64a",
+  "note": ""
+ },
+ "utility.air-purifier": {
+  "decision": "rejected",
+  "specHash": "bf3f6a395abde5da",
+  "note": "hole on top"
+ },
+ "utility.dehumidifier": {
+  "decision": "rejected",
+  "specHash": "5ba0b33efeecc4ff",
+  "note": "hole on top missing"
+ },
+ "utility.network-rack-half": {
+  "decision": "rejected",
+  "specHash": "c742f75cef26d6ca",
+  "note": "wires missing"
+ },
+ "utility.paper-shredder": {
+  "decision": "rejected",
+  "specHash": "eeb830935783904d",
+  "note": "structurally incorrect"
+ },
+ "utility.scanner": {
+  "decision": "approved",
+  "specHash": "1577f17dea66803f",
+  "note": ""
+ },
+ "utility.server-rack-full": {
+  "decision": "approved",
+  "specHash": "69c973bc50a8ed5d",
+  "note": ""
+ },
+ "utility.ups-unit": {
+  "decision": "approved",
+  "specHash": "fe73ce76a478ab61",
+  "note": ""
+ },
+ "utility.compost-green": {
+  "decision": "rejected",
+  "specHash": "65f05cc22a600d38",
+  "note": "hole and symble missing"
+ },
+ "tech.cork-board-1200x900": {
+  "decision": "approved",
+  "specHash": "50744bffd79fce60",
+  "note": ""
+ },
+ "tech.cork-board-900x600": {
+  "decision": "approved",
+  "specHash": "e08b599e3faa515f",
+  "note": ""
+ },
+ "tech.glass-whiteboard": {
+  "decision": "approved",
+  "specHash": "c578bef678a5cb7d",
+  "note": ""
+ },
+ "tech.grid-panel": {
+  "decision": "rejected",
+  "specHash": "5b298dc648f92381",
+  "note": ""
+ },
+ "tech.grid-pin-board": {
+  "decision": "approved",
+  "specHash": "2d8a355bfc2000c6",
+  "note": ""
+ },
+ "tech.mobile-whiteboard": {
+  "decision": "approved",
+  "specHash": "73b47030f99ac7db",
+  "note": ""
+ },
+ "tech.wall-whiteboard": {
+  "decision": "approved",
+  "specHash": "55e11b7e24eedfdf",
+  "note": ""
+ },
+ "tech.whiteboard": {
+  "decision": "approved",
+  "specHash": "4cf6e61df78348cc",
+  "note": ""
+ },
+ "kitchen.base-cabinet": {
+  "decision": "approved",
+  "specHash": "fbab0f9a80ec9173",
+  "note": ""
+ },
+ "kitchen.corner-cabinet": {
+  "decision": "rejected",
+  "specHash": "657336b5de817ceb",
+  "note": "structure"
+ },
+ "kitchen.drawer-cabinet": {
+  "decision": "approved",
+  "specHash": "9fbc45be25615691",
+  "note": ""
+ },
+ "kitchen.sink-cabinet": {
+  "decision": "approved",
+  "specHash": "5b587925001e78dc",
+  "note": ""
+ },
+ "kitchen.upper-cabinet": {
+  "decision": "rejected",
+  "specHash": "8f829e8214271ad7",
+  "note": "bigger cabinet and door handel on the bottom "
+ },
+ "lounge.bar-counter": {
+  "decision": "rejected",
+  "specHash": "c6748a44e40140df",
+  "note": "stools missing "
+ },
+ "storage.coat-cabinet": {
+  "decision": "approved",
+  "specHash": "81d73db0d9fd79f8",
+  "note": ""
+ },
+ "storage.credenza-low": {
+  "decision": "approved",
+  "specHash": "bee9481c5aaab965",
+  "note": ""
+ },
+ "storage.employee-locker": {
+  "decision": "approved",
+  "specHash": "47978acc7866218a",
+  "note": ""
+ },
+ "storage.glass-door-cabinet": {
+  "decision": "rejected",
+  "specHash": "425d224e3662bac8",
+  "note": "stuff inside cabinet"
+ },
+ "storage.lateral-file-cabinet": {
+  "decision": "approved",
+  "specHash": "e5ca94950e0a1c12",
+  "note": ""
+ },
+ "storage.mobile-file-cabinet": {
+  "decision": "approved",
+  "specHash": "4fb88baa5118d40e",
+  "note": ""
+ },
+ "storage.personal-locker": {
+  "decision": "approved",
+  "specHash": "a4d9c4319a50d05d",
+  "note": ""
+ },
+ "storage.small-locker-2x2": {
+  "decision": "approved",
+  "specHash": "65802826b60d64eb",
+  "note": ""
+ },
+ "storage.storage-cabinet-low": {
+  "decision": "approved",
+  "specHash": "d8c1e616c3925ab1",
+  "note": ""
+ },
+ "storage.storage-cabinet-medium": {
+  "decision": "approved",
+  "specHash": "90fa39991e6e68d5",
+  "note": ""
+ },
+ "storage.storage-cabinet-tall": {
+  "decision": "approved",
+  "specHash": "3edf7c2d5a34fca8",
+  "note": ""
+ },
+ "storage.vertical-file-cabinet-2-drawer": {
+  "decision": "approved",
+  "specHash": "e6e1769f9c2da672",
+  "note": ""
+ },
+ "storage.vertical-file-cabinet-3-drawer": {
+  "decision": "approved",
+  "specHash": "bd34ffa42cb75aea",
+  "note": ""
+ },
+ "workstation.bench-desk-2": {
+  "decision": "approved",
+  "specHash": "dc42198c1e52cdb8",
+  "note": ""
+ },
+ "workstation.bench-desk-4": {
+  "decision": "approved",
+  "specHash": "d96e946ec910ce40",
+  "note": ""
+ },
+ "workstation.l-shape-desk": {
+  "decision": "rejected",
+  "specHash": "c1ab1e383e7bee35",
+  "note": "structure and texture"
+ },
+ "workstation.standard-desk": {
+  "decision": "approved",
+  "specHash": "8620fa1ecaeb7d0b",
+  "note": ""
+ },
+ "workstation.standing-desk": {
+  "decision": "approved",
+  "specHash": "06e801ed40c4aebb",
+  "note": ""
+ },
+ "architecture.glass-door": {
+  "decision": "approved",
+  "specHash": "3bff17db08121e50",
+  "note": ""
+ },
+ "architecture.glass-door-double": {
+  "decision": "approved",
+  "specHash": "97358588a6106f88",
+  "note": ""
+ },
+ "architecture.glass-door-single": {
+  "decision": "approved",
+  "specHash": "afb71e42d5cfae47",
+  "note": ""
+ },
+ "architecture.sliding-door-glass": {
+  "decision": "rejected",
+  "specHash": "088a830eeefa32cc",
+  "note": "siliding missing"
+ },
+ "architecture.sliding-glass-door": {
+  "decision": "approved",
+  "specHash": "309dface91f2d187",
+  "note": ""
+ },
+ "architecture.solid-door": {
+  "decision": "approved",
+  "specHash": "fb90476765521143",
+  "note": ""
+ },
+ "architecture.swing-door-glass": {
+  "decision": "approved",
+  "specHash": "541f1b7ebe93be2c",
+  "note": ""
+ },
+ "architecture.swing-door-solid": {
+  "decision": "approved",
+  "specHash": "98df6933d834ffd6",
+  "note": ""
+ },
+ "lighting.presentation-light": {
+  "decision": "approved",
+  "specHash": "3a5e19fcdb966350",
+  "note": ""
+ },
+ "architecture.half-wall": {
+  "decision": "rejected",
+  "specHash": "3aaff13e6246a8e2",
+  "note": "hole missing"
+ },
+ "architecture.solid-wall": {
+  "decision": "rejected",
+  "specHash": "0c5d482495105a82",
+  "note": "texture"
+ },
+ "architecture.wall-with-screen": {
+  "decision": "rejected",
+  "specHash": "00f30e6fccef71eb",
+  "note": "texture ans screen missing"
+ },
+ "partition.acoustic-panel": {
+  "decision": "rejected",
+  "specHash": "3b657385ed39e43c",
+  "note": "texture"
+ },
+ "partition.fabric-divider-tall": {
+  "decision": "rejected",
+  "specHash": "6fcf970bc71521ea",
+  "note": "texture"
+ },
+ "partition.frameless-glass-wall": {
+  "decision": "approved",
+  "specHash": "ba9859dba5575194",
+  "note": ""
+ },
+ "partition.frameless-with-door": {
+  "decision": "rejected",
+  "specHash": "1048832e0a52c6e8",
+  "note": "dimention wrong"
+ },
+ "partition.front-screen-fabric": {
+  "decision": "approved",
+  "specHash": "066a38d4b4123d9d",
+  "note": ""
+ },
+ "partition.frosted-glass-panel": {
+  "decision": "rejected",
+  "specHash": "7342cdfff68fb346",
+  "note": "dimention"
+ },
+ "partition.hanging-slat-divider": {
+  "decision": "approved",
+  "specHash": "f6582907b32e67ff",
+  "note": ""
+ },
+ "partition.side-screen-fabric": {
+  "decision": "approved",
+  "specHash": "918b21bdc85859b4",
+  "note": ""
+ },
+ "partition.side-screen-glass": {
+  "decision": "approved",
+  "specHash": "1d281c51faa7e1f4",
+  "note": ""
+ },
+ "greenery.planter-divider-medium": {
+  "decision": "rejected",
+  "specHash": "188308fd7616e926",
+  "note": "plant proortion to pot is small and leaves looks unreal "
+ },
+ "greenery.shelf-with-planter": {
+  "decision": "rejected",
+  "specHash": "a03321d88b665d91",
+  "note": "Same pot in every row needs dynamic pots of diffrent sizes . to make iit look more asthetic"
+ },
+ "greenery.tall-planter": {
+  "decision": "rejected",
+  "specHash": "043ac4d6b760b316",
+  "note": "plan proportion to pot it not correct and pot should be hollow with dirt in it "
+ },
+ "storage.bookcase-medium": {
+  "decision": "approved",
+  "specHash": "74027e1de8ed6236",
+  "note": ""
+ },
+ "storage.bookcase-tall": {
+  "decision": "approved",
+  "specHash": "d65ef5fbffde8e65",
+  "note": ""
+ },
+ "storage.bookcase-wide": {
+  "decision": "approved",
+  "specHash": "3744e6f45316ef56",
+  "note": ""
+ },
+ "storage.bookshelf": {
+  "decision": "approved",
+  "specHash": "5d6bda605438dd98",
+  "note": ""
+ },
+ "storage.cleaning-supply-shelf": {
+  "decision": "approved",
+  "specHash": "2141c3b448b2a7e8",
+  "note": ""
+ },
+ "storage.shelf-divider-tall": {
+  "decision": "rejected",
+  "specHash": "0870329aabda56ba",
+  "note": "bigger"
+ },
+ "storage.shoe-rack": {
+  "decision": "rejected",
+  "specHash": "2a5294b815632a50",
+  "note": "shoes missing"
+ },
+ "storage.utility-shelf-metal": {
+  "decision": "approved",
+  "specHash": "44402d33e066bc31",
+  "note": ""
+ },
+ "storage.wall-shelf-800x200": {
+  "decision": "rejected",
+  "specHash": "72f2b00bd6d87949",
+  "note": "self missing"
+ },
+ "utility.av-cart-600x400x900": {
+  "decision": "approved",
+  "specHash": "d58671970e382e86",
+  "note": ""
+ },
+ "utility.supply-cart": {
+  "decision": "approved",
+  "specHash": "454c144fd17d9dcd",
+  "note": ""
+ },
+ "kitchen.counter-table": {
+  "decision": "approved",
+  "specHash": "82f549a5b8e2b59d",
+  "note": ""
+ },
+ "kitchen.dining-table-4": {
+  "decision": "approved",
+  "specHash": "b27e349deb5280c2",
+  "note": ""
+ },
+ "lounge.coffee-table": {
+  "decision": "approved",
+  "specHash": "0e94a292bb374ea1",
+  "note": ""
+ },
+ "lounge.rectangular-coffee-table": {
+  "decision": "approved",
+  "specHash": "958f128934bb0596",
+  "note": ""
+ },
+ "lounge.round-casual-table": {
+  "decision": "approved",
+  "specHash": "11e2a208f7dfbb9c",
+  "note": ""
+ },
+ "lounge.round-coffee-table": {
+  "decision": "approved",
+  "specHash": "d762c8c7285cc4cc",
+  "note": ""
+ },
+ "lounge.round-high-table": {
+  "decision": "approved",
+  "specHash": "2ea8e4f46ba14e50",
+  "note": ""
+ },
+ "lounge.side-table": {
+  "decision": "approved",
+  "specHash": "bee0b20afbfcd819",
+  "note": ""
+ },
+ "lounge.square-casual-table": {
+  "decision": "approved",
+  "specHash": "e43a769d41967a5b",
+  "note": ""
+ },
+ "meeting.conference-table-10": {
+  "decision": "approved",
+  "specHash": "74efe9ac1b66699f",
+  "note": ""
+ },
+ "meeting.rectangular-table-6": {
+  "decision": "approved",
+  "specHash": "9a0043bd8b8ace96",
+  "note": ""
+ },
+ "meeting.round-table-4": {
+  "decision": "rejected",
+  "specHash": "c3e7be96993ce07b",
+  "note": "square table"
+ },
+ "meeting.round-table-6": {
+  "decision": "approved",
+  "specHash": "de877cedf5e8a788",
+  "note": ""
+ },
+ "meeting.standing-table": {
+  "decision": "rejected",
+  "specHash": "1bc5fcd9f66d5f22",
+  "note": "leg support missing"
+ }
+}

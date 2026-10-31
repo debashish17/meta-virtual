@@ -1,0 +1,53 @@
+{
+  "pipeline_version": "1.0.0",
+  "asset_name": "ai.coffee-table",
+  "category": "coffee_table",
+  "quality_preset": "standard",
+  "seed": 42,
+  "source_image": {
+    "path": "blender-asset-pipeline/inputs/extracted_all/cutout_coffee_table.png",
+    "hash": "12712462531e",
+    "original_dimensions": [
+      70,
+      117
+    ]
+  },
+  "target_dimensions_meters": [
+    1.1,
+    0.6,
+    0.42
+  ],
+  "processing_timings_sec": {
+    "stage_a_preprocessing": 0.3742,
+    "stages_b_to_g_execution": 2.3858,
+    "total_elapsed": 2.7643
+  },
+  "geometry_stats": {
+    "vertices": 456,
+    "triangles": 260,
+    "bounding_box_meters": [
+      1.0967,
+      0.42,
+      0.5982
+    ],
+    "file_size_bytes": 18332
+  },
+  "validation": {
+    "valid": true,
+    "vertices": 456,
+    "triangles": 260,
+    "extents_meters": [
+      1.0967,
+      0.42,
+      0.5982
+    ],
+    "ground_level_y": 0.0,
+    "height_y": 0.42,
+    "center_xz": [
+      0.0,
+      0.0
+    ],
+    "file_size_bytes": 18332,
+    "is_watertight": false
+  }
+}

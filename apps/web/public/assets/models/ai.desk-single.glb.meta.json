@@ -1,0 +1,53 @@
+{
+  "pipeline_version": "1.0.0",
+  "asset_name": "ai.desk-single",
+  "category": "desk",
+  "quality_preset": "standard",
+  "seed": 42,
+  "source_image": {
+    "path": "blender-asset-pipeline/inputs/extracted_all/cutout_desk_single.png",
+    "hash": "8f391e78cae4",
+    "original_dimensions": [
+      68,
+      117
+    ]
+  },
+  "target_dimensions_meters": [
+    1.4,
+    0.75,
+    0.75
+  ],
+  "processing_timings_sec": {
+    "stage_a_preprocessing": 0.3633,
+    "stages_b_to_g_execution": 2.3496,
+    "total_elapsed": 2.7169
+  },
+  "geometry_stats": {
+    "vertices": 288,
+    "triangles": 144,
+    "bounding_box_meters": [
+      0.9813,
+      0.75,
+      0.5257
+    ],
+    "file_size_bytes": 13164
+  },
+  "validation": {
+    "valid": true,
+    "vertices": 288,
+    "triangles": 144,
+    "extents_meters": [
+      0.9813,
+      0.75,
+      0.5257
+    ],
+    "ground_level_y": 0.0,
+    "height_y": 0.75,
+    "center_xz": [
+      0.0,
+      0.0
+    ],
+    "file_size_bytes": 13164,
+    "is_watertight": false
+  }
+}

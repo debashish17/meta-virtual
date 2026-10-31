@@ -1,0 +1,53 @@
+{
+  "pipeline_version": "1.0.0",
+  "asset_name": "ai.test-plant",
+  "category": "plant",
+  "quality_preset": "standard",
+  "seed": 42,
+  "source_image": {
+    "path": "blender-asset-pipeline/inputs/test_plant.png",
+    "hash": "c92e29779120",
+    "original_dimensions": [
+      70,
+      85
+    ]
+  },
+  "target_dimensions_meters": [
+    0.6,
+    0.6,
+    0.88
+  ],
+  "processing_timings_sec": {
+    "stage_a_preprocessing": 0.5222,
+    "stages_b_to_g_execution": 2.7035,
+    "total_elapsed": 3.2351
+  },
+  "geometry_stats": {
+    "vertices": 1480,
+    "triangles": 724,
+    "bounding_box_meters": [
+      0.4768,
+      0.88,
+      0.4787
+    ],
+    "file_size_bytes": 54844
+  },
+  "validation": {
+    "valid": true,
+    "vertices": 1480,
+    "triangles": 724,
+    "extents_meters": [
+      0.4768,
+      0.88,
+      0.4787
+    ],
+    "ground_level_y": 0.0,
+    "height_y": 0.88,
+    "center_xz": [
+      0.0,
+      0.0
+    ],
+    "file_size_bytes": 54844,
+    "is_watertight": false
+  }
+}

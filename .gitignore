@@ -1,0 +1,37 @@
+node_modules/
+dist/
+.vite/
+.turbo/
+coverage/
+*.tsbuildinfo
+.env
+.pnpm-store/
+.localappdata/
+__pycache__/
+*.pyc
+
+# Blender asset pipeline: only the live pipeline is tracked (run.py, catalog/, blender_kit/,
+# data/, tests/, README.md). Earlier pipelines, their outputs and the large CC0 library stay
+# on disk but out of git until they are deleted.
+blender-asset-pipeline/output/
+blender-asset-pipeline/library/
+blender-asset-pipeline/_archive/
+blender-asset-pipeline/scripts/
+blender-asset-pipeline/templates/
+blender-asset-pipeline/inputs/
+blender-asset-pipeline/pipeline.py
+blender-asset-pipeline/capture_verification_screenshots.py
+blender-asset-pipeline/test_batch.py
+blender-asset-pipeline/test_identify_curated.py
+blender-asset-pipeline/AGENT_TASK.md
+blender-asset-pipeline/ASSET_INVENTORY.md
+blender-asset-pipeline/PIPELINE.md
+blender-asset-pipeline/QA_CHECKLIST.md
+blender-asset-pipeline/REPORT_TEMPLATE.md
+# generated/ is rebuilt by run.py, except the OCR cache (slow; the boards' readings) and the
+# review baseline (which builds earlier review decisions were made on), which are kept
+blender-asset-pipeline/generated/*
+!blender-asset-pipeline/generated/catalog/
+blender-asset-pipeline/generated/catalog/*
+!blender-asset-pipeline/generated/catalog/ocr/
+!blender-asset-pipeline/generated/catalog/review_baseline.json
