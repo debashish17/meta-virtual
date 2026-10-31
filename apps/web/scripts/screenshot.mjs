@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url'
 const here = path.dirname(fileURLToPath(import.meta.url))
 const args = Object.fromEntries(process.argv.slice(2).reduce((pairs, a, i, all) =>
   a.startsWith('--') ? [...pairs, [a.slice(2), all[i + 1]]] : pairs, []))
-const url = args.url ?? 'http://localhost:5173/?mode=office'
+const url = args.url ?? 'http://localhost:5173/'
 const out = path.resolve(args.out ?? path.join(here, '../../../docs/screenshots/office-m1.png'))
 const [width, height] = [1440, 810]
 const chrome = process.env.CHROME ?? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'

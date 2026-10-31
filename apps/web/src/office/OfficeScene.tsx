@@ -17,7 +17,7 @@ import { PALETTE } from './palette'
 import { OVERVIEW } from './state'
 
 /**
- * The office (`?mode=office`; `&view=overview` frames the whole floor). The camera follows the
+ * The office, the app's page (`?view=overview` frames the whole floor). The camera follows the
  * local avatar at a walking zoom. Ambient occlusion and daylight through the windows give the
  * interior depth; the composer applies tone mapping (it renders in linear HDR), a light grade and
  * a soft vignette; the overview adds a gentle tilt-shift so the eye settles on the office. (The

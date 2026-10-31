@@ -112,8 +112,8 @@ Layouts live in `packages/shared/src/layouts/` (Zod schema, helpers, `data.ts`).
 
 Things a board picture shows that no builder makes yet go in `pending` and are never substituted.
 
-To browse parts, layouts and references on the look-dev stage, run `pnpm dev` and open
-`http://localhost:5173/?mode=catalogue`. Add `&item=<id>` to link to one item.
+To review builds, run `pnpm dev` and open `http://localhost:5173/assets/catalogue/review.html`
+(the review sheet; the 3D catalogue gallery was retired with the old app modes).
 
 ## Layout of this folder
 

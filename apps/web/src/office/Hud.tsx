@@ -3,7 +3,8 @@ import LookEditor from './LookEditor'
 import { OVERVIEW, useOfficeUi } from './state'
 import './office.css'
 
-/** Room label pill at the top centre (DESIGN_SPEC 9), the look editor and a one-line control hint. */
+/** Room label pill at the top centre (DESIGN_SPEC 9), the look editor and a one-line control hint;
+ * in development, a link to the asset library's review sheet. */
 
 const KIND: Record<ZoneType, string> = {
   meeting_room: 'Meeting room', customer_room: 'Customer room', project_room: 'Project room',
@@ -20,6 +21,7 @@ export default function Hud() {
       </div>
       <LookEditor />
       <p className="office-hint">WASD or arrow keys to walk · Shift to jog · click the floor to walk there · click a desk chair to sit, the tea counter for a drink (or E nearby) · scroll to zoom</p>
+      {import.meta.env.DEV && <a className="office-asset-review" href="/assets/catalogue/review.html" target="_blank" rel="noreferrer">Asset review</a>}
     </>
   )
 }

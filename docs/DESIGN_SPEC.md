@@ -20,7 +20,7 @@ The look is a stylized architectural illustration: clean geometric shapes, crisp
 
 - Orthographic camera, fixed angle: true isometric from the south-west (azimuth 45 degrees, elevation 35.264 degrees). No orbit, no rotation, no first person.
 - **Walking view (default, owner request at G1):** the camera follows the local avatar at a walking zoom (62 px/m) and eases after it; the mouse wheel zooms between 34 and 120 px/m. The view target stays a few metres inside the floor's open south and west edges so walking along an edge does not fill the screen with void.
-- **Overview (`&view=overview`):** frames the whole floor and its surrounding streets, for reviews and screenshots.
+- **Overview (`?view=overview`):** frames the whole floor and its surrounding streets, for reviews and screenshots.
 - On narrow windows, scale the frustum to fit; do not rotate.
 
 ## 3. Coordinates and layout (initial values, tune against the image)

@@ -92,9 +92,10 @@ python blender-asset-pipeline/run.py qa        # re-score builds and apply data/
 python blender-asset-pipeline/run.py test      # pipeline unit tests
 ```
 
-Catalogue gallery (parts, layouts, references): `pnpm dev`, then `http://localhost:5173/?mode=catalogue`.
-Office scene: `http://localhost:5173/?mode=office` (walk with WASD / arrows, click to walk, scroll to zoom;
-`&view=overview` frames the whole floor). Screenshot (needs `pnpm dev`):
+Asset library review sheet (approve builds, export `reviews.json`): `pnpm dev`, then
+`http://localhost:5173/assets/catalogue/review.html` (also linked from the office in development).
+Office (the app's only page): `http://localhost:5173/` (walk with WASD / arrows, click to walk, scroll to zoom;
+`?view=overview` frames the whole floor). Screenshot (needs `pnpm dev`):
 `pnpm --filter @office/web screenshot -- --url "<url>" --out <file.png> [--before "__officeDebug.teleport(x, z)"]`
 (1440 x 810; `--before` runs in the page once the scene is ready; headless Chrome renders in software, so measure
 frame rate in a normal browser).
