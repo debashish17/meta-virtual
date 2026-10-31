@@ -2,7 +2,7 @@
 
 Read this file first, every session. Then read, in order:
 1. `docs/HANDOFF.md`: current state, how the agents work together, setup quirks.
-2. `docs/PROJECT_BRIEF.md`, `docs/ARCHITECTURE.md`, `docs/DESIGN_SPEC.md`.
+2. `docs/PROJECT_BRIEF.md`, `docs/ARCHITECTURE.md` (section 12 settles the designs the packages share), `docs/DESIGN_SPEC.md`.
 3. `docs/IMPLEMENTATION_PLAN.md`: phases, gates, owner decisions.
 4. Your work package in `docs/WORK_PACKAGES.md`.
 
@@ -20,7 +20,7 @@ Work is split into work packages (`docs/WORK_PACKAGES.md`) grouped in phases tha
 
 You may, without asking:
 - Create, edit and delete files that your work package owns (its "Owns" list).
-- Install the project's dependencies with pnpm (`pnpm install`).
+- Install the project's dependencies with pnpm (`pnpm install`) and Playwright's browser (`npx playwright install chromium`).
 - Run builds, linters, unit and e2e tests, the local dev servers and the local Supabase.
 - Reset the **local** database (`pnpm db:reset`), when you are the agent the plan allows to.
 - Make small commits on your package's branch.
@@ -71,6 +71,8 @@ Rules:
 - Code that both client and server need (map, zones, obstacles, movement, people logic, message and record schemas, demo data) lives in `packages/shared`. Never duplicate it.
 - `apps/web` and `apps/server` never import from each other.
 - The client never decides final positions (it predicts, the server decides), never talks to the LLM, and never holds service keys.
+- `packages/shared` imports nothing from `three`, `react`, `@react-three/*` or the DOM: the server bundles it. A lint rule enforces this from P1-B.
+- Designs that several packages share (movement sync, rooms, auth, database access, the LLM adapter, deployment) are fixed in `docs/ARCHITECTURE.md` section 12. Do not re-decide them inside a package; file a request if one does not fit.
 - One reusable component per furniture type; placements come from data in `packages/shared`.
 
 ## 4. Locked decisions (do not change without the owner's approval)

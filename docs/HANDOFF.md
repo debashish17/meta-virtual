@@ -63,6 +63,17 @@ The defaults and what each decision blocks are in `docs/IMPLEMENTATION_PLAN.md` 
 | D7 | Player contract additions (look, pose, speed, activity) | |
 | D8 | Demo sign-in (seeded test users locally, email and password deployed) | |
 
+**What the owner prepares, and when**
+
+- Before Phase 1: answers D1, D2 and D7 (the others can wait for the phase that needs them);
+  keeps Docker Desktop running on the build machine (local Supabase); decides whether there will be
+  a git remote, and if so makes it private (the Mixamo files, `AGENTS.md` section 5).
+- From Phase 2, optional: an Anthropic API key in the server's `.env` (never committed, never
+  pasted in chat). Without it everything runs on `FixtureLlm`, which is also what the tests use.
+- For P3-D: the web host and the WebSocket host accounts (D3), with deploy access for the lead.
+- For Phase 4: the hosted Supabase project (D4). Its URL and keys go into the hosts' secret
+  settings and the lead's local `.env`, not into chat or the repo.
+
 ## 4. Machine and setup
 
 The owner's machine: Windows 11, Git Bash and PowerShell, Node 22.22, pnpm 12.8.1, Python 3.13,
@@ -88,6 +99,15 @@ pnpm dev                      # web http://localhost:5173/  server http://localh
 - Importing `/src/...` from the page console can give a second copy of a module (Vite adds
   timestamps). Use the dev hooks instead.
 - "LF will be replaced by CRLF" warnings from git are harmless.
+- `supabase start` pulls about a gigabyte of images the first time (minutes). `supabase status`
+  prints the local URLs and keys; the local JWT secret is HS256. Local ports: 54321 (API), 54322
+  (Postgres), 54323 (Studio). One local Supabase per machine.
+- After `pnpm install`, run `npx playwright install chromium` once per machine.
+- Every git worktree needs its own `pnpm install` (about 30 s); it gets its own `node_modules` and
+  Vite cache.
+- Colyseus 0.18: subscribe to state with `getStateCallbacks(room)` from `@colyseus/sdk`; the
+  `state.players.onAdd(...)` form from older tutorials does not exist. The token goes in
+  `client.auth.token`, not in the join options.
 
 ## 5. How the agents work together
 
@@ -126,6 +146,11 @@ If you need anything else (another package's file, a shared contract, a new depe
 file), do not edit it. Add a "Requests" section to your report saying what and why, then carry on
 with the rest of your package. The lead makes the change on `main`, and you rebase.
 
+**Contract review.** Before Gate P1, one lane agent who did not write them reads
+`packages/shared/src/{net,api,sim,demo}` and `ARCHITECTURE.md` sections 4, 5 and 12, and lists
+every ambiguity as a question. The lead answers in the code or the docs before Phase 2 starts.
+Half a day; it saves seven lanes from guessing the same thing seven ways.
+
 **Dependencies.** P1-B installs every package the plan needs. After Gate P1 nobody else edits
 `package.json` or `pnpm-lock.yaml`. A missing dependency is a request to the lead.
 
@@ -150,8 +175,8 @@ with the rest of your package. The lead makes the change on `main`, and you reba
 
 | Wave | Start when | Packages (one agent each, in parallel) |
 |---|---|---|
-| 1 | Owner approves D1, D2, D7 | P1-A (lead), P1-B |
-| 2 | P1-A merged | P1-C (lead); P1-B continues |
+| 1 | Owner approves D1, D2, D7 | P1-A1 (lead), P1-A2, P1-B (or P1-A whole, with two agents) |
+| 2 | P1-A merged | P1-C (lead); P1-B continues; one lane agent reviews the contracts |
 | Gate P1 | P1-A, P1-B, P1-C merged | lead checks, owner informed |
 | 3 | Gate P1 | P2-A, P2-B, P2-C, P2-D, P2-E, P2-F, P2-G |
 | 4 | Their dependencies merged | P3-A, P3-B, P3-D (P3-D needs D3); P3-C starts against the contract |
@@ -172,7 +197,8 @@ with the rest of your package. The lead makes the change on `main`, and you reba
 > You are the lead agent for the Virtual Office repository at `<repo path>`. Read `AGENTS.md`,
 > `docs/HANDOFF.md`, `docs/IMPLEMENTATION_PLAN.md` and `docs/WORK_PACKAGES.md`. Check that the owner's
 > decisions in `HANDOFF.md` section 3 are filled in for Phase 1. Then:
-> 1. Build P1-A, then P1-C, on their own branches, and run P1-B in parallel through a second agent.
+> 1. Build P1-A1 (or all of P1-A) and then P1-C yourself, on their own branches; hand P1-A2 and
+>    P1-B to other agents at the same time, and have a lane agent review the contracts before Gate P1.
 > 2. Keep the status board in `HANDOFF.md` section 7.
 > 3. Merge each package after checking its acceptance criteria and report.
 > 4. At every gate, stop and report to the owner in the `AGENTS.md` section 8 format.
@@ -201,7 +227,8 @@ with the rest of your package. The lead makes the change on `main`, and you reba
 
 | Package | Agent | Branch | State | Report |
 |---|---|---|---|---|
-| P1-A contracts and shared simulation | lead | | not started | |
+| P1-A1 net, sim, people (or P1-A whole) | lead | | not started | |
+| P1-A2 api, demo | | | not started | |
 | P1-B tooling | | | not started | |
 | P1-C app skeletons and slots | lead | | not started | |
 | P2-A room server | | | not started | |
@@ -245,8 +272,9 @@ States: not started, in progress, blocked (say why), in review, merged.
 1. **Completeness.** Every package on the status board is merged, with a report. Every gate item
    (P1, G3 to G6) is checked, with evidence.
 2. **Fresh checks.** In a clean clone or worktree: `pnpm install`, `pnpm typecheck`, `pnpm lint`,
-   `pnpm test`, `pnpm test:e2e`, `python blender-asset-pipeline/run.py test`, and `pnpm db:reset`
-   followed by the database tests.
+   `pnpm test`, `pnpm test:e2e`, `python blender-asset-pipeline/run.py test`, `pnpm db:reset`
+   followed by the database tests, and `pnpm build` followed by `node apps/server/dist/index.js`
+   (the server starts and `/health` answers).
 3. **Tests not weakened.** Run `git log -p handoff-m3..main` on the test and e2e files. Every
    deleted test or loosened assertion has a reason in a report, and the reason holds up.
 4. **Contracts honoured.**
@@ -254,6 +282,8 @@ States: not started, in progress, blocked (say why), in review, merged.
    - No payload types are declared outside `packages/shared`.
    - The client never sends a position.
    - No AI path writes to records except through approved `proposed_changes`.
+   - `packages/shared` imports nothing from `three`, `react` or the DOM (the lint rule exists and passes).
+   - The designs in `ARCHITECTURE.md` section 12 were followed, or the departure is explained in a report.
 5. **Security.**
    - Nothing like a key, token or password is committed: `git grep` for `service_role`, `sk-`,
      `eyJ`, `password`, `secret`.
@@ -268,7 +298,8 @@ States: not started, in progress, blocked (say why), in review, merged.
    - An answer citing an ID outside the retrieved set is discarded (test).
    - Invalid LLM output is retried once, then falls back (test).
 7. **The demo.** The `PROJECT_BRIEF.md` section 5 script on the deployed URL in two browsers, by
-   hand, plus a reconnect and a reload. `pnpm demo:reset` restores the start.
+   hand, plus a reconnect and a reload. `pnpm demo:reset` restores the start. The frame rate with
+   two players and the colleagues, from a real browser, is in a report.
 8. **Scope and decisions.**
    - The locked decisions (`AGENTS.md` section 4) still hold.
    - The visual freeze held: changes to the scene files are limited to slots, remote people,
@@ -278,6 +309,29 @@ States: not started, in progress, blocked (say why), in review, merged.
    `ARCHITECTURE.md` (contracts) match the code.
 10. **Licence.** The repository is private (or the people assets are excluded from any public
     copy); `apps/web/public/assets/people/LICENSE.txt` is present.
+11. **History.** `main` is the baseline plus `--no-ff` merges of package branches and the lead's own
+    commits; nothing was force-pushed; every merged package has a report.
 
 The reviewer's report: one line per gate (pass, fail or not verified), then findings ordered by
 severity, each with the file, the evidence and the fix suggested.
+
+## 9. Plan review log
+
+**2026-11-01, review before handoff.** The plan was checked against the installed libraries
+(Colyseus 0.18.24, `@colyseus/schema` 5.0.42, Zod 4.6.7, Node 22) and current package versions, and
+tightened where lanes would otherwise have guessed:
+
+- `ARCHITECTURE.md` section 12 added: movement sync and reconciliation, the room registry and
+  `PROTOCOL_VERSION`, auth modes and token transport, database access with RLS applied to the
+  server's reads, seeding users through the Auth Admin API, the Anthropic adapter, the web data
+  layer, deployment, test tools.
+- P1-A can be split (P1-A1 ‖ P1-A2). P1-C's stub room holds the state shape so P2-B can start
+  before P2-A; P2-B finishes after P2-A.
+- A contract review by a lane agent before Gate P1.
+- P1-B installs `@colyseus/testing` and `@anthropic-ai/sdk`, the Playwright browser, the
+  shared-package lint rule, and gives the e2e stack its own ports.
+- Demo users are keyed (`maya`, `arjun`), not fixed UUIDs; a `profiles` table; the seed is a script.
+- `env.ts` fails fast; `/health` reports the deployed configuration; a `records` store and a
+  contract test suite shared by the mock and the HTTP API.
+- Owner preparation list (section 3), more quirks (section 4), more reviewer checks (section 8),
+  a team-size estimate (`IMPLEMENTATION_PLAN.md` section 3).

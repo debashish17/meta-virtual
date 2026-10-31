@@ -183,3 +183,146 @@ ExtractionResult = {
 - **Integration tests:** HTTP endpoints against a local or test database; RLS isolation.
 - **Playwright e2e:** two browser contexts join, see each other, move, run the demo script through approval, and see the update in the second context.
 - **Visual check:** a script that renders the fixed camera and saves a screenshot for comparison with the reference.
+
+## 12. Implementation decisions for M3 to M6 (plan review, 2026-11-01)
+
+These settle the designs that several work packages share (`docs/WORK_PACKAGES.md`), so no lane
+re-decides them. Sections 4 and 5 keep the message and endpoint tables; P1-A updates those to match.
+Checked against the installed libraries: Colyseus 0.18 (`@colyseus/core` 0.18.24,
+`@colyseus/schema` 5.0.42), Zod 4.6, Node 22.
+
+### 12.1 Movement: inputs in, state out
+
+- The client never sends a position. `move_intent` (held keys on world axes, once per client tick
+  and once more on release) and `move_target` (a floor click) carry `seq`, which counts the
+  client's ticks.
+- One function, `stepPlayer(player, input, dt)` in `packages/shared/src/sim`, moves a player. The
+  server runs it in a fixed tick (`setSimulationInterval(..., 1000 / TICK_HZ)`, `TICK_HZ = 20`) and
+  records `lastSeq`, the seq of the last input it applied. The client runs the same function at the
+  same rate for its own avatar (prediction) and renders between ticks.
+- Reconciliation without input replay: the client keeps a ring buffer of its predicted position per
+  seq. When a snapshot arrives with `lastSeq = k`, the error is the server position minus the
+  predicted position at k. Below `SNAP_DISTANCE` (0.3 m) the error is added to the current
+  prediction over about 100 ms; above it the avatar snaps to the server position. The simulation is
+  deterministic, so the error is normally zero and the correction invisible.
+- Remote players are drawn from a snapshot buffer `INTERP_DELAY_MS` (100 ms) behind, interpolating
+  position and facing. Pose and activity step with the snapshot. A position jump above
+  `SNAP_DISTANCE` between two snapshots (sitting down, standing up) snaps instead of sliding, so the
+  cut in `Person` lines up with the move.
+- Activities (desk seat, counter) run on the server with the shared `advanceActivity`. While one
+  runs, the local avatar is drawn from snapshots, not predicted.
+- Colleagues run on the server tick with the shared routine code and the room's reservation set,
+  synced as `NpcView` (decision D6).
+- `setPatchRate(1000 / TICK_HZ)`. Per connection: at most 30 movement messages a second and 5 chat
+  messages per 10 seconds; anything above is dropped and answered with `error rate_limited`.
+
+### 12.2 Rooms
+
+- One `OfficeRoom` per workspace: `define("office", OfficeRoom).filterBy(["workspaceId"])`. The
+  `workspaceId` join option is only the matchmaking key. `static onAuth(token, options, context)`
+  verifies the token (the SDK sends `client.auth.token`); `onJoin` refuses a join whose option does
+  not match the token's workspace.
+- An in-process registry (`apps/server/src/room/rooms.ts`: `Map<workspaceId, OfficeRoom>`, set in
+  `onCreate`, deleted in `onDispose`) lets the HTTP API broadcast `records_changed` to the right
+  room after a commit. One process, so no message bus.
+- `JoinOptions.protocol` must equal `PROTOCOL_VERSION` from `packages/shared`; a mismatch is refused
+  with `error { code: "protocol_mismatch" }`. This keeps stale clients from confusing a newer server
+  during parallel development and after deploys.
+- Reconnect: `allowReconnection(client, RECONNECT_SECONDS)`. The client keeps
+  `room.reconnectionToken` and calls `client.reconnect(token)` with backoff. The player and their
+  reservation survive the window.
+- State subscriptions on the client use `getStateCallbacks(room)` from `@colyseus/sdk`; the
+  pre-0.16 `state.players.onAdd(...)` form does not exist any more.
+
+### 12.3 Auth
+
+- `AUTH_MODE=dev` (the local default): the web shows a name picker and sends `dev:<name>` both as
+  `client.auth.token` and as the HTTP bearer token. `DevAuth` maps it to a seeded user of
+  `WORKSPACE_ID`. The server refuses to start with `AUTH_MODE=dev` when `NODE_ENV=production`.
+- `AUTH_MODE=supabase`: the web signs in with `@supabase/supabase-js` (seeded test users locally;
+  email and password when deployed) and sends the access token the same two ways. The server
+  verifies it with `jose`: HS256 with `SUPABASE_JWT_SECRET` for the local CLI, or the project's
+  JWKS (`<SUPABASE_URL>/auth/v1/.well-known/jwks.json`) for hosted projects with asymmetric keys.
+  The claims give `userId`; a membership lookup (cached for a few seconds) gives `workspaceId` and
+  the display name. Authorization never uses a client-supplied workspace.
+- Both modes resolve to the same `AuthClaims = { userId; name; workspaceId }`, which every HTTP
+  handler and the room pass to the `Repo`.
+
+### 12.4 Database access
+
+- The server talks to Postgres with postgres.js over `DATABASE_URL` (local: from
+  `supabase status`; hosted: the Supavisor pooler, with `prepare: false` when it runs in transaction
+  mode). Migrations are Supabase CLI files in `supabase/migrations`.
+- Policies: members may `SELECT` rows of their workspace. There are no `INSERT`, `UPDATE` or
+  `DELETE` policies for `authenticated`, so the browser's anon key plus a user JWT can never write.
+  Every write happens in the server.
+- The `Repo` wraps each request in a transaction. Reads run as the user: `SET LOCAL ROLE
+  authenticated` and `set_config('request.jwt.claims', <claims json>, true)`, so RLS applies to the
+  server's own reads (this is also how Supabase recommends testing policies as a user). Writes
+  (`createMeeting`, `approveChange`, `rejectChange`, `saveChat`) run under the connection's own
+  role, which bypasses RLS, only after an explicit membership check in code; every query still
+  names `workspace_id`.
+- If the hosted project's role cannot `SET ROLE authenticated`, keep the explicit `workspace_id`
+  scoping, prove isolation with supabase-js (anon key plus a user's JWT) instead, and report it.
+- `approveChange`: `SELECT ... FOR UPDATE` the proposed change; it must be `pending`; apply it by
+  type; insert the `audit_log` row (before and after); mark it approved; commit; then, outside the
+  transaction, `bus.recordsChanged`. A change that is no longer pending returns 409.
+- Users: `profiles(id = auth.users.id, name)` and `memberships(workspace_id, user_id, role)`. The
+  seed creates Maya and Arjun through the Auth Admin API (service role key, local or hosted alike)
+  and then writes profiles, memberships and the Acme records with the ids it got back. Shared demo
+  data therefore identifies people by `key` (`maya`, `arjun`), never by UUID; records keep stable
+  UUIDs.
+
+### 12.5 LLM
+
+- `LlmClient { extractMeeting(transcript, context); answer(question, records) }` returns raw
+  output. The pipelines validate with Zod, retry once with the validation error, then fall back
+  (summary only; abstain).
+- `FixtureLlm` is the default, and the only client in tests and CI. It is deterministic over the
+  shared demo data.
+- The real adapter uses Anthropic's SDK (`@anthropic-ai/sdk`): `LLM_PROVIDER=anthropic`, model from
+  `LLM_MODEL` (default `claude-opus-5-5`), key from `LLM_API_KEY`. Structured output goes through
+  `client.messages.parse` with `output_config.format = zodOutputFormat(<the shared Zod schema>)`
+  (`@anthropic-ai/sdk/helpers/zod`), followed by the same Zod validation as the fixture path.
+  `output_config.effort: "low"` for extraction and answers (thinking stays on; it cannot be
+  disabled on this model). `timeout` 30 000 ms (milliseconds in the TypeScript SDK), `maxRetries` 1.
+  Optional hardening: `fallbacks: "default"` (beta `server-side-fallback-2026-07-01`) so a safety
+  refusal still returns an answer; without it the pipeline's own fallback handles a refusal.
+- Never log keys. Prompts and outputs that contain records are logged only at debug level, never
+  in production.
+- Ask: classify by rules first (the seeded project and account names, "my day"), the LLM only when
+  the rules fail. Retrieve with structured queries. The LLM only composes `{ answer, sourceIds }`
+  from the retrieved records; every id must be in the retrieved set, or the answer is discarded and
+  the office abstains.
+
+### 12.6 Web data layer
+
+- `OfficeApi` (`apps/web/src/api/types.ts`) has two implementations: `mock` (in memory over the
+  shared demo data; the default in development and in tests) and `http` (`VITE_API=http`). One
+  contract test suite runs against both, so they cannot drift.
+- A Zustand `records` store holds what the panels and wall displays show and exposes
+  `refetch(kinds)`; the net store calls it on `records_changed`. No query library: the client stack
+  is locked to Zustand.
+- The office renders before any network. The socket connects in the background; `offline` keeps
+  single-player mode with the mock API.
+
+### 12.7 Deployment
+
+- Server: one container (Node 22, pnpm through corepack, `pnpm install --frozen-lockfile`,
+  `pnpm --filter @office/server build`, `node apps/server/dist/index.js`), `PORT` from the host,
+  `/health` as the health check, on a host that keeps a process and its WebSocket connections alive
+  (Fly.io or Render; not serverless). Env: `DATABASE_URL`, `SUPABASE_*`, `AUTH_MODE=supabase`,
+  `ALLOWED_ORIGINS`, `LLM_*`.
+- Web: the static `apps/web/dist` on Vercel. `VITE_SERVER_URL=https://<server>` (the SDK upgrades
+  to WebSocket itself), `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_AUTH_MODE=supabase`,
+  `VITE_API=http`, all set at build time.
+- Secrets live only in the hosts' settings. `/health` reports `{ ok, version, authMode, llm }` and
+  nothing secret, so a rehearsal can confirm what is deployed.
+
+### 12.8 Testing tools
+
+- Room tests: `@colyseus/testing` boots the real server inside Vitest and drives it with the SDK.
+- Database tests: against the local Supabase; each test creates its own workspace and cleans up.
+- Component tests: Vitest with `// @vitest-environment jsdom` per file, so the node tests stay fast.
+- e2e: Playwright with two browser contexts. Its stack runs on its own ports (`WEB_PORT=5190`,
+  `PORT=2590`).

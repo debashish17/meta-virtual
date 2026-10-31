@@ -42,16 +42,25 @@ The original M0 to M2 task lists are in git history (commit `a5d9085`).
    the real provider, the database and the HTTP API are wired in.
 5. **Offline mode stays.** With no server, the office runs single-player as it does today.
 6. **Tests first** for movement, validation, extraction, approval and ask.
+7. **Shared designs are written down, once.** `ARCHITECTURE.md` section 12 settles movement sync
+   and reconciliation, the room registry, auth modes, database access under RLS, the LLM adapter,
+   the web data layer and deployment. A lane that needs to depart from it files a request to the
+   lead; it does not improvise.
 
 ## 3. Phases
 
 | Phase | Packages (agents in parallel) | Gates it closes |
 |---|---|---|
-| 1 Foundations | P1-A contracts and shared simulation, then P1-C app skeletons (lead) ‖ P1-B tooling | Gate P1 |
+| 1 Foundations | P1-A contracts and shared simulation (splittable into P1-A1 ‖ P1-A2), then P1-C app skeletons (lead) ‖ P1-B tooling | Gate P1 |
 | 2 Parallel lanes | P2-A room server ‖ P2-B web networking ‖ P2-C database ‖ P2-D LLM and meetings ‖ P2-E ask and status ‖ P2-F panels ‖ P2-G wall displays | G3 (local items) |
 | 3 Integration | P3-A shared colleagues ‖ P3-B HTTP API and auth ‖ P3-D deploy smoke test; then P3-C web wiring; then P3-E demo e2e | G3 (public URL), G4, G5 |
 | 4 Deploy and harden | P4-A production deploy ‖ P4-B hardening; then P4-C rehearsal | G6 |
 | 5 Final review | Reviewer (owner hands over) | Sign-off |
+
+**Team size and time.** The packages add up to roughly 20 agent-days. With one agent that is
+three to four weeks; with four agents, about eight working days; with seven lanes in Phase 2, about
+six. Phase 1 is sequential whatever the team size (one to two days), and Phase 3 to 4 cannot
+usefully run more than three agents.
 
 ### Dependencies
 
@@ -59,11 +68,11 @@ A package starts when everything in its row is merged into `main` (and its phase
 
 | Package | Needs first |
 |---|---|
-| P1-A contracts and shared simulation | nothing |
+| P1-A contracts and shared simulation (P1-A1 net, sim, people ‖ P1-A2 api, demo) | nothing |
 | P1-B tooling | nothing |
 | P1-C app skeletons and slots | P1-A |
 | P2-A room server | P1-A, P1-C |
-| P2-B web networking | P1-A, P1-B, P1-C |
+| P2-B web networking | P1-A, P1-B, P1-C to start; P2-A to finish |
 | P2-C database | P1-A, P1-B, P1-C |
 | P2-D LLM and meetings, P2-E ask and status, P2-F panels, P2-G wall displays | P1-A, P1-C |
 | P3-A shared colleagues | P2-A, P2-B |
@@ -85,6 +94,8 @@ possible: it is the longest Phase 2 lane on that path.
 - [ ] The people logic is in `packages/shared/src/people`; the office looks and behaves unchanged (before and after screenshots).
 - [ ] `pnpm test:e2e` smoke test passes; two dev stacks run on different ports; local Supabase starts (or the blocker is reported).
 - [ ] Server and web slots are mounted; `ARCHITECTURE.md` sections 4 and 5 describe the new contract.
+- [ ] A lane agent who did not write the contracts has read them and section 12, and the lead has
+      answered every question in the code or the docs (`HANDOFF.md` section 5).
 
 **Gate G3: multiplayer** (from the original plan)
 - [ ] Two browsers see each other move smoothly. (P2-A, P2-B)
@@ -123,7 +134,7 @@ Record the answers in `docs/HANDOFF.md` section 3.
 | D2 | Visual freeze for M3 to M6 | Yes | Phase 1 start |
 | D3 | Hosting: a static web host and a persistent WebSocket host | Web on Vercel; server on Fly.io or Render (Colyseus needs a long-lived process; serverless will not work) | P3-D |
 | D4 | Supabase: local for development; a hosted project for deployment | Local Supabase CLI on Docker now; the owner creates the hosted project before Phase 4 | P2-C (local), P4-A (hosted) |
-| D5 | LLM provider for the real adapter | `FixtureLlm` first; one real adapter chosen by the owner (`LLM_PROVIDER`, `LLM_MODEL` from env) | P2-D (adapter only) |
+| D5 | LLM provider for the real adapter | `FixtureLlm` first; the real adapter is Anthropic's SDK with `claude-opus-5-5` (`LLM_PROVIDER`, `LLM_MODEL`, `LLM_API_KEY` from env; `ARCHITECTURE.md` 12.5) | P2-D (adapter only) |
 | D6 | Colleagues once multiplayer works | Keep them, run on the server, the same for everyone (P3-A); the alternative is to remove them when online | P3-A |
 | D7 | Player contract adds look, pose, speed, activity and the seat reservations | Accept (P1-A) | Phase 1 |
 | D8 | Demo sign-in | Supabase Auth with two seeded test users and a "Join as Maya / Arjun" picker locally; email and password when deployed | P3-C |

@@ -20,6 +20,13 @@ Rules for every package:
   `src/api`). Do not declare a payload type anywhere else.
 - Keep the office working with no server running (offline mode). It is how the scene is reviewed,
   and the app must not go blank while the server is restarting.
+- Read `docs/ARCHITECTURE.md` section 12 before starting. It settles the designs that several lanes
+  share (movement sync, the room registry, auth, database access, the LLM adapter, deployment).
+  A package that needs to depart from it files a request; it does not improvise.
+- `packages/shared` imports nothing from `three`, `react`, `@react-three/*` or the DOM: the server
+  bundles it. P1-B adds the lint rule.
+- The web's mock API and the real HTTP API are held to one contract test suite (P1-C writes it
+  against the mock; P3-C runs it against the server).
 - When done: commit on your branch, write `docs/reports/<ID>.md` (format in `AGENTS.md` section 8), stop.
   The lead merges.
 
@@ -27,9 +34,11 @@ Rules for every package:
 
 ## Phase 1: Foundations
 
-Two agents: the lead runs P1-A then P1-C; a second agent runs P1-B at the same time.
+Two or three agents. The lead runs P1-A then P1-C; a second agent runs P1-B at the same time.
+With a third agent, P1-A is split by folder into P1-A1 and P1-A2 (below), which shortens Phase 1
+by about a day.
 
-### P1-A Contracts and shared simulation [L] (lead)
+### P1-A Contracts and shared simulation [L] (lead; splittable)
 
 **Goal:** everything the Phase 2 lanes must agree on exists in `packages/shared`, tested, before
 any lane starts.
@@ -40,11 +49,20 @@ any lane starts.
 `apps/web/src/office/{routine,interactions,moves}.ts` and their tests (moved out),
 the import lines of `apps/web/src/office/{Avatar,Colleagues,Person}.tsx`, `docs/ARCHITECTURE.md` sections 4 and 5.
 
+**Split (optional):** **P1-A1** (lead) owns `net`, `sim`, `people`, the web import lines and the
+`ARCHITECTURE.md` update (tasks 1, 2, 3, 6). **P1-A2** owns `api` and `demo` (tasks 4, 5). They
+share nothing but `packages/shared/src/index.ts`, where each adds its own export line. Both merge
+before P1-C.
+
 **Tasks**
 
 1. **Socket contract** (`src/net/`), Zod schemas with inferred types, all `.strict()`:
-   - `JoinOptions = { displayName: string (1 to 40, trimmed); look: AvatarLook; accessToken?: string }`.
-     The workspace comes from the token (in dev auth: `WORKSPACE_ID`), never from the client.
+   - `JoinOptions = { protocol: number; displayName: string (1 to 40, trimmed); workspaceId: string; look: AvatarLook }`
+     and the constant `PROTOCOL_VERSION`. The access token is not in the options: the SDK carries
+     it as `client.auth.token` and the server reads it in `static onAuth`. `workspaceId` is only
+     the matchmaking key; authorization comes from the token (`ARCHITECTURE.md` 12.2, 12.3).
+   - `AuthClaims = { userId; name; workspaceId }`: what a verified token resolves to. The server's
+     `AuthVerifier` returns it and the `Repo` takes it on every call.
    - Client to server:
 
      | Message | Payload |
@@ -59,13 +77,15 @@ the import lines of `apps/web/src/office/{Avatar,Colleagues,Person}.tsx`, `docs/
 
    - Server to client: `chat`, `chat_history` (last 50 on join), `zone_event`, `records_changed`
      (`{ kinds: RecordKind[] }`), and
-     `error { code: "invalid_message" | "rate_limited" | "unwalkable" | "target_taken" | "unauthorized"; message }`.
+     `error { code: "invalid_message" | "rate_limited" | "unwalkable" | "target_taken" | "unauthorized" | "protocol_mismatch"; message }`.
    - Synced state as plain types (the server's Colyseus schema must mirror them, field for field):
      `PlayerView = { id; userId; name; look; x; z; facing; pose: Pose; speed; activity: { kind: "seat" | "counter"; targetId } | null; status; zoneId: string | null; lastSeq }`
      and `NpcView = { id; name; look; x; z; facing; pose; speed }`.
    - Constants: `TICK_HZ = 20`, `INTERP_DELAY_MS = 100`, `SNAP_DISTANCE = 0.3` (m; a bigger change
      between two ticks is a jump, never smoothed), move rate limit 30 messages a second, chat 5 per
      10 seconds, `RECONNECT_SECONDS = 20`, proximity enter 3 m and leave 4 m.
+   - `seq` counts the client's ticks; the server's `lastSeq` is the seq of the last input it
+     applied for that player (`ARCHITECTURE.md` 12.1). Document both in the schema file.
    - `screenToIntent(sx, sy)`: the camera's screen directions map exactly onto world axes
      (screen up = (+1, -1), screen right = (+1, +1)). Test it.
 2. **Shared simulation** (`src/sim/`): `stepPlayer(player, input, dt)`, the one movement function
@@ -97,9 +117,13 @@ the import lines of `apps/web/src/office/{Avatar,Colleagues,Person}.tsx`, `docs/
      endpoint table.
 5. **Demo data** (`src/demo/`), the single source for `seed.sql` (P2-C), `FixtureLlm` (P2-D) and the
    web's mock API (P1-C):
-   - People and records: the Northwind workspace, Maya and Arjun with stable UUIDs, the Acme
-     account and a contact, the project, the milestone "Go-live" (2026-11-15), the three tasks and
-     the commitment (`PROJECT_BRIEF.md` section 5).
+   - People and records: the Northwind workspace, Maya and Arjun identified by `key` (`maya`,
+     `arjun`; the database assigns their ids, `ARCHITECTURE.md` 12.4), the Acme account and a
+     contact, the project, the milestone "Go-live" (2026-11-15), the three tasks and the commitment
+     (`PROJECT_BRIEF.md` section 5). Records carry stable UUIDs, used by the in-memory repo, the
+     mock API and the seed alike; owners are referenced by `key`.
+   - `ROOM_RECORDS`: which account or project each room shows on its wall and processes meetings
+     for (`acme_room`: Acme Corp; `project_room`: Acme Payments Integration).
    - The meeting transcript (fixture `acme-sync`) and the four proposed changes it must produce:
      - milestone 15 Nov to 22 Nov;
      - commitment "Go-live by 22 Nov";
@@ -131,21 +155,30 @@ the import lines of `apps/web/src/office/{Avatar,Colleagues,Person}.tsx`, `docs/
    - web: `@colyseus/sdk` (the 0.18 line, matching `@colyseus/core` 0.18; not the old `colyseus.js`)
      and `@supabase/supabase-js`;
    - web dev: `jsdom` and `@testing-library/react`, for P2-F's component tests;
-   - server: `postgres` (postgres.js), `jose` and `@supabase/supabase-js`;
-   - root dev: `@playwright/test` and `supabase` (the CLI).
+   - server: `postgres` (postgres.js), `jose`, `@supabase/supabase-js` and `@anthropic-ai/sdk`;
+   - server dev: `@colyseus/testing` (the 0.18 line), for P2-A's room tests;
+   - root dev: `@playwright/test` and `supabase` (the CLI). Then `npx playwright install chromium`
+     once per machine (documented in `README.md`, not a dependency).
 
-   Record the versions in the report.
+   Seen on 2026-11-01: `@colyseus/sdk` 0.18.9, `@colyseus/testing` 0.18.6, `@anthropic-ai/sdk` 1.3.0,
+   `@supabase/supabase-js` 2.118, `supabase` 2.122, `postgres` 4.0, `jose` 6.2, `@playwright/test` 1.64.
+   Record the versions you installed in the report.
 2. **Ports from env**, so two stacks can run at once:
    - `WEB_PORT` (default 5173), `PORT` (server, default 2567) and `VITE_SERVER_URL`;
    - `CHROME_DEBUG_PORT` for `screenshot.mjs` (default 9341).
 3. **Playwright**: `pnpm test:e2e`.
-   - Starts web and server through `webServer`, using the env ports.
+   - Starts web and server through `webServer` on the e2e ports (`WEB_PORT=5190`, `PORT=2590`),
+     with `reuseExistingServer` outside CI, so it never collides with an agent's dev stack.
    - Runs headless Chromium.
    - Includes a two-users helper (`e2e/helpers/twoUsers.ts`, two browser contexts).
    - Includes one smoke test: the office reaches `window.__officeReady` in both contexts.
 4. **Local Supabase** (Docker Desktop is installed on the owner's machine):
    - `supabase init` config;
-   - root scripts `pnpm db:start`, `pnpm db:stop` and `pnpm db:reset` (local only: migrations plus seed).
+   - root scripts `pnpm db:start`, `pnpm db:stop`, `pnpm db:reset` (local only: `supabase db reset`
+     for the migrations, then `pnpm db:seed`) and `pnpm db:seed` (`supabase/seed.mjs`: creates the
+     demo users through the Auth Admin API with the local service role key, then every row from
+     the shared demo data with the ids it got back; P2-C writes it, P1-B leaves a stub that prints
+     what it will do).
    - Do not create a hosted project.
 5. **`.env.example` names** (no values): `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
    `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWKS_URL` or `SUPABASE_JWT_SECRET` (whichever the
@@ -153,6 +186,11 @@ the import lines of `apps/web/src/office/{Avatar,Colleagues,Person}.tsx`, `docs/
    `LLM_API_KEY`, `LLM_MODEL`, `WEB_PORT`, `PORT`, `VITE_SERVER_URL`, `VITE_SUPABASE_URL`,
    `VITE_SUPABASE_ANON_KEY`, `VITE_AUTH_MODE`, `VITE_API` (`mock` | `http`).
 6. Update `AGENTS.md` section 5 and `README.md` with the verified commands.
+7. ESLint for `packages/shared`: `no-restricted-imports` for `three`, `react`, `react-dom` and
+   `@react-three/*`, and `no-restricted-globals` for `window` and `document`, so the server can
+   always bundle it.
+8. Vitest: the web config keeps the node environment; component tests opt in per file with
+   `// @vitest-environment jsdom`.
 
 **Acceptance:**
 - `pnpm test:e2e` passes the smoke test.
@@ -169,17 +207,25 @@ entry files that everyone shares.
 **Depends on:** P1-A.
 
 **Owns:**
-- server: `apps/server/src/index.ts`, `apps/server/src/{server,deps}.ts`, the stub files under
+- server: `apps/server/src/index.ts`, `apps/server/src/{server,deps,env}.ts`, the stub files under
   `apps/server/src/{room,http,db,llm,meetings,ask,status,auth}/`;
 - web: `apps/web/src/office/OfficeScene.tsx`, `apps/web/src/App.tsx`,
-  `apps/web/src/net/store.ts`, `apps/web/src/api/{types,mock,index}.ts`, and the four slot files below.
+  `apps/web/src/net/store.ts`, `apps/web/src/api/{types,mock,index,records,contract}.ts`, and the four slot files below.
 
 **Tasks**
 
 1. **Server**:
    - `createServer(deps)` in `src/server.ts` (Express plus Colyseus), used by `index.ts` and by tests.
-   - `httpRoutes(app, deps)` from `src/http/routes.ts`, empty for now.
-   - The hello room moved to `src/room/office.room.ts`.
+   - `src/env.ts`: the environment parsed with Zod at startup. A missing or invalid value stops
+     the server with the variable's name (never its value). `AUTH_MODE=dev` is refused when
+     `NODE_ENV=production`.
+   - `httpRoutes(app, deps)` from `src/http/routes.ts`, with only `/health`, which returns
+     `{ ok, version, authMode, llm }` (`version` from `GIT_COMMIT` or the package version).
+   - The room stub: `src/room/schema.ts` with Colyseus schema classes mirroring `PlayerView` and
+     `NpcView` (plus a test that the field names equal the types' keys), and
+     `src/room/office.room.ts`, which validates `JoinOptions`, checks `protocol`, adds a player at
+     `WORLD.spawn` and removes them on leave. No tick and no messages yet: P2-A adds those. This is
+     what P2-B connects to until P2-A merges.
    - `deps = { repo, llm, auth, bus, chat }`, built from env in `src/deps.ts`, with these
      interface files (types plus the simplest working implementation):
      - `src/db/repo.ts`: the `Repo` interface: record reads for my day, status and ask; meetings;
@@ -209,9 +255,16 @@ entry files that everyone shares.
      - `api/mock.ts`: an in-memory implementation over the shared demo data; approve and reject
        change the mock records; ask answers the two demo questions.
      - `api/index.ts`: uses the mock unless `VITE_API=http`.
+     - `api/records.ts`: a Zustand store with what the panels and displays show (`myDay`,
+       `pending`, `project`, `account`, `meeting`), `load()` and `refetch(kinds)`. The net store
+       calls `refetch` on `records_changed` (P2-B wires that).
+     - `api/contract.ts`: a test suite written against `OfficeApi` (process the fixture meeting
+       gives four pending changes; approve three and reject one, then my day and the statuses
+       reflect it; the two ask outcomes). `mock.contract.test.ts` runs it here; P3-C runs it
+       against the server.
 3. **Tests**:
    - `createServer()` boots in a test and `/health` answers.
-   - The mock API applies the four demo changes correctly.
+   - The contract suite passes against the mock.
 
 **Acceptance:**
 - The office looks and behaves unchanged.
@@ -233,11 +286,17 @@ fewer agents, see the groupings in `docs/HANDOFF.md` section 6.
 
 **Tasks**
 
-1. Colyseus schema classes mirroring `PlayerView`. Test that the field names equal the type's keys.
-2. `onAuth` through `AuthVerifier`. `onJoin` validates `JoinOptions`, spawns at `WORLD.spawn` (or the
-   nearest free walkable point), and sends `chat_history`.
-3. A fixed tick at `TICK_HZ` running `stepPlayer` with each player's latest `move_intent` or
-   `move_target`. It sets `lastSeq`, pose and speed, and `zoneId`, sending `zone_event` on change.
+1. The schema classes from P1-C's stub stay the mirror of `PlayerView` and `NpcView`; keep the
+   test that the field names equal the types' keys.
+2. `static onAuth(token, options, context)` verifies the token through `AuthVerifier` (the SDK sends
+   `client.auth.token`). `onJoin` validates `JoinOptions`, checks `protocol`, refuses a
+   `workspaceId` that is not the token's (`define("office", OfficeRoom).filterBy(["workspaceId"])`
+   makes one room per workspace), spawns at `WORLD.spawn` (or the nearest free walkable point) and
+   sends `chat_history`. `onCreate` registers the room in `rooms.ts` (`Map<workspaceId, OfficeRoom>`);
+   `onDispose` removes it (`ARCHITECTURE.md` 12.2).
+3. A fixed tick (`setSimulationInterval`, `1000 / TICK_HZ`; `setPatchRate` the same) running
+   `stepPlayer` with each player's latest `move_intent` or `move_target`. It sets `lastSeq` (the seq
+   of the input it applied), pose and speed, and `zoneId`, sending `zone_event` on change.
 4. Activities, with one reservation set per room (P3-A adds the colleagues to it):
    - `activity_start` checks that the target is a known desk seat or counter spot and is not reserved.
    - The tick runs the shared activity code.
@@ -249,8 +308,10 @@ fewer agents, see the groupings in `docs/HANDOFF.md` section 6.
    - No message can set a position.
 6. Reconnect with `allowReconnection(RECONNECT_SECONDS)`; the player and their reservation are kept
    during the window.
-7. Chat through `ChatStore`. Implement `RoomBus`: find the workspace's room and broadcast `records_changed`.
-8. Tests, written first:
+7. Chat through `ChatStore`. Implement `RoomBus`: look the workspace's room up in the registry and
+   broadcast `records_changed`.
+8. Tests, written first, with `@colyseus/testing` (boot the server inside Vitest and drive it with
+   `@colyseus/sdk`, so every test goes over a real socket):
    - tampering: an out-of-range `dx`, NaN, extra fields, a flood (rate limited), a target inside a wall;
    - speed stays clamped over 10 s;
    - walls are never crossed;
@@ -263,7 +324,8 @@ state" are proven by tests. Checks pass.
 
 ### P2-B Web networking and remote people [L]
 
-**Depends on:** P1-A, P1-B, P1-C.
+**Depends on:** P1-A, P1-B, P1-C to start (P1-C's stub room accepts joins and holds the state
+shape); P2-A to finish (movement and the e2e test need the real room). Rebase when P2-A merges.
 
 **Owns:** `apps/web/src/net/**` (except the store's shape), `apps/web/src/office/Avatar.tsx`,
 `apps/web/src/office/me.ts`, `e2e/multiplayer.spec.ts`.
@@ -271,16 +333,23 @@ state" are proven by tests. Checks pass.
 **Tasks**
 
 1. **Connection** (`net/connection.ts`):
-   - `@colyseus/sdk` to `VITE_SERVER_URL`; join `office` with `JoinOptions` (name and look from
-     `me.ts`; dev auth for now).
-   - Reconnect with backoff using the reconnection token.
+   - `@colyseus/sdk` to `VITE_SERVER_URL`; the token in `client.auth.token` (`dev:<name>` until
+     P3-C; never in the join options); join `office` with `JoinOptions` (name and look from
+     `me.ts`, `PROTOCOL_VERSION`, `WORKSPACE_ID`).
+   - Reconnect with backoff: keep `room.reconnectionToken`, call `client.reconnect(token)`.
+   - Subscribe to state with `getStateCallbacks(room)` from `@colyseus/sdk`.
    - Status goes into the net store.
    - With no server the office stays single-player, exactly as today.
 2. **Local avatar**:
    - Held keys send `move_intent` at `TICK_HZ`, plus once on release. A floor click sends `move_target`.
    - A chair or counter click, or E, sends `activity_start`; moving or E sends `activity_stop`.
-   - Predict with `stepPlayer` at fixed ticks, render between ticks, and reconcile with
-     `lastSeq`: replay unacknowledged inputs; snap if the error exceeds `SNAP_DISTANCE`, ease it out otherwise.
+   - Predict with `stepPlayer` at fixed ticks (the same `1 / TICK_HZ` as the server), render
+     between ticks, and keep a ring buffer of the predicted position per `seq`.
+   - Reconcile on each snapshot without replaying inputs (`ARCHITECTURE.md` 12.1): the error is
+     the server position minus the predicted position at the snapshot's `lastSeq`; below
+     `SNAP_DISTANCE` it is added to the current prediction over about 100 ms, above it the avatar
+     snaps. Unit-test this with a fake server that lags by a few ticks: no correction when the
+     simulations agree; a snap when the server rejects a move.
    - During an activity, draw the local avatar from server snapshots (interpolated) instead of predicting.
 3. **Remote players** (`net/Players.tsx`, in its slot):
    - One `Person` per player with a snapshot buffer of `INTERP_DELAY_MS`.
@@ -292,7 +361,7 @@ state" are proven by tests. Checks pass.
 6. e2e: two contexts join, see each other's name pill, one walks, and the other sees it move.
 
 **Acceptance:**
-- G3 "two browsers see each other move smoothly" passes locally.
+- G3 "two browsers see each other move smoothly" passes locally (after P2-A is merged).
 - Offline mode is unchanged.
 - Frame rate with 2 players and 9 colleagues is reported from a real browser (target 60 fps).
 
@@ -306,18 +375,30 @@ state" are proven by tests. Checks pass.
    - `workspace_id` on every workspace row;
    - `source_meeting_id` on records the AI creates or changes;
    - foreign keys, indexes, and enums for the statuses.
-2. Row-level security on every workspace table. Members read their workspace. Record writes go
-   only through the server (service role), after its own membership checks.
-3. Seed from `@office/shared` demo data: workspace, the two users with local test passwords
-   (documented, local only, never a real password), memberships and the Acme records. A test
-   checks that the seed matches the shared demo data.
-4. A `Repo` implementation on postgres.js:
-   - `approveChange(id, actor)` in one transaction: lock the row (`FOR UPDATE`); it must be
-     pending; apply it per change type; write an `audit_log` row with before and after; mark it approved.
+2. Row-level security on every workspace table (`ARCHITECTURE.md` 12.4): `profiles` and
+   `memberships` first, then a `SELECT` policy for members on every workspace table, and no write
+   policies for `authenticated`. Record writes happen only in the server, after its own membership
+   checks.
+3. The seed, `supabase/seed.mjs` (`pnpm db:seed`): create Maya and Arjun through the Auth Admin API
+   with the service role key and local test passwords (documented, local only, never real ones),
+   then insert profiles, memberships and the Acme records from `@office/shared` demo data with the
+   returned ids. A test checks that the seeded rows match the shared demo data. The same script
+   seeds the hosted project in P4-A.
+4. A `Repo` implementation on postgres.js (`prepare: false` when `DATABASE_URL` is a
+   transaction-mode pooler):
+   - `withUser(claims, fn)`: a transaction that runs `SET LOCAL ROLE authenticated` and sets
+     `request.jwt.claims`, so RLS applies to the server's reads; every read goes through it.
+   - `withService(fn)`: a transaction under the connection's own role, used only by the writes,
+     each of which checks membership first and names `workspace_id` in every statement.
+   - `approveChange(id, claims)`: lock the row (`FOR UPDATE`); it must be pending; apply it per
+     change type; write an `audit_log` row with before and after; mark it approved. Not pending
+     gives a typed conflict error (P3-B turns it into 409).
    - `rejectChange`, which also writes an audit row.
    - Reads for my day, status and ask; meetings; chat messages; membership lookup.
-5. Tests against local Supabase:
-   - workspace isolation (a second workspace created in the test; a user in A cannot read B);
+5. Tests against local Supabase (each test creates its own workspace and removes it):
+   - workspace isolation: with claims for a user of A, reads of B's rows return nothing (through
+     `withUser`); if `SET ROLE authenticated` turns out not to be possible for the connection's
+     role, prove it with supabase-js (anon key plus a user's JWT) instead and say so in the report;
    - approving applies the change and writes audit rows;
    - a second approval of the same change is rejected;
    - rejecting leaves records unchanged.
@@ -336,12 +417,17 @@ proves workspace isolation". Checks pass, with the database tests runnable with 
    - Any other transcript gives a summary-only result.
    - `answer` calls a function passed to the constructor. Until P3-B wires in P2-E's
      `fixtureAnswer` (in `deps.ts`), that function abstains.
-2. **One real provider adapter**, chosen by `LLM_PROVIDER` (owner decision D5), with key and model
-   from env. It asks for JSON only and has timeouts. It never logs keys, and never logs prompts that
-   contain records.
+2. **The real adapter** (`ARCHITECTURE.md` 12.5; owner decision D5): Anthropic's SDK, chosen by
+   `LLM_PROVIDER=anthropic`, model from `LLM_MODEL` (default `claude-opus-5-5`), key from
+   `LLM_API_KEY`. Structured output through `client.messages.parse` with
+   `output_config.format = zodOutputFormat(<shared schema>)`, `output_config.effort: "low"`,
+   `timeout: 30_000`, `maxRetries: 1`; the result still goes through the pipeline's own Zod
+   validation. It never logs keys, and logs prompts or outputs that contain records only at debug
+   level. Without a key the server uses `FixtureLlm` and says so on `/health`.
 3. **Pipeline**: validate with Zod; on failure retry once with the validation error; then fall back to
    a summary-only result with a "could not extract" notice.
 4. **Mapping** `ExtractionResult` to `ProposedChange[]` against a records snapshot, as a pure function.
+   The meeting's room gives the account or project (`ROOM_RECORDS`), which narrows the matching.
    Match by name and context; when nothing matches confidently, set `targetId` to null and
    `needsReview` to true.
 5. **Tests**:
@@ -405,7 +491,9 @@ the position of `apps/web/src/office/LookEditor.tsx`.
    - Move the control hint and "Customise look" so nothing overlaps.
    - Keep the centre of the scene clear.
    - Typing in any input must never move the avatar.
-5. Use only `api` (the mock until P3-C) and the net store.
+5. Read through the `records` store (which uses `api`: the mock until P3-C) and the net store;
+   never call `fetch` directly. Disable "Process meeting", approve and reject while their request
+   is pending, so a double click cannot submit twice.
 
 **Acceptance:**
 - Against the mock API in one browser: process the meeting, approve three changes and reject one;
@@ -466,11 +554,13 @@ after P3-B. P3-E comes last.
 **Tasks**
 
 1. **Endpoints**: everything in `ARCHITECTURE.md` section 5, plus the pending list, each with Zod
-   bodies and responses. In `deps.ts`, build the real `Repo` (P2-C), its database chat store,
+   bodies and responses. `/health` fills in `version`, `authMode` and `llm`. In `deps.ts`, build the real `Repo` (P2-C), its database chat store,
    `FixtureLlm` with P2-E's `fixtureAnswer` (or the real adapter when a key is set), and the auth
    verifier.
-2. **Auth**: verify Supabase JWTs with `jose` (JWKS or secret, as P1-B found), then look up
-   membership to get the workspace. The room join verifies the same token when `AUTH_MODE=supabase`.
+2. **Auth** (`ARCHITECTURE.md` 12.3): verify Supabase JWTs with `jose`, HS256 with
+   `SUPABASE_JWT_SECRET` (the local CLI) or the project's JWKS (hosted), then look up membership
+   to get the workspace and the name, cached for a few seconds. The room join verifies the same
+   token when `AUTH_MODE=supabase`. Both modes produce `AuthClaims`.
 3. **Limits**: CORS from `ALLOWED_ORIGINS`; rate limits per user.
 4. **Approve**:
    - the repo transaction runs first;
@@ -491,14 +581,19 @@ after P3-B. P3-E comes last.
 
 **Tasks**
 
-1. A sign-in screen ("Join as Maya" / "Join as Arjun") through Supabase Auth with the seeded local
-   test users. Production uses an email and password form.
-2. The token goes to every HTTP call and to the room join.
+1. `AuthGate`: with `VITE_AUTH_MODE=dev` a name picker (no network), otherwise a sign-in screen
+   ("Join as Maya" / "Join as Arjun") through Supabase Auth with the seeded local test users;
+   deployed, an email and password form.
+2. The token goes to every HTTP call as the bearer header and to the room as `client.auth.token`;
+   a refreshed token is used on the next reconnect.
 3. On `records_changed`, refetch the affected queries, so panels and wall displays update without a reload.
 4. Loading, error and reconnecting states.
+5. `api/http.contract.test.ts`: the contract suite from P1-C against the running local stack,
+   skipped unless `E2E_STACK=1`.
 
 **Acceptance:**
 - G5 "the second user's view updates live after approval", locally.
+- The contract suite passes against the server.
 - Checks pass.
 
 ### P3-D Deployment smoke test [S] (needs owner approval and hosting, decision D3)
@@ -510,8 +605,13 @@ after P3-B. P3-E comes last.
 
 **Tasks**
 
-1. Build the server bundle (`tsup` bundles `@office/shared`) and deploy it to the WebSocket host.
-2. Build the web app with `VITE_SERVER_URL=wss://...` and deploy it to the web host.
+1. Server (`ARCHITECTURE.md` 12.7): a `Dockerfile` (Node 22, pnpm through corepack,
+   `pnpm install --frozen-lockfile`, `pnpm --filter @office/server build`, which bundles
+   `@office/shared`, `CMD node apps/server/dist/index.js`), `/health` as the health check, `PORT`
+   from the host, `ALLOWED_ORIGINS` set to the web URL. Deploy it to the WebSocket host.
+2. Web: build with `VITE_SERVER_URL=https://<server>` (the SDK upgrades to WebSocket itself),
+   `VITE_AUTH_MODE=dev` and `VITE_API=mock` for this smoke test, output `apps/web/dist`; deploy it
+   to the static host. Then the server's `ALLOWED_ORIGINS` gets the real web URL.
 3. Confirm two browsers on the public URL see each other.
 4. Secrets go only in the hosts' settings.
 
@@ -558,6 +658,7 @@ after P3-B. P3-E comes last.
 **Tasks**
 
 1. `pnpm demo:reset` restores the demo in one command: local freely; hosted only with approval.
+   Restart the server afterwards so rooms drop their state; clients reconnect and refetch.
 2. Performance pass: pixel-ratio cap, shadow cost, instancing. Report numbers from a real browser.
 3. Check the notices for fixture mode, reconnecting and errors.
 4. `README.md`: setup, deployment and known limitations.
