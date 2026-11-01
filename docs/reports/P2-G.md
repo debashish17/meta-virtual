@@ -59,3 +59,52 @@ How to verify:
 Open questions: none.
 Next: P3-C web wiring (displays update live via the records store); P3-E demo (Acme wall
 display shows the status — ready).
+
+---
+Reviewer addendum (independent verification, 2026-11-01)
+Checks re-run from the worktree root, all fresh:
+- `pnpm typecheck`: 3/3 pass. `pnpm lint`: 3/3 pass. `pnpm build`: ok.
+- `pnpm --filter @office/web test -- --run`: 38/38 pass (incl. 12 screens +
+  2 overlay tests). `--filter @office/shared`: 107/107 pass.
+- `--filter @office/server`: all 9 files pass, 0 failures; the runner then crashes in
+  teardown with the PRE-EXISTING tinypool `ERR_INVALID_ARG_TYPE` (files P2-G does not
+  own; same crash P2-E/P2-F reported). No package e2e exists for P2-G.
+- Scope: `git diff main...HEAD` touches only `apps/web/src/office/displays/**`
+  (7 files) + this report. Both test files are new; no existing test was changed or
+  weakened (`WallDisplays.tsx` replaced a mount-ready stub already wired in
+  `OfficeScene.tsx:65`, so no out-of-Owns edit was needed). No secrets in the diff.
+- Read every owned implementation and test body; verified TV placements against
+  `packages/shared/src/world/office.ts` (read-only): Acme 55" at x 13.7, project 65"
+  at x 27.5, both z 0.1 / base y 0.95 — the screens sit centred just in front of the
+  faces, face +z into the rooms, and no furniture moved. Data flows records store ->
+  mock `api` (`apps/web/src/api/records.ts`, `mock.ts` serves the DEMO fixtures).
+- Live visual pass (reviewer's own screenshots, offline client on lane port 5176,
+  headless Chromium + SwiftShader): /tmp/p2g-rev-acme.png (default walking zoom),
+  /tmp/p2g-rev-acme-zoom.png (max wheel zoom: "Acme Corp / Implementation /
+  Go-live 15 Nov" legible), /tmp/p2g-rev-overlay.png (overlay opened by a REAL CDP
+  mouse click aimed with `__wallDisplays.aim`, title "Acme Corp" verified in DOM),
+  /tmp/p2g-rev-project.png (warn tone, milestones/blocked/owners rows legible).
+  Project overlay DOM dump: title "Acme Payments Integration", tone-warn,
+  "Go-live · 15 Nov (upcoming)", "Fix webhook signature validation — Waiting on the
+  vendor fix (Maya)", "Arjun · 1 open task", "Maya · 2 open tasks" — exactly the
+  unit-test expectations, served from the mock api. Escape closes the overlay.
+Verdict per acceptance item:
+- Readable at the walking zoom: PASS with the builder's documented deviation — the
+  3D screen is a one-line-per-section glance (legible at close wheel zoom, ~70 px
+  tall at default zoom), the click-to-open overlay carries every line fully
+  readable. Same `ScreenData` feeds both; accepted as physically necessary.
+- Screenshots of both rooms: PASS (builder's /tmp/p2g-*.png + reviewer's
+  /tmp/p2g-rev-*.png; lead still to copy into docs/screenshots/ — outside Owns).
+- No frame-rate drop in a real browser: GAP REMAINS — headless SwiftShader gives
+  ~1 fps either way (software, not a benchmark), and this box has no GPU. By
+  construction there is no per-frame cost (two static canvas textures, `screenHash`
+  gates `drawScreen` + `needsUpdate`, verified in code), so no drop is expected;
+  a headed real-GPU number still needs the lead's machine.
+Fixes applied: none — no defects found in Owns files.
+Requests (added by reviewer): `__officeDebug.teleport` is a no-op while the client
+is online (Avatar onlineFrame overwrites avatar.x/z from the predictor every
+frame; P2-A interaction, outside this package's Owns). The reviewer verified
+offline, as the builder evidently did. Suggest the lead file this against the
+owner of `apps/web/src/office/Avatar.tsx` (teleport should also reset the
+predictor / ask the server) so future screenshot runs work online too.
+Reviewer verdict: passed (with the frame-rate number gap carried over).
