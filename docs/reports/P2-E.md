@@ -74,3 +74,41 @@ Open questions: none. D3/D4/D6/D8 are not needed for this package.
 Next: P3-B can wire the status builders and `askQuestion` behind the HTTP API with the
 `fixtureAnswer` slot; the fixture demo then answers the status question end to end.
 Not started.
+
+---
+Reviewer addendum (independent re-verification, worktree vo-P2-E @ 71f2b94)
+Status: passed
+Checks re-run (fresh, from the worktree root):
+- Read all 10 implementation bodies + both test bodies; verified `AnswerFn` /
+  `FIXTURE_ABSTAIN_MESSAGE` in `apps/server/src/llm/fixture.ts` and the
+  classifier-less `LlmClient` in `apps/server/src/llm/types.ts`.
+- `tsc --noEmit` (server, uncached): pass. `eslint src --max-warnings 0`
+  (server, uncached): pass. Root `pnpm typecheck` / `pnpm lint`: 3/3 pass
+  (turbo-cached; shared/web untouched by this package).
+- `vitest run src/ask/ask.test.ts src/status/status.test.ts`: 27/27 pass,
+  exit 0. Shared (107) + web (24) suites: all pass.
+- Full server suite: all 12 files pass (incl. P2-E's 27 tests), then the
+  runner exits 1 on the pre-existing vitest-pool crash
+  (`[vitest-pool]: Unexpected call to process.send()`, tinypool
+  deserialization). Proven pre-existing: re-ran with `ask/**`+`status/**`
+  excluded — same crash, exit 1, zero test failures
+  (logs `/tmp/p2e-review-full.log`, `/tmp/p2e-review-noe.log`).
+- `pnpm --filter @office/server build`: success.
+- `git show --name-status HEAD`: 12 files, all `A` (added); no existing
+  test touched or weakened. All paths inside Owns (`apps/server/src/ask/**`,
+  `apps/server/src/status/**`, `docs/reports/P2-E.md`). Secret scan of the
+  new code: only word-tokenizer identifiers, no secrets.
+Verdict per acceptance item:
+- Task 1 (status builders, pure + reasoned DayItems): pass.
+- Task 2 (5-class rules classify, retrieve, abstain, cited llm.answer,
+  citation validation): pass; the rules-only deviation is justified
+  (`LlmClient` exposes no classifier) and documented in `classify.ts`.
+- Task 3 (`fixtureAnswer` live from records, `AnswerFn`-compatible): pass.
+- Task 4 (in-memory Repo tests: cited status, CEO abstain, unknown-ID
+  abstain, post-approval date): pass; tests use `DEMO_QUESTIONS` directly.
+- G4 at function level: pass.
+Fixes applied: none (no defects found).
+Requests (carried over): P3-B wiring of `fixtureAnswer`/`askQuestion`/
+status builders behind HTTP (needs `deps.ts`, not owned here); lead to
+quarantine/fix the pre-existing vitest-pool crash.
+Processes started: none left running (test/build only); no ports used.
