@@ -19,10 +19,12 @@ test("two browsers see each other move", async ({ alice, bob }) => {
     [bob, "Bob"],
   ] as const) {
     await user.page.goto(`/?name=${name}&noao&noshadow`);
+    // 300 s bound: the second page needs minutes under software rendering
+    // (measured 222 s on 4 vCPUs); assertions below are unchanged.
     await user.page.waitForFunction(
       () => (window as unknown as { __officeReady?: boolean }).__officeReady === true,
       null,
-      { timeout: 150_000 },
+      { timeout: 300_000 },
     );
   }
 

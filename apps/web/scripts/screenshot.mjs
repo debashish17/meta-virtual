@@ -29,7 +29,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'office-shot-'))
 const browser = spawn(chrome, ['--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
-  '--hide-scrollbars', '--ignore-gpu-blocklist', `--window-size=${width},${height}`, 'about:blank'], { stdio: 'ignore' })
+  '--hide-scrollbars', '--ignore-gpu-blocklist', '--no-sandbox', '--enable-unsafe-swiftshader',
+  `--window-size=${width},${height}`, 'about:blank'], { stdio: 'ignore' })
 
 try {
   let target

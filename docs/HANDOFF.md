@@ -233,17 +233,17 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 
 | Package | Agent | Branch | State | Report |
 |---|---|---|---|---|
-| P1-A1 net, sim, people (or P1-A whole) | lead + builder/reviewer | wp/P1-A1-net-sim-people | in review (built + reviewer-passed, uncommitted; awaiting merge) | P1-A1.md |
-| P1-A2 api, demo | builder/reviewer | wp/P1-A2-api-demo | in review (built + reviewer-passed, uncommitted; awaiting merge) | P1-A2.md |
-| P1-B tooling | builder/reviewer | wp/P1-B-tooling | in review (built + reviewer-passed with fixes, uncommitted; awaiting merge) | P1-B.md |
-| P1-C app skeletons and slots | builder/reviewer | | in review (built + reviewer-passed, uncommitted; awaiting merge) | P1-C.md |
-| P2-A room server | builder/reviewer | | in review (built + reviewer-passed, uncommitted; awaiting merge) | P2-A.md |
-| P2-B web networking | builder/reviewer | | in review (built + reviewer-passed, uncommitted; awaiting merge) | P2-B.md |
-| P2-C database | builder/reviewer | | in review (built + reviewer-passed with fixes, uncommitted; awaiting merge) | P2-C.md |
-| P2-D LLM and meetings | builder/reviewer | | in review (built + reviewer-passed, uncommitted; awaiting merge) | P2-D.md |
-| P2-E ask and status | | | not started | |
-| P2-F product panels | | | not started | |
-| P2-G wall displays | | | not started | |
+| P1-A1 net, sim, people (or P1-A whole) | lead + builder/reviewer | wp/P1-A1-net-sim-people | merged (content via the 6f2bbfd checkpoint, squashed not --no-ff) | P1-A1.md |
+| P1-A2 api, demo | builder/reviewer | wp/P1-A2-api-demo | merged (content via the 6f2bbfd checkpoint, squashed not --no-ff) | P1-A2.md |
+| P1-B tooling | builder/reviewer | wp/P1-B-tooling | merged (content via the 6f2bbfd checkpoint, squashed not --no-ff) | P1-B.md |
+| P1-C app skeletons and slots | builder/reviewer | | merged (content via the 6f2bbfd checkpoint, squashed not --no-ff) | P1-C.md |
+| P2-A room server | builder/reviewer | | merged (content via the 6f2bbfd checkpoint, squashed not --no-ff) | P2-A.md |
+| P2-B web networking | builder/reviewer | | merged (content via the 6f2bbfd checkpoint, squashed not --no-ff) | P2-B.md |
+| P2-C database | builder/reviewer | | merged (content via the 6f2bbfd checkpoint, squashed not --no-ff) | P2-C.md |
+| P2-D LLM and meetings | builder/reviewer | | merged (content via the 6f2bbfd checkpoint, squashed not --no-ff) | P2-D.md |
+| P2-E ask and status | builder/reviewer | wp/P2-E-ask-status | merged (--no-ff d58b677) | P2-E.md |
+| P2-F product panels | builder/reviewer | wp/P2-F-panels | merged (--no-ff 6642893) | P2-F.md |
+| P2-G wall displays | builder/reviewer | wp/P2-G-wall-displays | merged (--no-ff 60f9e0c) | P2-G.md |
 | P3-A shared colleagues | | | not started | |
 | P3-B HTTP API and auth | | | not started | |
 | P3-C web wiring and sign-in | | | not started | |

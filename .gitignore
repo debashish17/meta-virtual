@@ -9,6 +9,8 @@ coverage/
 .localappdata/
 __pycache__/
 *.pyc
+test-results/
+playwright-report/
 
 # generated/ is rebuilt by run.py, except the OCR cache (slow; the boards' readings) and the
 # review baseline (which builds earlier review decisions were made on), which are kept

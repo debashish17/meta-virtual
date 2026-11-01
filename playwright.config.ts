@@ -11,7 +11,7 @@ export default defineConfig({
   workers: 1,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? "github" : "list",
-  timeout: 300_000,
+  timeout: 600_000, // two pages can need ~70 s + ~230 s under SwiftShader
   expect: { timeout: 90_000 },
   use: {
     baseURL: `http://localhost:${WEB_PORT}`,
