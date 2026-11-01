@@ -20,7 +20,7 @@ export default function Hud() {
         {zone && <><span>{KIND[zone.type]}</span>{zone.name}</>}
       </div>
       <LookEditor />
-      <p className="office-hint">WASD or arrow keys to walk · Shift to jog · click the floor to walk there · click a desk chair to sit, the tea counter for a drink (or E nearby) · scroll to zoom</p>
+      <p className="office-hint">WASD or arrows to walk · Shift to jog · click to move · E to sit or drink · scroll to zoom</p>
       {import.meta.env.DEV && <a className="office-asset-review" href="/assets/catalogue/review.html" target="_blank" rel="noreferrer">Asset review</a>}
     </>
   )

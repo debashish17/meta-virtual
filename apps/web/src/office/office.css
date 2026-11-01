@@ -27,14 +27,17 @@
 
 .office-hint {
   position: fixed;
-  left: 16px;
-  bottom: 12px;
+  top: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 60vw;
   margin: 0;
   padding: 6px 12px;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.8);
   color: #4a4d52;
   font: 12px/1.3 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  text-align: center;
 }
 
 .office-name {
@@ -59,7 +62,7 @@
 /* "Your look" (LookEditor) */
 .look-open {
   position: fixed;
-  top: 16px;
+  bottom: 16px;
   right: 16px;
   padding: 8px 14px;
   border: 0;
@@ -75,9 +78,10 @@
 
 .look-panel {
   position: fixed;
-  top: 16px;
+  z-index: 5;
+  bottom: 64px;
   right: 16px;
-  bottom: 16px;
+  max-height: calc(100vh - 112px);
   width: 300px;
   overflow-y: auto;
   padding: 14px 16px 18px;
@@ -122,8 +126,8 @@
 /* development only: the asset library's review sheet */
 .office-asset-review {
   position: fixed;
-  right: 16px;
-  bottom: 12px;
+  right: 344px;
+  top: 16px;
   padding: 6px 12px;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.8);
