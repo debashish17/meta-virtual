@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { FURNITURE, OFFICE_WALK, zoneAt } from '@office/shared'
-import { OFFICE_SPOTS, advance, besideOf, routineAtDesk, routineAway, seatFor, type Routine, type RoutineWorld } from './routine'
+import { FURNITURE, OFFICE_WALK, zoneAt } from '../world/index.js'
+import { OFFICE_SPOTS, advance, besideOf, routineAtDesk, routineAway, seatFor, type Routine, type RoutineWorld } from './routine.js'
 
 /** Desk chairs in the team areas, as the colleagues use them. */
 const chairs = FURNITURE.filter((p) => p.part === 'seating.task-chair-black' && zoneAt(p.x, p.z)?.id.startsWith('team_'))

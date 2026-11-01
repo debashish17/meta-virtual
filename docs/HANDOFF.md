@@ -54,13 +54,13 @@ The defaults and what each decision blocks are in `docs/IMPLEMENTATION_PLAN.md` 
 
 | ID | Decision | Owner's answer |
 |---|---|---|
-| D1 | G2 approved (movement smooth at 60 fps in your browser) | |
-| D2 | Visual freeze for M3 to M6 | |
+| D1 | G2 approved (movement smooth at 60 fps in your browser) | Approved (2026-11-01) |
+| D2 | Visual freeze for M3 to M6 | Yes (2026-11-01) |
 | D3 | Web host and WebSocket host (accounts created by the owner) | |
 | D4 | Local Supabase now; hosted project before Phase 4 | |
-| D5 | LLM provider for the real adapter | |
+| D5 | LLM provider for the real adapter | Muse Spark (`muse-spark-1.3`) through the Meta Model API (2026-11-01) |
 | D6 | Colleagues run on the server (or are removed when online) | |
-| D7 | Player contract additions (look, pose, speed, activity) | |
+| D7 | Player contract additions (look, pose, speed, activity) | Accept (2026-11-01) |
 | D8 | Demo sign-in (seeded test users locally, email and password deployed) | |
 | D9 | Live meetings with LiveKit after G6, if time permits; the fixture transcript stays the fallback | Yes, if time permits (2026-11-01) |
 
@@ -69,8 +69,10 @@ The defaults and what each decision blocks are in `docs/IMPLEMENTATION_PLAN.md` 
 - Before Phase 1: answers D1, D2 and D7 (the others can wait for the phase that needs them);
   keeps Docker Desktop running on the build machine (local Supabase); decides whether there will be
   a git remote, and if so makes it private (the Mixamo files, `AGENTS.md` section 5).
-- From Phase 2, optional: an Anthropic API key in the server's `.env` (never committed, never
-  pasted in chat). Without it everything runs on `FixtureLlm`, which is also what the tests use.
+- From Phase 2, optional: a Meta Model API key (the hackathon's Model API key) as `LLM_API_KEY` in
+  the server's `.env` (never committed, never pasted in chat). P2-D uses it to check the API's JSON
+  and reasoning-effort settings. Without it everything runs on `FixtureLlm`, which is also what the
+  tests use.
 - For P3-D: the web host and the WebSocket host accounts (D3), with deploy access for the lead.
 - For Phase 4: the hosted Supabase project (D4). Its URL and keys go into the hosts' secret
   settings and the lead's local `.env`, not into chat or the repo.
@@ -231,14 +233,14 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 
 | Package | Agent | Branch | State | Report |
 |---|---|---|---|---|
-| P1-A1 net, sim, people (or P1-A whole) | lead | | not started | |
-| P1-A2 api, demo | | | not started | |
-| P1-B tooling | | | not started | |
-| P1-C app skeletons and slots | lead | | not started | |
-| P2-A room server | | | not started | |
-| P2-B web networking | | | not started | |
-| P2-C database | | | not started | |
-| P2-D LLM and meetings | | | not started | |
+| P1-A1 net, sim, people (or P1-A whole) | lead + builder/reviewer | wp/P1-A1-net-sim-people | in review (built + reviewer-passed, uncommitted; awaiting merge) | P1-A1.md |
+| P1-A2 api, demo | builder/reviewer | wp/P1-A2-api-demo | in review (built + reviewer-passed, uncommitted; awaiting merge) | P1-A2.md |
+| P1-B tooling | builder/reviewer | wp/P1-B-tooling | in review (built + reviewer-passed with fixes, uncommitted; awaiting merge) | P1-B.md |
+| P1-C app skeletons and slots | builder/reviewer | | in review (built + reviewer-passed, uncommitted; awaiting merge) | P1-C.md |
+| P2-A room server | builder/reviewer | | in review (built + reviewer-passed, uncommitted; awaiting merge) | P2-A.md |
+| P2-B web networking | builder/reviewer | | in review (built + reviewer-passed, uncommitted; awaiting merge) | P2-B.md |
+| P2-C database | builder/reviewer | | in review (built + reviewer-passed with fixes, uncommitted; awaiting merge) | P2-C.md |
+| P2-D LLM and meetings | builder/reviewer | | in review (built + reviewer-passed, uncommitted; awaiting merge) | P2-D.md |
 | P2-E ask and status | | | not started | |
 | P2-F product panels | | | not started | |
 | P2-G wall displays | | | not started | |
@@ -352,3 +354,10 @@ tightened where lanes would otherwise have guessed:
 with LiveKit) added as the optional Phase 5 after G6 (decision D9), with the fixture transcript as
 the standing fallback; the final review is now Phase 6. `ARCHITECTURE.md` 12.9, packages P5-A to
 P5-D, Gate G7, and the locked decision in `AGENTS.md` section 4 updated to match.
+
+**2026-11-01, decision D5.** The real LLM adapter is Muse Spark (`muse-spark-1.3`) through the Meta
+Model API, called with OpenAI's SDK (`openai`), replacing the Anthropic adapter planned above.
+`LLM_BASE_URL` added (default `https://api.meta.ai/v1`). P1-B installs `openai` instead of
+`@anthropic-ai/sdk`. JSON-schema output, the reasoning-effort parameter and the latency at `low` are
+not yet verified against the API; P2-D checks them. `ARCHITECTURE.md` 12.5, P1-B, P2-D, the D5 rows
+and `PROJECT_BRIEF.md` section 10 updated.

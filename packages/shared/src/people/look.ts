@@ -37,8 +37,8 @@ export const BodyManifest = z.object({
 }).strict();
 
 export const BODIES = BodyManifest.parse(bodies);
-export type Body = (typeof BODIES)["bodies"][number];
-export const bodyOf = (id: BodyId): Body => BODIES.bodies.find((b) => b.id === id)!;
+export type BodySpec = (typeof BODIES)["bodies"][number];
+export const bodyOf = (id: BodyId): BodySpec => BODIES.bodies.find((b) => b.id === id)!;
 
 export const CLOTHING = [
   "#34495e", "#4f7393", "#3f7f7a", "#7d9a7a", "#c99a3d", "#b5654a", "#7d3a45", "#3a3d42", "#e8e1d3",

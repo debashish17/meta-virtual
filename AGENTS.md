@@ -92,22 +92,24 @@ Rules:
 
 ## 5. Commands
 
-Verified on the owner's machine (Windows 11, Node 22.22, pnpm 12.8.1). Lines marked *(P1-B)* arrive with work package P1-B, which verifies them and removes the mark.
+Verified on the owner's machine (Windows 11, Node 22.22, pnpm 12.8.1).
 
 ```bash
 pnpm install
+npx playwright install chromium   # once per machine, for pnpm test:e2e
 pnpm dev            # web + server together (web :5173, server :2567)
 pnpm build
 pnpm lint
 pnpm typecheck
 pnpm test           # unit tests (Vitest)
-pnpm test:e2e       # two-browser tests (Playwright)            (P1-B)
-pnpm db:start       # local Supabase in Docker                  (P1-B)
-pnpm db:reset       # local only: migrations + seed             (P1-B)
-pnpm db:stop        #                                           (P1-B)
+pnpm test:e2e       # two-browser tests (Playwright)
+pnpm db:start       # local Supabase in Docker
+pnpm db:reset       # local only: migrations + seed
+pnpm db:seed        # local only: demo users + rows (stub until P2-C)
+pnpm db:stop        # stop local Supabase
 ```
 
-Ports come from env so several agents can run the app at once *(P1-B)*: `WEB_PORT`, `PORT` (server), `VITE_SERVER_URL`, `CHROME_DEBUG_PORT` (screenshot script). Slot numbers are in `docs/HANDOFF.md` section 5.
+Ports come from env so several agents can run the app at once: `WEB_PORT`, `PORT` (server), `VITE_SERVER_URL`, `CHROME_DEBUG_PORT` (screenshot script). Slot numbers are in `docs/HANDOFF.md` section 5.
 
 URLs (default ports):
 - **Office** (the app's only page): `http://localhost:5173/`. Walk with WASD or arrows (Shift jogs), click to walk, click a desk chair to sit or the tea counter for a drink (E nearby), scroll to zoom. `?view=overview` frames the whole floor.

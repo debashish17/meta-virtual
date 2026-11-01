@@ -1,4 +1,4 @@
-import { BODIES, bodyOf, type AvatarLook, type Move } from '@office/shared'
+import { BODIES, bodyOf, type AvatarLook, type Move } from "./look.js";
 
 /** Seconds a baked move lasts (bodies.generated.json). */
 export const secondsOf = (move: Move) => BODIES.moves.clips.find((c) => c.name === move)?.seconds ?? 1

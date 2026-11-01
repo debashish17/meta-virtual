@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
-import { BODIES, bodyOf, type AvatarLook, type Move } from '@office/shared'
+import { BODIES, bodyOf, type AvatarLook, type Move, type Pose } from '@office/shared'
 import { keepHandsOnDesk } from './deskReach'
 
 /**
@@ -20,7 +20,6 @@ import { keepHandsOnDesk } from './deskReach'
  * blending (a blend would slide the body across the step).
  */
 
-export type Pose = 'stand' | 'walk' | 'jog' | 'talk' | 'phone' | 'interact' | 'sit_down' | 'seated' | 'stand_up' | 'sit_talk' | 'type'
 export type Motion = { pose: Pose; speed: number }
 
 const CLIP: Record<Pose, Move> = {

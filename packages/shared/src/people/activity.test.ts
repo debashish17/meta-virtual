@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { OFFICE_WALK } from '@office/shared'
-import { COUNTERS, DESK_SEATS, advanceActivity, approachOf, startActivity, targetNear, type Activity, type Body } from './interactions'
-import { besideOf } from './routine'
+import { OFFICE_WALK } from '../world/index.js'
+import { COUNTERS, DESK_SEATS, advanceActivity, approachOf, startActivity, targetNear, type Activity, type Body } from './activity.js'
+import { besideOf } from './routine.js'
 
 const MOVES = { sit_down: 2.2, stand_up: 2.3, interact: 3.2, rise: 0.5 }   // seconds, and seat to standing spot (m)
 const body = (x: number, z: number): Body => ({ x, z, facing: 0 })

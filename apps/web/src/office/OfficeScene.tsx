@@ -13,6 +13,9 @@ import Colleagues from './Colleagues'
 import Desktops from './Desktops'
 import Pedestrians from './Pedestrians'
 import Sprites from './Sprites'
+import WallDisplays from './displays/WallDisplays'
+import Players from '../net/Players'
+import Panels from '../ui/Panels'
 import { PALETTE } from './palette'
 import { OVERVIEW } from './state'
 
@@ -58,6 +61,8 @@ export default function OfficeScene() {
           <Cityscape />
           {!OVERVIEW && <Avatar />}
           <Colleagues />
+          <Players />
+          <WallDisplays />
           <Pedestrians />
           <ReadySignal />
         </Suspense>
@@ -73,6 +78,7 @@ export default function OfficeScene() {
         </EffectComposer>
       </Canvas>
       <Hud />
+      <Panels />
     </div>
   )
 }

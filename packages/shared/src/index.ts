@@ -11,3 +11,9 @@ export * from "./catalogue/builds.js";
 export * from "./layouts/index.js";
 export * from "./world/index.js";
 export * from "./people/index.js";
+export * from "./net/index.js";
+export * from "./sim/index.js";
+export * from "./api/index.js";
+export * from "./demo/index.js";
+/** `net` and `api` both export it; the explicit line wins over the ambiguous `export *`. */
+export { RecordKind } from "./net/index.js";

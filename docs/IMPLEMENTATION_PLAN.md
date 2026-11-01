@@ -146,7 +146,7 @@ Record the answers in `docs/HANDOFF.md` section 3.
 | D2 | Visual freeze for M3 to M6 | Yes | Phase 1 start |
 | D3 | Hosting: a static web host and a persistent WebSocket host | Web on Vercel; server on Fly.io or Render (Colyseus needs a long-lived process; serverless will not work) | P3-D |
 | D4 | Supabase: local for development; a hosted project for deployment | Local Supabase CLI on Docker now; the owner creates the hosted project before Phase 4 | P2-C (local), P4-A (hosted) |
-| D5 | LLM provider for the real adapter | `FixtureLlm` first; the real adapter is Anthropic's SDK with `claude-opus-5-5` (`LLM_PROVIDER`, `LLM_MODEL`, `LLM_API_KEY` from env; `ARCHITECTURE.md` 12.5) | P2-D (adapter only) |
+| D5 | LLM provider for the real adapter | Chosen 2026-11-01: `FixtureLlm` first; the real adapter is Muse Spark (`muse-spark-1.3`) through the Meta Model API, called with OpenAI's SDK (`LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY` from env; `ARCHITECTURE.md` 12.5) | P2-D (adapter only) |
 | D6 | Colleagues once multiplayer works | Keep them, run on the server, the same for everyone (P3-A); the alternative is to remove them when online | P3-A |
 | D7 | Player contract adds look, pose, speed, activity and the seat reservations | Accept (P1-A) | Phase 1 |
 | D8 | Demo sign-in | Supabase Auth with two seeded test users and a "Join as Maya / Arjun" picker locally; email and password when deployed | P3-C |

@@ -1,18 +1,18 @@
-import { FURNITURE, OFFICE_WALK, zoneAt, type Point } from '@office/shared'
-import type { Pose } from './Person'
-import { OFFICE_SPOTS, besideOf, roundTheChair, seatFor, type Seat, type Spot } from './routine'
+import { FURNITURE, OFFICE_WALK, zoneAt, type Point } from "../world/index.js";
+import type { Pose } from "./pose.js";
+import { OFFICE_SPOTS, besideOf, roundTheChair, seatFor, type Seat, type Spot } from "./routine.js";
 
 /**
- * What you can do besides walking: sit at a free desk chair and type, or make a drink at the tea
- * counter. Clicking a chair or the counter (or pressing E beside one) walks you to it; moving off
- * stands you up again. You sit down as the colleagues do (routine.ts): round beside the chair, back
- * onto it, swivel to the desk; and stand up the same way in reverse. Seats and counter spots are reserved in one set shared with the colleagues,
- * so nobody takes a place someone else holds. Pure state, advanced by time, so it can be tested;
- * Avatar.tsx drives it.
+ * What someone can do besides walking: sit at a free desk chair and type, or make a drink at the
+ * tea counter. Clicking a chair or the counter (or pressing E beside one) walks them to it; moving
+ * off stands them up again. People sit down as the colleagues do (routine.ts): round beside the
+ * chair, back onto it, swivel to the desk; and stand up the same way in reverse. Seats and counter
+ * spots are reserved in a set passed in by the caller (one per server room; the web keeps its own
+ * for offline mode), so nobody takes a place someone else holds. Pure state, advanced by time, so
+ * it can be tested.
  */
 
-/** Seats (`seat:x,z`) and spots (their id) that someone holds, colleagues and you alike. */
-export const TAKEN = new Set<string>()
+/** Seats (`seat:x,z`) and spots (their id) that someone holds, colleagues and players alike. */
 export const seatKey = (p: Point) => `seat:${p.x.toFixed(2)},${p.z.toFixed(2)}`
 
 /** Every desk chair in the team areas, as a seat. */
@@ -78,9 +78,10 @@ function stepTo(me: Body, to: Point, dt: number) {
 }
 
 /**
- * Advance an activity by `dt`. `wantsToMove` is true while you press a movement key or have asked to
- * go somewhere else: it stands you up (or ends the drink). Returns the next activity and the pose
- * to show (null once free, when ordinary walking takes over); the caller frees `TAKEN` on 'free'.
+ * Advance an activity by `dt`. `wantsToMove` is true while a movement key is pressed or another
+ * destination was asked for: it stands the person up (or ends the drink). Returns the next
+ * activity and the pose to show (null once free, when ordinary walking takes over); the caller
+ * frees its reservation set on 'free'.
  */
 export function advanceActivity(a: Activity, me: Body, dt: number, wantsToMove: boolean,
   moves: Moves): { activity: Activity; pose: Pose | null; speed: number } {

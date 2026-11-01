@@ -1,5 +1,6 @@
-import { FURNITURE, OFFICE_WALK, type LayoutPart, type Point, type WalkMap } from '@office/shared'
-import type { Pose } from './Person'
+import { type LayoutPart } from "../layouts/index.js";
+import { FURNITURE, OFFICE_WALK, type Point, type WalkMap } from "../world/index.js";
+import type { Pose } from "./pose.js";
 
 /**
  * Colleagues' days: typing at their desk for a while, then up and out along the office's paths to
@@ -7,8 +8,9 @@ import type { Pose } from './Person'
  * for a phone call, and back to sit down again. As the Mixamo moves they play are made, people sit
  * down by stepping round beside the chair, backing onto it and swivelling to the desk, and stand up
  * the same way in reverse. Spots are reserved while someone is on their way or
- * there, so two people never stand in one place. Pure state, advanced by time, so it can be tested;
- * Colleagues.tsx draws it. Scenery only: in M3 real people come from the server.
+ * there, so two people never stand in one place. Pure state, advanced by time, so it can be tested.
+ * Shared: the web runs it for offline colleagues, the server for the synced ones (each room keeps
+ * its own reservation set, passed in as `taken`).
  */
 
 export type Spot = { id: string; x: number; z: number; facing: number; pose: 'interact' | 'talk' | 'phone' }

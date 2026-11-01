@@ -156,12 +156,13 @@ before P1-C.
    - web: `@colyseus/sdk` (the 0.18 line, matching `@colyseus/core` 0.18; not the old `colyseus.js`)
      and `@supabase/supabase-js`;
    - web dev: `jsdom` and `@testing-library/react`, for P2-F's component tests;
-   - server: `postgres` (postgres.js), `jose`, `@supabase/supabase-js` and `@anthropic-ai/sdk`;
+   - server: `postgres` (postgres.js), `jose`, `@supabase/supabase-js` and `openai` (OpenAI's SDK,
+     used for the Meta Model API; decision D5);
    - server dev: `@colyseus/testing` (the 0.18 line), for P2-A's room tests;
    - root dev: `@playwright/test` and `supabase` (the CLI). Then `npx playwright install chromium`
      once per machine (documented in `README.md`, not a dependency).
 
-   Seen on 2026-11-01: `@colyseus/sdk` 0.18.9, `@colyseus/testing` 0.18.6, `@anthropic-ai/sdk` 1.3.0,
+   Seen on 2026-11-01: `@colyseus/sdk` 0.18.9, `@colyseus/testing` 0.18.6, `openai` 7.47.0,
    `@supabase/supabase-js` 2.118, `supabase` 2.122, `postgres` 4.0, `jose` 6.2, `@playwright/test` 1.64.
    Record the versions you installed in the report.
 2. **Ports from env**, so two stacks can run at once:
@@ -184,7 +185,7 @@ before P1-C.
 5. **`.env.example` names** (no values): `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
    `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWKS_URL` or `SUPABASE_JWT_SECRET` (whichever the
    CLI version signs with; verify), `AUTH_MODE` (`dev` | `supabase`), `ALLOWED_ORIGINS`, `LLM_PROVIDER`,
-   `LLM_API_KEY`, `LLM_MODEL`, `WEB_PORT`, `PORT`, `VITE_SERVER_URL`, `VITE_SUPABASE_URL`,
+   `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, `WEB_PORT`, `PORT`, `VITE_SERVER_URL`, `VITE_SUPABASE_URL`,
    `VITE_SUPABASE_ANON_KEY`, `VITE_AUTH_MODE`, `VITE_API` (`mock` | `http`).
 6. Update `AGENTS.md` section 5 and `README.md` with the verified commands.
 7. ESLint for `packages/shared`: `no-restricted-imports` for `three`, `react`, `react-dom` and
@@ -418,13 +419,20 @@ proves workspace isolation". Checks pass, with the database tests runnable with 
    - Any other transcript gives a summary-only result.
    - `answer` calls a function passed to the constructor. Until P3-B wires in P2-E's
      `fixtureAnswer` (in `deps.ts`), that function abstains.
-2. **The real adapter** (`ARCHITECTURE.md` 12.5; owner decision D5): Anthropic's SDK, chosen by
-   `LLM_PROVIDER=anthropic`, model from `LLM_MODEL` (default `claude-opus-5-5`), key from
-   `LLM_API_KEY`. Structured output through `client.messages.parse` with
-   `output_config.format = zodOutputFormat(<shared schema>)`, `output_config.effort: "low"`,
-   `timeout: 30_000`, `maxRetries: 1`; the result still goes through the pipeline's own Zod
-   validation. It never logs keys, and logs prompts or outputs that contain records only at debug
-   level. Without a key the server uses `FixtureLlm` and says so on `/health`.
+2. **The real adapter** (`ARCHITECTURE.md` 12.5; owner decision D5: Muse Spark): OpenAI's SDK
+   (`openai`) pointed at the Meta Model API, chosen by `LLM_PROVIDER=meta`, base URL from
+   `LLM_BASE_URL` (default `https://api.meta.ai/v1`), model from `LLM_MODEL` (default
+   `muse-spark-1.3`), key from `LLM_API_KEY`.
+   - Chat Completions, with the reply requested as JSON in the shared schema's shape
+     (`response_format` with `z.toJSONSchema(<shared schema>)` if the API accepts it, otherwise the
+     schema in the system prompt), reasoning effort `low`, `timeout: 30_000`, `maxRetries: 1`. The
+     result still goes through the pipeline's own Zod validation.
+   - Before relying on them, check with one real call each and record in the report: whether a
+     JSON-schema `response_format` is accepted, the reasoning-effort parameter's name and values,
+     and how long an extraction at `low` takes. This needs the owner's key in the server's `.env`;
+     without it, report the three as unverified.
+   - It never logs keys, and logs prompts or outputs that contain records only at debug level.
+     Without a key the server uses `FixtureLlm` and says so on `/health`.
 3. **Pipeline**: validate with Zod; on failure retry once with the validation error; then fall back to
    a summary-only result with a "could not extract" notice.
 4. **Mapping** `ExtractionResult` to `ProposedChange[]` against a records snapshot, as a pure function.

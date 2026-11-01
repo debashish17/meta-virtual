@@ -7,7 +7,8 @@
 //
 // Drives a local Chrome over the DevTools protocol (Node's built-in WebSocket; no extra
 // dependencies), waits for the scene's `window.__officeReady` flag, captures the page and
-// samples the frame rate. CHROME overrides the browser path.
+// samples the frame rate. CHROME overrides the browser path, CHROME_DEBUG_PORT the
+// DevTools port (default 9341; HANDOFF.md section 5 slots).
 
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
@@ -22,7 +23,7 @@ const url = args.url ?? 'http://localhost:5173/'
 const out = path.resolve(args.out ?? path.join(here, '../../../docs/screenshots/office-m1.png'))
 const [width, height] = [1440, 810]
 const chrome = process.env.CHROME ?? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
-const port = 9341
+const port = Number(process.env.CHROME_DEBUG_PORT ?? 9341)
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 

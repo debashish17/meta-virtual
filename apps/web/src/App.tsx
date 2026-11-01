@@ -1,3 +1,4 @@
+import AuthGate from './auth/AuthGate'
 import OfficeScene from './office/OfficeScene'
 
 /**
@@ -6,5 +7,9 @@ import OfficeScene from './office/OfficeScene'
  * /assets/catalogue/review.html (linked from the office's HUD in development).
  */
 export default function App() {
-  return <OfficeScene />
+  return (
+    <AuthGate>
+      <OfficeScene />
+    </AuthGate>
+  )
 }

@@ -29,17 +29,23 @@ pnpm dev            # web on :5173 + server on :2567 (Turbo)
 - Server health: `http://localhost:2567/health` returns the shared constant.
   The `office` Colyseus room is defined; clients join in M3.
 
-## Commands (verified M0, Turbo)
+## Commands (verified P1-B, Turbo)
 
 ```sh
+pnpm install
+npx playwright install chromium   # once per machine, for pnpm test:e2e
+pnpm dev            # web on :5173 + server on :2567 (WEB_PORT/PORT to move)
 pnpm build          # web dist + server dist bundle
 pnpm typecheck
 pnpm lint
 pnpm test           # Vitest unit tests
+pnpm test:e2e       # Playwright, two browsers, on :5190/:2590
+pnpm db:start       # local Supabase in Docker (needs Docker Desktop running)
+pnpm db:reset       # local only: migrations + seed
+pnpm db:seed        # local only: demo users + rows (stub until P2-C)
+pnpm db:stop        # stop local Supabase
 node apps/server/dist/index.js   # run the built server (PORT env, default 2567)
 ```
-
-`pnpm test:e2e` (Playwright, two-browser) lands in M3 and is not configured yet.
 
 ## Asset catalogue
 

@@ -1,31 +1,15 @@
-import { Server } from "@colyseus/core";
-import { WebSocketTransport } from "@colyseus/ws-transport";
-import { SHARED_HELLO } from "@office/shared";
-import { OfficeRoom } from "./office.room.js";
-import express from "express";
+import { buildDeps } from "./deps.js";
+import { loadEnv } from "./env.js";
+import { createServer } from "./server.js";
 
-const PORT = Number(process.env.PORT ?? 2567);
-
-console.log(`[server] shared constant: ${SHARED_HELLO}`);
-
-const gameServer = new Server({
-  transport: new WebSocketTransport(),
-  express: (app) => {
-    app.use(express.json());
-    app.use((_req, res, next) => {
-      res.header("Access-Control-Allow-Origin", "*");
-      res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-      res.header("Access-Control-Allow-Headers", "Content-Type");
-      next();
-    });
-
-    app.get("/health", (_req, res) => {
-      res.json({ ok: true, shared: SHARED_HELLO });
-    });
-  },
-});
-
-gameServer.define("office", OfficeRoom);
-
-await gameServer.listen(PORT);
-console.log(`[server] office room listening on :${PORT} (${SHARED_HELLO})`);
+try {
+  const env = loadEnv();
+  const deps = buildDeps(env);
+  const gameServer = createServer(deps);
+  await gameServer.listen(env.PORT);
+  console.log(`[server] office listening on :${env.PORT} (auth=${env.AUTH_MODE})`);
+} catch (err) {
+  // loadEnv names variables, never values, so this is safe to print.
+  console.error(`[server] ${err instanceof Error ? err.message : err}`);
+  process.exit(1);
+}

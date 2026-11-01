@@ -2,12 +2,10 @@ import { Html } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { FURNITURE, LOOK_PRESETS, OFFICE_WALK, zoneAt, type AvatarLook } from '@office/shared'
+import { FURNITURE, LOOK_PRESETS, OFFICE_SPOTS, OFFICE_WALK, advance, riseOf, routineAtDesk, routineAway, seatFor, seatKey, secondsOf, zoneAt, type AvatarLook, type Routine, type RoutineWorld } from '@office/shared'
 import Person, { type Motion } from './Person'
 import { useMe } from './me'
-import { TAKEN, seatKey } from './interactions'
-import { riseOf, secondsOf } from './moves'
-import { OFFICE_SPOTS, advance, routineAtDesk, routineAway, seatFor, type Routine, type RoutineWorld } from './routine'
+import { TAKEN } from './taken'
 
 /**
  * Colleagues at work: the other preset employees, each with a desk, typing for a while and then

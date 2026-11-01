@@ -42,48 +42,70 @@ Exports: `WORLD`, `OBSTACLES`, `ZONES`, `FURNITURE`, `isWalkable(x, z)`, `zoneAt
 
 ## 4. Multiplayer contract (Colyseus)
 
-Room: `office` (one room per workspace). Join options validated with Zod:
+Room: `office`, one per workspace (`define("office", OfficeRoom).filterBy(["workspaceId"])`).
+Join options validated with Zod (`JoinOptions` in `packages/shared/src/net`):
 
 ```ts
-JoinOptions = { displayName: string; workspaceId: string; accessToken: string }
+JoinOptions = { protocol: number; displayName: string; workspaceId: string; look: AvatarLook }
 ```
 
-The server verifies `accessToken` (Supabase JWT) before admitting the client.
+`protocol` must equal `PROTOCOL_VERSION`; a mismatch is refused with
+`error { code: "protocol_mismatch" }`. The access token is not in the options: the SDK carries
+it as `client.auth.token` and the server reads it in `static onAuth`. `workspaceId` is only
+the matchmaking key; authorization comes from the token, which resolves to
+`AuthClaims = { userId; name; workspaceId }` (12.2, 12.3).
 
-**Synchronized state (Colyseus Schema)**
+**Synchronized state** (plain types `PlayerView` and `NpcView` in `packages/shared/src/net`;
+the server's Colyseus schema mirrors them, field for field):
 
 ```ts
-Player = {
-  id: string; userId: string; name: string;
-  x: number; z: number; facing: number;       // radians
+PlayerView = {
+  id: string; userId: string; name: string; look: AvatarLook;
+  x: number; z: number; facing: number;   // metres, radians
+  pose: Pose; speed: number;              // m/s
+  activity: { kind: "seat" | "counter"; targetId: string } | null;
   status: "available" | "in_meeting" | "away";
   zoneId: string | null;
+  lastSeq: number;                        // seq of the last input the server applied
+}
+NpcView = {
+  id: string; name: string; look: AvatarLook;
+  x: number; z: number; facing: number; pose: Pose; speed: number;
 }
 ```
 
-**Client → server messages**
+**Client → server messages** (every payload `.strict()`, parsed on receipt)
 
 | Message | Payload | Rules |
 |---|---|---|
-| `move_intent` | `{ seq: number; dx: -1\|0\|1; dz: -1\|0\|1 }` | Sent at a fixed rate while a key is held; server normalizes and clamps speed |
+| `move_intent` | `{ seq: number; dx: -1\|0\|1; dz: -1\|0\|1; run: boolean }` | Sent at `TICK_HZ` while a key is held (world axes), plus once on release; server normalizes and clamps speed |
 | `move_target` | `{ seq: number; x: number; z: number }` | Server computes path with `findPath`; rejects unwalkable targets |
+| `activity_start` | `{ seq: number; targetId: string }` | A desk seat id (`seat:x,z`) or a counter spot id; must be known and free |
+| `activity_stop` | `{ seq: number }` | Ends the activity (standing up first, as in the office today) |
 | `chat_send` | `{ text: string }` | 1 to 500 chars, trimmed, rate-limited |
-| `status_set` | `{ status: Player["status"] }` | Optional |
+| `status_set` | `{ status: PlayerView["status"] }` |  |
+| `look_set` | `{ look: AvatarLook }` |  |
+
+`seq` counts the client's ticks (12.1).
 
 **Server → client messages**
 
 | Message | Payload |
 |---|---|
 | `chat` | `{ id, userId, name, text, ts }` |
+| `chat_history` | `{ messages: ChatMessage[] }` (the last 50, sent on join) |
 | `zone_event` | `{ userId, zoneId, kind: "enter" \| "leave" }` |
-| `records_changed` | `{ kinds: ("tasks" \| "milestones" \| "commitments" \| "proposed_changes" \| "meetings")[] }` |
-| `error` | `{ code, message }` |
+| `records_changed` | `{ kinds: RecordKind[] }` |
+| `error` | `{ code: "invalid_message" \| "rate_limited" \| "unwalkable" \| "target_taken" \| "unauthorized" \| "protocol_mismatch"; message }` |
 
 **Movement rules**
-- Server tick fixed (for example 20 Hz). The client never sends final positions.
-- The server rejects moves into non-walkable cells, clamps speed, and ignores messages above the rate limit.
-- The client predicts its own avatar and reconciles on mismatch using `seq`. Remote avatars are interpolated with a buffer of about 100 ms.
+- Server tick fixed at `TICK_HZ` (20 Hz). The client never sends final positions.
+- One function, `stepPlayer(player, input, dt)` in `packages/shared/src/sim`, moves a player on both sides; the client reconciles against the snapshot's `lastSeq` without replaying inputs (12.1).
+- The server rejects moves into non-walkable cells, clamps speed (walk 2.3 m/s, jog `WalkMap.MAX_SPEED`), and drops messages above the rate limit (30 movement a second, 5 chat per 10 seconds).
+- Remote avatars are interpolated with a buffer of `INTERP_DELAY_MS` (100 ms); jumps above `SNAP_DISTANCE` (0.3 m) snap instead of sliding.
 - Proximity events use hysteresis (enter at 3 m, leave at 4 m).
+
+**Changed in P1-A1:** the token moved out of the join options into `client.auth.token` with `static onAuth`; `protocol` / `PROTOCOL_VERSION` added; `AuthClaims` added; `activity_start`, `activity_stop` and `look_set` added; the error codes enumerated; the state gained `look`, `pose`, `speed`, `activity` and `lastSeq` and split into `PlayerView` / `NpcView`; the constants (`TICK_HZ`, `INTERP_DELAY_MS`, `SNAP_DISTANCE`, rate limits, `RECONNECT_SECONDS`, proximity distances) named; movement runs the shared `stepPlayer` with `lastSeq` reconciliation.
 
 ## 5. HTTP API contract
 
@@ -94,8 +116,9 @@ All endpoints require `Authorization: Bearer <Supabase JWT>`. Bodies and respons
 | `GET /me/day` | "My day": tasks due, meetings, customer follow-ups, each with a reason | `{ items: DayItem[] }` |
 | `GET /projects/:id/status` | Milestones, tasks, blockers, owners, latest decisions | `ProjectStatus` |
 | `GET /accounts/:id/status` | Deal stage, commitments, recent activity | `AccountStatus` |
-| `POST /meetings` | Create a meeting from a transcript (pasted or fixture), run extraction | `{ meetingId, proposedChanges: ProposedChange[] }` |
+| `POST /meetings` | Create a meeting from a transcript (pasted, or fixture `acme-sync`), run extraction | `{ meetingId, proposedChanges: ProposedChange[] }` |
 | `GET /meetings/:id` | Meeting with summary, decisions, transcript | `Meeting` |
+| `GET /proposed-changes?status=pending&meetingId=` | The approval drawer's list | `{ changes: ProposedChange[] }` |
 | `POST /proposed-changes/:id/approve` | Apply one change in a transaction, write audit row, notify room | `{ ok: true }` |
 | `POST /proposed-changes/:id/reject` | Mark rejected, write audit row | `{ ok: true }` |
 | `POST /ask` | Ask the office | `AskResult` |
@@ -107,6 +130,10 @@ AskResult = {
   sources: { type: "task"|"milestone"|"commitment"|"meeting"|"account"|"project"; id: string; label: string }[];
 }
 ```
+
+Record, change, extraction, status and ask shapes are Zod schemas in `packages/shared/src/api`
+(P1-A2). **Changed in P1-A:** the `GET /proposed-changes` list added; the fixture meeting
+variant named.
 
 ## 6. Data model (Postgres)
 
@@ -280,14 +307,23 @@ Checked against the installed libraries: Colyseus 0.18 (`@colyseus/core` 0.18.24
   (summary only; abstain).
 - `FixtureLlm` is the default, and the only client in tests and CI. It is deterministic over the
   shared demo data.
-- The real adapter uses Anthropic's SDK (`@anthropic-ai/sdk`): `LLM_PROVIDER=anthropic`, model from
-  `LLM_MODEL` (default `claude-opus-5-5`), key from `LLM_API_KEY`. Structured output goes through
-  `client.messages.parse` with `output_config.format = zodOutputFormat(<the shared Zod schema>)`
-  (`@anthropic-ai/sdk/helpers/zod`), followed by the same Zod validation as the fixture path.
-  `output_config.effort: "low"` for extraction and answers (thinking stays on; it cannot be
-  disabled on this model). `timeout` 30 000 ms (milliseconds in the TypeScript SDK), `maxRetries` 1.
-  Optional hardening: `fallbacks: "default"` (beta `server-side-fallback-2026-07-01`) so a safety
-  refusal still returns an answer; without it the pipeline's own fallback handles a refusal.
+- The real adapter is Muse Spark through the Meta Model API (decision D5), which is
+  OpenAI-compatible, so it uses OpenAI's SDK (`openai`): `LLM_PROVIDER=meta`, base URL from
+  `LLM_BASE_URL` (default `https://api.meta.ai/v1`), model from `LLM_MODEL` (default
+  `muse-spark-1.3`), key from `LLM_API_KEY`. Calls go through Chat Completions. The reply is
+  requested as JSON in the shape of the shared Zod schema: through `response_format` with
+  `type: "json_schema"` and `z.toJSONSchema(<the shared Zod schema>)` if the API accepts it,
+  otherwise with the schema in the system prompt and an instruction to reply with JSON only. Either
+  way it then goes through the same Zod validation as the fixture path.
+- Reasoning effort `low` for extraction and answers (Muse Spark offers minimal, low, medium, high,
+  extra high and max; more effort is not reliably better). `timeout` 30 000 ms (milliseconds in the
+  TypeScript SDK), `maxRetries` 1.
+- Not yet verified against the API; P2-D checks each with one real call and records the result in
+  its report: whether `response_format` with a JSON schema is accepted, the name and values of the
+  reasoning-effort parameter (the OpenAI SDK calls it `reasoning_effort`), and how long an
+  extraction at `low` takes against the 30-second timeout.
+- The adapter needs only a base URL, a model and a key, so another OpenAI-compatible host (for
+  example Fireworks, which also serves Muse models) needs no new code, only different `LLM_*` values.
 - Never log keys. Prompts and outputs that contain records are logged only at debug level, never
   in production.
 - Ask: classify by rules first (the seeded project and account names, "my day"), the LLM only when
