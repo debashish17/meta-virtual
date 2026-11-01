@@ -107,3 +107,63 @@ None.
 
 P3-C web wiring and sign-in (starts after P2-B/P2-F/P2-G; finishes after P3-B) and
 P3-E demo e2e are unblocked by this package; not started.
+
+---
+
+## Reviewer addendum (independent verification, 2026-11-01)
+
+Branch `wp/P2-F-panels`, reviewed at commit `571ca5f`. I read every owned
+implementation and test body listed below (not just search output) and re-ran
+all checks fresh from the worktree root.
+
+Files read in full: `apps/web/src/ui/{Panels,Participants,ChatPanel,AskPanel,
+MyDayPanel,ApprovalsPanel,RightDrawer,MeetingBar,Notices}.tsx`,
+`{actions,format}.ts`, `panels.css`, `{format,AskPanel,ApprovalsPanel,
+approvalConflict,panels}.test.{ts,tsx}`, plus the `Hud.tsx`/`office.css` diff.
+
+Checks re-run (results):
+- `pnpm typecheck`: 3/3 pass.
+- `pnpm lint`: 3/3 pass.
+- `pnpm --filter @office/web test`: 10 files, 44/44 pass (20 new P2-F tests).
+- `pnpm --filter @office/shared test`: 14 files, 107/107 pass.
+- `pnpm build`: ok (web built in ~6s).
+- Full `pnpm test`: server suite fails only on the pre-existing vitest tinypool
+  teardown crash (`ERR_INVALID_ARG_TYPE` after results); I confirmed all 8
+  server test files pass individually. P2-F owns no server files, so this is
+  out of scope (same crash as the P2-E report).
+- `git diff --name-status main...HEAD`: 12 added + `Panels.tsx` (slot stub to
+  implementation) under `apps/web/src/ui/`, `Hud.tsx` (one hint-text line),
+  `office.css` (hint/look/review-sheet positioning only), `docs/reports/P2-F.md`.
+  All within Owns; LookEditor moved via CSS only.
+- No existing test changed or weakened: every test file in the diff is new
+  (`A` status); no `M` on any test file.
+- No secrets committed: no secret-ish strings in `apps/web/src/ui/`; no
+  `.env` changes.
+- No `fetch(` in `apps/web/src/ui/` (only `refetch` store calls) — task 5 holds.
+- Mock conflict message (`mock.ts:215`, "is no longer pending") matches the
+  ApprovalsPanel refresh regex; the conflict test genuinely exercises it.
+- Screenshot `/tmp/p2f-panels.png` inspected: 1440x810 PNG, panels open
+  (People, Chat, Ask with sourced answer, Approvals (4) with meeting summary
+  and before/after cards), scene centre clear, no overlaps.
+
+Verdict per acceptance item:
+1. Process meeting, approve three, reject one; My day and ask show the result
+   — PASS. Proven by the ordered `ApprovalsPanel.test.tsx` flow (real mock api
+   + real records store: 4→3→2→1→My day with "Go-live by 22 Nov"), the
+   Acme-room gating test in `panels.test.tsx`, and the cited-answer/abstain
+   tests in `AskPanel.test.tsx`; all re-run green above.
+2. 1440x810 screenshot with panels open, centre clear — PASS (inspected;
+   lives in /tmp per the builder's Owns-correct request to the lead).
+3. Checks pass — PASS (typecheck, lint, web, shared, build; server crash is
+   pre-existing infrastructure, untouched by this package).
+
+Task-by-task: participants/chat/ask/My day/approvals (before-after,
+approve/reject, needs-review, conflict refresh), Acme-room Process meeting +
+meeting summary, fixture/reconnecting/error notices, ask sources/no-record
+state, hint + Customise-look repositioning, keydown (not keyup) movement guard
+with test, and pending-disables on process/approve/reject/ask — all present
+in the bodies read.
+
+Fixes applied: none (no defects found).
+Processes started: none (no dev servers needed; none left running).
+Status: passed.
