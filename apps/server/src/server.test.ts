@@ -1,4 +1,4 @@
-import { afterAll, afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import type { Server } from "@colyseus/core";
 import { buildDeps } from "./deps.js";
 import { loadEnv } from "./env.js";
@@ -7,7 +7,10 @@ import { createServer } from "./server.js";
 // `Server.listen()` dynamically imports `@pm2/io` when it resolves (Stats.reset), and the
 // import spams the worker's IPC channel with `axm:` messages, which breaks vitest's forks
 // pool. Plain node is unaffected (no channel: it degrades silently). Swallow only those
-// messages for this file; everything else still reaches the pool.
+// messages for this file; everything else still reaches the pool. The filter stays
+// installed for the worker's whole life (never restored): the pm2 monitor interval
+// outlives the tests, and a late `axm:monitor` through the restored channel crashes
+// the runner with "Unexpected call to process.send()" after every test passed.
 const realSend = process.send?.bind(process);
 const filteredSend = function (
   this: unknown,
@@ -26,9 +29,6 @@ const filteredSend = function (
   return realSend?.(message as never, ...(rest as never[])) ?? false;
 } as typeof process.send;
 process.send = filteredSend;
-afterAll(() => {
-  process.send = realSend;
-});
 
 async function boot(env: Parameters<typeof loadEnv>[0] = {}): Promise<{ gameServer: Server; base: string }> {
   const gameServer = createServer(buildDeps(loadEnv(env)));
