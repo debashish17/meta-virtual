@@ -41,12 +41,15 @@ test("two browsers see each other move", async ({ alice, bob }) => {
     );
   }
 
+  // Pill waits are schedule bounds, not behavior: under SwiftShader contention
+  // (two pages at ~0.3 fps) the first remote pill took 189 s to render after
+  // both peers were online and present in net data. Assertions unchanged.
   await expect(
     alice.page.locator('[data-testid="remote-name"]', { hasText: "Bob" }),
-  ).toBeVisible({ timeout: 30_000 });
+  ).toBeVisible({ timeout: 240_000 });
   await expect(
     bob.page.locator('[data-testid="remote-name"]', { hasText: "Alice" }),
-  ).toBeVisible({ timeout: 30_000 });
+  ).toBeVisible({ timeout: 240_000 });
 
   const before = (await bob.page.evaluate(
     () =>
@@ -79,6 +82,8 @@ test("two browsers see each other move", async ({ alice, bob }) => {
       );
     },
     before,
-    { timeout: 30_000 },
+    // Schedule bound (see above): in-page polling runs at the render frame
+    // rate, so observing the walk needs minutes on a starved box.
+    { timeout: 180_000 },
   );
 });

@@ -113,6 +113,11 @@ pnpm dev                      # web http://localhost:5173/  server http://localh
 - Colyseus 0.18: subscribe to state with `getStateCallbacks(room)` from `@colyseus/sdk`; the
   `state.players.onAdd(...)` form from older tutorials does not exist. The token goes in
   `client.auth.token`, not in the join options.
+- Slow GPU-less boxes (the AWS instance): one headless page needs ~70 s to reach ready,
+  the second ~230 s while the first renders, and remote pills up to ~190 s after online.
+  The e2e waits are schedule bounds for this (see the comments in `e2e/*.spec.ts`);
+  a multiplayer timeout here is contention until proven otherwise — check the pill
+  rendered, not just the clock.
 
 ## 5. How the agents work together
 
