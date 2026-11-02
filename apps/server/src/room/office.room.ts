@@ -40,7 +40,8 @@ import {
   type Target,
 } from "@office/shared";
 import { DevAuth, UnauthorizedError, type AuthVerifier } from "../auth/verify.js";
-import { InMemoryChatStore } from "./chat.js";
+import { InMemoryChatStore, type ChatStore } from "./chat.js";
+import { NpcDirector } from "./npcs.js";
 import { registerRoom, unregisterRoom } from "./rooms.js";
 import { OfficeState, PlayerState } from "./schema.js";
 
@@ -127,8 +128,15 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
    * everything when `AUTH_MODE=supabase` without a wired verifier (fail closed).
    */
   static verifier: AuthVerifier | null = null;
+  /**
+   * Optional write-through chat persister (wiring assigns `deps.chat`). The room keeps its
+   * own per-workspace memory store for history; every message is additionally handed here
+   * so it reaches `chat_messages`. Null in tests and bare checkouts: chat just works live.
+   */
+  static chatPersist: ChatStore | null = null;
 
   private chat = new InMemoryChatStore();
+  private readonly npcs = new NpcDirector();
   private readonly recs = new Map<string, SessionRecord>();
   /** Seat and counter-spot ids held in this room, players (and later colleagues) alike. */
   private readonly taken = new Set<string>();
@@ -175,6 +183,7 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
       this.onStatusSet(client, message),
     );
     this.onMessage(CLIENT_MESSAGE.lookSet, (client, message) => this.onLookSet(client, message));
+    this.npcs.sync(this.state, this.taken, []);
   }
 
   override onJoin(client: Client, options: unknown): void {
@@ -232,6 +241,7 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
       chatHits: [],
     });
     client.send(SERVER_MESSAGE.chatHistory, { messages: this.chat.recent(CHAT_HISTORY_MAX) });
+    this.syncNpcs();
   }
 
   override async onDrop(client: Client): Promise<void> {
@@ -244,6 +254,7 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
 
   override onLeave(client: Client): void {
     this.removePlayer(client.sessionId);
+    this.syncNpcs();
   }
 
   override onDispose(): void {
@@ -372,6 +383,7 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
       ts: Date.now(),
     };
     this.chat.add(chat);
+    OfficeRoom.chatPersist?.add(chat);
     this.broadcast(SERVER_MESSAGE.chat, chat);
   }
 
@@ -417,6 +429,13 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
         console.warn(`[room] tick failed for ${sessionId}: ${err instanceof Error ? err.message : err}`);
       }
     }
+    this.npcs.tick(this.state, this.taken, TICK_DT);
+  }
+
+  /** The spawned colleagues exclude whoever is signed in; respawns on leave. */
+  private syncNpcs(): void {
+    const names = [...this.state.players.values()].map((player) => player.name);
+    this.npcs.sync(this.state, this.taken, names);
   }
 
   private tickMovement(player: PlayerState, rec: SessionRecord): void {

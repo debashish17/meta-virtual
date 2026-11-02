@@ -20,6 +20,8 @@ export interface Env {
   AUTH_MODE: AuthMode;
   /** CORS origins, comma-separated; empty means any origin (local development). */
   ALLOWED_ORIGINS: string;
+  /** "1" relaxes the WS heartbeat for loaded dev/e2e boxes (server.ts); unset is strict. */
+  WS_PING_RELAXED: string;
   /** postgres.js URL (P2-C). */
   DATABASE_URL: string;
   SUPABASE_URL: string;
@@ -100,6 +102,7 @@ export function loadEnv(from: NodeJS.ProcessEnv = process.env): Env {
     PORT: port(raw),
     AUTH_MODE: oneOf(raw, "AUTH_MODE", AUTH_MODES, "dev"),
     ALLOWED_ORIGINS: text(raw, "ALLOWED_ORIGINS", ""),
+    WS_PING_RELAXED: text(raw, "WS_PING_RELAXED", ""),
     DATABASE_URL: text(raw, "DATABASE_URL", ""),
     SUPABASE_URL: text(raw, "SUPABASE_URL", ""),
     SUPABASE_ANON_KEY: text(raw, "SUPABASE_ANON_KEY", ""),

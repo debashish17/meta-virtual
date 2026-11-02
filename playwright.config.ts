@@ -28,7 +28,8 @@ export default defineConfig({
   webServer: [
     {
       command: "pnpm --filter @office/server dev",
-      env: { PORT: String(SERVER_PORT) },
+      // Relaxed heartbeat: headless software rendering stalls past 3s x 2 (P3-A).
+      env: { PORT: String(SERVER_PORT), WS_PING_RELAXED: "1" },
       port: SERVER_PORT,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,

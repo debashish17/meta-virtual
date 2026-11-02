@@ -268,8 +268,9 @@ Checked against the installed libraries: Colyseus 0.18 (`@colyseus/core` 0.18.24
   `WORKSPACE_ID`. The server refuses to start with `AUTH_MODE=dev` when `NODE_ENV=production`.
 - `AUTH_MODE=supabase`: the web signs in with `@supabase/supabase-js` (seeded test users locally;
   email and password when deployed) and sends the access token the same two ways. The server
-  verifies it with `jose`: HS256 with `SUPABASE_JWT_SECRET` for the local CLI, or the project's
-  JWKS (`<SUPABASE_URL>/auth/v1/.well-known/jwks.json`) for hosted projects with asymmetric keys.
+  verifies it with `jose` against the project's JWKS
+  (`<SUPABASE_URL>/auth/v1/.well-known/jwks.json`), locally and hosted: the local CLI signs
+  ES256 (verified on CLI 2.122; there is no local HS256 secret).
   The claims give `userId`; a membership lookup (cached for a few seconds) gives `workspaceId` and
   the display name. Authorization never uses a client-supplied workspace.
 - Both modes resolve to the same `AuthClaims = { userId; name; workspaceId }`, which every HTTP
