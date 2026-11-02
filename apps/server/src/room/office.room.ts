@@ -10,6 +10,8 @@ import {
   COUNTERS,
   ChatSend,
   DESK_SEATS,
+  HistoryRequest,
+  TeleportAdmin,
   JoinOptions,
   LookSet,
   MOVE_RATE_PER_SECOND,
@@ -181,6 +183,12 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
       this.onActivityStop(client, message),
     );
     this.onMessage(CLIENT_MESSAGE.chatSend, (client, message) => this.onChatSend(client, message));
+    this.onMessage(CLIENT_MESSAGE.historyRequest, (client, message) =>
+      this.onHistoryRequest(client, message),
+    );
+    this.onMessage(CLIENT_MESSAGE.teleportAdmin, (client, message) =>
+      this.onTeleportAdmin(client, message),
+    );
     this.onMessage(CLIENT_MESSAGE.statusSet, (client, message) =>
       this.onStatusSet(client, message),
     );
@@ -243,7 +251,8 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
       moveHits: [],
       chatHits: [],
     });
-    client.send(SERVER_MESSAGE.chatHistory, { messages: this.chat.recent(CHAT_HISTORY_MAX) });
+    // History is pulled via `history_request`, never pushed here: a join-time push
+    // can arrive before the client registers its handler and gets dropped.
     this.syncNpcs();
   }
 
@@ -388,6 +397,50 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
     this.chat.add(chat);
     OfficeRoom.chatPersist?.add(chat);
     this.broadcast(SERVER_MESSAGE.chat, chat);
+  }
+
+  private onHistoryRequest(client: Client, message: unknown): void {
+    const rec = this.recs.get(client.sessionId);
+    if (!rec) return;
+    const parsed = HistoryRequest.safeParse(message);
+    if (!parsed.success) {
+      this.fail(client, "invalid_message", "bad history_request");
+      return;
+    }
+    client.send(SERVER_MESSAGE.chatHistory, { messages: this.chat.recent(CHAT_HISTORY_MAX) });
+  }
+
+  private onTeleportAdmin(client: Client, message: unknown): void {
+    const player = this.state.players.get(client.sessionId);
+    const rec = this.recs.get(client.sessionId);
+    if (!player || !rec) return;
+    if (process.env.NODE_ENV === "production") {
+      this.fail(client, "invalid_message", "teleport is dev-only");
+      return;
+    }
+    const parsed = TeleportAdmin.safeParse(message);
+    if (!parsed.success) {
+      this.fail(client, "invalid_message", "bad teleport_admin");
+      return;
+    }
+    if (!OFFICE_WALK.isWalkable(parsed.data.x, parsed.data.z)) {
+      this.fail(client, "unwalkable", "target is not walkable");
+      return;
+    }
+    if (rec.heldTargetId) {
+      this.taken.delete(rec.heldTargetId);
+      rec.heldTargetId = null;
+    }
+    this.cancelApproach(rec);
+    rec.fresh = null;
+    rec.queued = null;
+    rec.pendingTarget = null;
+    rec.stopRequested = false;
+    rec.activity = { kind: "free" };
+    player.x = parsed.data.x;
+    player.z = parsed.data.z;
+    player.pose = "stand";
+    player.speed = 0;
   }
 
   private onStatusSet(client: Client, message: unknown): void {

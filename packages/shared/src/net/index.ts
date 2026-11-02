@@ -110,6 +110,24 @@ export const ChatSend = z.object({
 }).strict();
 export type ChatSend = z.infer<typeof ChatSend>;
 
+/**
+ * Ask for the recent chat. History is pulled, not pushed on join: a join-time push
+ * can arrive before the client registers its handler and gets dropped with a
+ * warning, so the client requests it once its handlers are attached.
+ */
+export const HistoryRequest = z.object({}).strict();
+export type HistoryRequest = z.infer<typeof HistoryRequest>;
+
+/**
+ * DEV ONLY (`__officeDebug.teleport`): move the sender instantly. The server refuses
+ * it in production and rejects unwalkable targets, so the no-walls invariant holds.
+ */
+export const TeleportAdmin = z.object({
+  x: z.number().finite(),
+  z: z.number().finite(),
+}).strict();
+export type TeleportAdmin = z.infer<typeof TeleportAdmin>;
+
 /** One caption segment from the browser speech recognizer (Phase 5). */
 export const CaptionSend = z.object({
   text: z.string().trim().min(1).max(CHAT_TEXT_MAX),
@@ -235,6 +253,8 @@ export const CLIENT_MESSAGE = {
   activityStart: "activity_start",
   activityStop: "activity_stop",
   chatSend: "chat_send",
+  historyRequest: "history_request",
+  teleportAdmin: "teleport_admin",
   captionSend: "caption_send",
   statusSet: "status_set",
   lookSet: "look_set",

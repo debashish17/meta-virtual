@@ -113,12 +113,12 @@ pnpm --filter @office/web screenshot -- --url "<url>" --out <file.png>
   pills up to ~190 s after online, and the full two-browser demo ~5 min
   inside a 15 min budget. A multiplayer timeout here is contention until
   proven otherwise.
-- **Dev sign-in cannot read the database.** `dev:<name>` ids have no
-  membership rows, so with `AUTH_MODE=dev` plus `DATABASE_URL` every record
-  read comes back empty ("unknown account …"). Until the lead fixes that,
-  run the server without `DATABASE_URL` (the deterministic in-memory demo
-  data, which is also what the e2e demo uses) or sign in through Supabase
-  Auth. Deployed (`AUTH_MODE=supabase`) is unaffected.
+- **Dev sign-in resolves through the database.** With `DATABASE_URL` set,
+  `dev:<name>` for a seeded person resolves to their seeded user id, so dev
+  auth reads Postgres like a signed-in user. Without a database it keeps the
+  legacy `dev-<name>` id over the deterministic in-memory demo data (which is
+  also what the e2e demo uses). Unknown names never resolve. Supabase sign-in
+  and deployed (`AUTH_MODE=supabase`) setups are unaffected.
 - **Fixture AI unless a key is set.** Without `LLM_API_KEY` the server
   answers from the deterministic fixture (the "Fixture AI" notice); the demo
   is built to pass that way.

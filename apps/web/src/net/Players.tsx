@@ -1,11 +1,12 @@
 import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { AvatarLook, Pose } from "@office/shared";
 import Person, { type Motion } from "../office/Person.js";
 import { startNet, stopNet } from "./connection.js";
 import { SnapshotBuffer } from "./interp.js";
+import { sameRemoteAppearance } from "./remoteAppearance.js";
 import { useNet } from "./store.js";
 
 /**
@@ -24,6 +25,7 @@ function seedOf(id: string): number {
 
 interface RemoteProps {
   id: string;
+  kind: "player" | "npc";
   name: string;
   look: AvatarLook;
   x: number;
@@ -33,16 +35,33 @@ interface RemoteProps {
   speed: number;
 }
 
-function RemotePerson({ id, name, look, x, z, facing, pose, speed }: RemoteProps) {
+function RemotePerson({ id, kind, name, look, x, z, facing, pose, speed }: RemoteProps) {
   const group = useRef<THREE.Group>(null);
   const label = useRef<THREE.Group>(null);
   const motion = useRef<Motion>({ pose, speed });
   const buffer = useMemo(() => new SnapshotBuffer(), []);
   const seed = useMemo(() => seedOf(id), [id]);
 
+  // Snapshots flow through a store subscription, not through rendering: the memo
+  // below skips the 20 Hz movement patches, so a render-driven feed would starve.
   useEffect(() => {
-    buffer.push({ t: performance.now(), x, z, facing, pose, speed });
-  }, [buffer, x, z, facing, pose, speed]);
+    let last = "";
+    return useNet.subscribe((state) => {
+      const view = kind === "player" ? state.players[id] : state.npcs[id];
+      if (!view) return;
+      const key = `${view.x}|${view.z}|${view.facing}|${view.pose}|${view.speed}`;
+      if (key === last) return;
+      last = key;
+      buffer.push({
+        t: performance.now(),
+        x: view.x,
+        z: view.z,
+        facing: view.facing,
+        pose: view.pose,
+        speed: view.speed,
+      });
+    });
+  }, [buffer, id, kind]);
 
   useFrame(() => {
     const s = buffer.sample(performance.now());
@@ -69,6 +88,11 @@ function RemotePerson({ id, name, look, x, z, facing, pose, speed }: RemoteProps
   );
 }
 
+// Movement patches must not re-render the drei label subtree; only identity, name
+// and clothing do (sameRemoteAppearance). Snapshots still flow every patch through
+// the subscription above, so interpolation is unaffected.
+const MemoRemotePerson = memo(RemotePerson, sameRemoteAppearance);
+
 export default function Players() {
   const players = useNet((s) => s.players);
   const npcs = useNet((s) => s.npcs);
@@ -90,9 +114,10 @@ export default function Players() {
   return (
     <>
       {remotes.map((p) => (
-        <RemotePerson
+        <MemoRemotePerson
           key={p.id}
           id={p.id}
+          kind="player"
           name={p.name}
           look={p.look}
           x={p.x}
@@ -103,9 +128,10 @@ export default function Players() {
         />
       ))}
       {npcList.map((n) => (
-        <RemotePerson
+        <MemoRemotePerson
           key={n.id}
           id={n.id}
+          kind="npc"
           name={n.name}
           look={n.look}
           x={n.x}

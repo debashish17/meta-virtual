@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { Server } from "@colyseus/core";
 import { ColyseusTestServer } from "@colyseus/testing";
 import { WebSocketTransport } from "@colyseus/ws-transport";
@@ -465,13 +465,45 @@ describe("OfficeRoom", () => {
     }
     await waitFor(() => errors.length > 0, 5000, "a chat rate limit");
     expect(errors[0].code).toBe("rate_limited");
-    // A late joiner gets the recent history (the 5 that fit, not the dropped one).
+    // A late joiner pulls the recent history (the 5 that fit, not the dropped one).
     testServer.sdk.auth.token = "dev:Maya";
     const late = await testServer.sdk.joinOrCreate("office", joinOptions("Maya"));
+    late.send(CLIENT_MESSAGE.historyRequest, {});
     const history = await late.waitForMessage(SERVER_MESSAGE.chatHistory, 5000);
     expect(history.messages).toHaveLength(5);
     expect(history.messages[0].text).toBe("hello office");
     await late.waitForInitialState();
+  });
+
+  it("teleports in dev, refuses walls and production", { timeout: 30000 }, async () => {
+    const { testServer } = await setup();
+    const room = await join(testServer, "Maya");
+    const target = otherZoneTarget();
+    const errors: { code: string }[] = [];
+    room.onMessage(SERVER_MESSAGE.error, (msg) => errors.push(msg));
+    room.send(CLIENT_MESSAGE.teleportAdmin, { x: target.x, z: target.z });
+    await waitFor(() => {
+      const p = serverPlayer(room.sessionId);
+      return p?.x === target.x && p?.z === target.z;
+    }, 5000, "the teleport");
+    expect(serverPlayer(room.sessionId)?.zoneId).toBe(target.zoneId);
+    room.send(CLIENT_MESSAGE.teleportAdmin, { x: 9999, z: 9999 });
+    await waitFor(
+      () => errors.some((e) => e.code === "unwalkable"),
+      5000,
+      "the wall rejection",
+    );
+    vi.stubEnv("NODE_ENV", "production");
+    try {
+      room.send(CLIENT_MESSAGE.teleportAdmin, { x: target.x, z: target.z });
+      await waitFor(
+        () => errors.some((e) => e.code === "invalid_message"),
+        5000,
+        "the production refusal",
+      );
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("updates status and look", { timeout: 15000 }, async () => {

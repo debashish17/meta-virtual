@@ -84,16 +84,30 @@ export function buildDeps(env: Env): Deps {
       model: env.LLM_MODEL,
       answer: fixtureAnswer,
     }),
-    auth: buildAuth(env, lookup),
+    auth: buildAuth(env, lookup, repo),
     // The live bus: approvals reach the workspace's room (nobody online: no-op).
     bus: new RegistryBus(),
     chat: new DatabaseChatStore(repo, lookup),
   };
 }
 
-function buildAuth(env: Env, lookup: MembershipLookup): AuthVerifier {
+function buildAuth(env: Env, lookup: MembershipLookup, repo: Repo): AuthVerifier {
   if (env.AUTH_MODE === "dev") {
-    return new DevAuth(env.NODE_ENV);
+    // With a database, dev names resolve to their seeded ids so dev auth reads
+    // Postgres like a signed-in user; without one the legacy dev-<key> id stands.
+    return new DevAuth(env.NODE_ENV, (name) => lookupProfileId(repo, name));
   }
   return new SupabaseAuth({ jwksUrl: resolveJwksUrl(env), lookup });
+}
+
+/** The seeded profile id for a display name, or null without a database. */
+async function lookupProfileId(repo: Repo, name: string): Promise<string | null> {
+  if (!(repo instanceof PostgresRepo)) {
+    return null;
+  }
+  return repo.withService(async (tx) => {
+    const rows = await tx`SELECT id FROM profiles WHERE name = ${name} LIMIT 1`;
+    const row = rows[0];
+    return row ? String(row["id"]) : null;
+  });
 }

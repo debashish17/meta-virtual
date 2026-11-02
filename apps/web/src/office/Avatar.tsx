@@ -314,7 +314,12 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
   // test hook for screenshots and manual checks: __officeDebug.teleport(x, z), .walkTo({x, z})
   (window as unknown as Record<string, unknown>).__officeDebug = {
     avatar, walkTo, route, walk: OFFICE_WALK, doing, interact,
-    teleport: (x: number, z: number) => { letGo(); doing.activity = { kind: 'free' }; avatar.x = x; avatar.z = z; route.points = [] },
+    teleport: (x: number, z: number) => {
+      // Online the server is authoritative: a local set would be overwritten by the
+      // next reconcile, so route through the dev-only server teleport instead.
+      if (isOnline()) { netSend.teleport(x, z); return; }
+      letGo(); doing.activity = { kind: 'free' }; avatar.x = x; avatar.z = z; route.points = []
+    },
   }
 }
 

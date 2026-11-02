@@ -1,9 +1,7 @@
 // Tests for `pnpm demo:reset` (P4-B task 1): the pure logic of
 // `scripts/demo-reset.mjs` — target parsing, the hosted guards, and the
-// no-secrets rule. Run from the repo root with:
-//   npx vitest run scripts/demo-reset.test.mjs
-// (The root package has no `test` task that covers scripts/; see the P4-B
-// report's Requests. Never run the hosted path in tests.)
+// no-secrets rule. Covered by `pnpm test` via the root `test:scripts` task.
+// (Never run the hosted path in tests.)
 import { describe, expect, it } from "vitest";
 import {
   DEMO_WORKSPACE_ID,

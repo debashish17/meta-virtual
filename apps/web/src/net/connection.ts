@@ -123,6 +123,9 @@ export const netSend = {
   caption(text: string, final: boolean): void {
     if (room) sendCaption(room, text, final);
   },
+  teleport(x: number, z: number): void {
+    room?.send(CLIENT_MESSAGE.teleportAdmin, { x, z });
+  },
   status(status: Status): void {
     room?.send(CLIENT_MESSAGE.statusSet, { status });
   },
@@ -173,6 +176,9 @@ function attach(newRoom: OfficeRoom, gen: number): void {
     if (!parsed.success) return;
     useNet.setState({ chat: parsed.data.messages });
   });
+  // History is pulled once the handlers above exist: a join-time push can arrive
+  // before this attach runs and gets dropped with an SDK warning.
+  newRoom.send(CLIENT_MESSAGE.historyRequest, {});
   newRoom.onMessage(SERVER_MESSAGE.recordsChanged, (message: unknown) => {
     if (gen !== generation) return;
     const parsed = RecordsChanged.safeParse(message);

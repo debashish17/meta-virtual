@@ -21,6 +21,8 @@ import {
   ChatHistory,
   ChatMessage,
   ChatSend,
+  HistoryRequest,
+  TeleportAdmin,
   ErrorCode,
   JoinOptions,
   LookSet,
@@ -71,6 +73,8 @@ describe("socket contract", () => {
     expect(ActivityStart.safeParse({ seq: 9, targetId: "counter_1" }).success).toBe(true);
     expect(ActivityStop.safeParse({ seq: 10 }).success).toBe(true);
     expect(ChatSend.parse({ text: "  hello  " }).text).toBe("hello");
+    expect(HistoryRequest.parse({})).toEqual({});
+    expect(TeleportAdmin.parse({ x: 1, z: -2 })).toEqual({ x: 1, z: -2 });
     expect(CaptionSend.parse({ text: "  go live  ", final: false, ts: 1 }).text).toBe("go live");
     expect(StatusSet.parse({ status: "in_meeting" }).status).toBe("in_meeting");
     expect(LookSet.parse({ look }).look).toEqual(look);
@@ -90,6 +94,9 @@ describe("socket contract", () => {
     expect(ChatSend.safeParse({ text: "" }).success).toBe(false);
     expect(ChatSend.safeParse({ text: "   " }).success).toBe(false);
     expect(ChatSend.safeParse({ text: "x".repeat(501) }).success).toBe(false);
+    expect(HistoryRequest.safeParse({ since: 1 }).success).toBe(false);
+    expect(TeleportAdmin.safeParse({ x: 1 }).success).toBe(false);
+    expect(TeleportAdmin.safeParse({ x: 1, z: 2, yaw: 0 }).success).toBe(false);
     expect(CaptionSend.safeParse({ text: "", final: true, ts: 1 }).success).toBe(false);
     expect(CaptionSend.safeParse({ text: "x", final: "yes", ts: 1 }).success).toBe(false);
     expect(StatusSet.safeParse({ status: "busy" }).success).toBe(false);
@@ -176,7 +183,8 @@ describe("socket contract", () => {
       "MOVE_RATE_PER_SECOND", "CHAT_RATE_MAX", "CHAT_RATE_WINDOW_S", "RECONNECT_SECONDS",
       "PROXIMITY_ENTER_M", "PROXIMITY_LEAVE_M", "DISPLAY_NAME_MIN", "DISPLAY_NAME_MAX",
       "CHAT_TEXT_MAX", "CHAT_HISTORY_MAX", "Seq", "Axis", "JoinOptions", "AuthClaims", "MoveIntent",
-      "MoveTarget", "ActivityStart", "ActivityStop", "ChatSend", "CaptionSend", "Status", "StatusSet", "LookSet",
+      "MoveTarget", "ActivityStart", "ActivityStop", "ChatSend", "CaptionSend", "HistoryRequest",
+      "TeleportAdmin", "Status", "StatusSet", "LookSet",
       "ChatMessage", "ChatHistory", "Caption", "ZoneEvent", "RecordKind", "RecordsChanged", "ErrorCode",
       "ServerError", "PlayerActivity", "PlayerView", "NpcView", "CLIENT_MESSAGE", "SERVER_MESSAGE",
       "screenToIntent", "WALK_SPEED", "spawnPlayer", "stepPlayer", "PoseSchema", "OFFICE_SPOTS",

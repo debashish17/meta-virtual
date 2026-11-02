@@ -19,10 +19,18 @@ export interface AuthVerifier {
 /**
  * `AUTH_MODE=dev` (the local default): the web sends `dev:<name>` and this maps it to a user
  * of the demo workspace, matching the seeded people by name. Refuses to start in production.
- * P3-B adds the Supabase verifier.
+ *
+ * When a `resolveUserId` is wired (the Postgres `profiles` table), a known name resolves to
+ * its seeded user id, so dev auth reads its own rows and passes membership checks on a real
+ * database; without one (in-memory mode) it keeps the legacy `dev-<key>` id. Unknown names
+ * always keep the legacy id. Dev mode stays forgeable by design and local-only, so resolving
+ * grants nothing it did not already have.
  */
 export class DevAuth implements AuthVerifier {
-  constructor(nodeEnv: string | undefined = process.env.NODE_ENV) {
+  constructor(
+    nodeEnv: string | undefined = process.env.NODE_ENV,
+    private readonly resolveUserId?: (name: string) => Promise<string | null>,
+  ) {
     if (nodeEnv === "production") {
       throw new Error("DevAuth is refused when NODE_ENV=production");
     }
@@ -34,8 +42,12 @@ export class DevAuth implements AuthVerifier {
       throw new UnauthorizedError("expected a dev:<name> token");
     }
     const person = DEMO_PEOPLE.find((p) => p.name.toLowerCase() === name.toLowerCase());
+    const resolved =
+      person && this.resolveUserId
+        ? await this.resolveUserId(person.name).catch(() => null)
+        : null;
     return {
-      userId: `dev-${(person?.key ?? name.toLowerCase()).replace(/\s+/g, "-")}`,
+      userId: resolved ?? `dev-${(person?.key ?? name.toLowerCase()).replace(/\s+/g, "-")}`,
       name: person?.name ?? name.slice(0, 40),
       workspaceId: WORKSPACE_ID,
     };
