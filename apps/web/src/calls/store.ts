@@ -141,12 +141,16 @@ function restorePreviousStatus(): void {
   if (self?.status === "in_meeting") sendStatus(next);
 }
 
-/** Ends any call or attempt silently (the notice, if any, is cleared too). */
-function cancelCall(): void {
+/**
+ * Ends any call or attempt silently (the notice, if any, is cleared too).
+ * `restore` is false only for a room-to-room walk, where the pre-call status
+ * carries over to the next join instead of being restored and recaptured.
+ */
+function cancelCall(restore = true): void {
   generation += 1;
   const room = activeRoom;
   activeRoom = null;
-  restorePreviousStatus();
+  if (restore) restorePreviousStatus();
   if (room) void room.disconnect().catch(() => undefined);
   useCalls.setState({ ...IDLE, collapsed: useCalls.getState().collapsed });
 }
@@ -154,15 +158,22 @@ function cancelCall(): void {
 function failJoin(gen: number): void {
   if (gen !== generation) return;
   activeRoom = null;
-  restoreStatus = null;
+  // A fresh join never sent a status, so this only clears; a carried-over
+  // room-to-room status is restored, since no call is live now.
+  restorePreviousStatus();
   useCalls.setState({ phase: "unavailable", notice: CALLS_UNAVAILABLE });
 }
 
 async function joinCall(zoneId: string): Promise<void> {
   const gen = generation + 1;
   generation = gen;
-  const net = useNet.getState();
-  restoreStatus = net.selfId ? (net.players[net.selfId]?.status ?? "available") : "available";
+  // A room-to-room walk carries the original pre-call status over: the
+  // snapshot still shows "in_meeting" until the server echo arrives, so
+  // recapturing here would strand the status on "in_meeting" at leave.
+  if (restoreStatus === null) {
+    const net = useNet.getState();
+    restoreStatus = net.selfId ? (net.players[net.selfId]?.status ?? "available") : "available";
+  }
   useCalls.setState({
     ...IDLE,
     phase: "joining",
@@ -265,7 +276,10 @@ function onZone(zone: string | null): void {
   lastZone = zone;
   const state = useCalls.getState();
   if (state.phase === "live" || state.phase === "joining" || state.phase === "unavailable") {
-    cancelCall();
+    // Room-to-room: the pre-call status carries over to the next join (no
+    // intermediate restore whose echo would arrive after the recapture).
+    const keepStatus = !!zone && isCallableZone(zone) && state.suppressedZone !== zone;
+    cancelCall(!keepStatus);
   }
   if (zone !== useCalls.getState().suppressedZone) {
     useCalls.setState({ suppressedZone: null });

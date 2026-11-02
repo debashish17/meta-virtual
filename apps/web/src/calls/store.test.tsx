@@ -180,6 +180,46 @@ describe("join and leave follow the avatar", () => {
     expect(rooms[1].connected).toBe(true);
   });
 
+  it("room-to-room keeps the original status when the server echo lags", async () => {
+    goOnline(selfPlayer({ zoneId: "acme_room", status: "away" }));
+    await waitFor(() => expect(useCalls.getState().phase).toBe("live"));
+    // From here the echo lags behind the sends, like the real socket: without
+    // the carry-over, the rejoin recaptures "in_meeting" and strands it.
+    const send = useNet.getState().send;
+    useNet.setState({
+      send: {
+        ...send,
+        status: (s: Status) => {
+          statusSent.push(s);
+        },
+      },
+    });
+    moveSelfTo("project_room");
+    await waitFor(() => expect(useCalls.getState().zoneId).toBe("project_room"));
+    await waitFor(() => expect(useCalls.getState().phase).toBe("live"));
+    moveSelfTo(null);
+    await waitFor(() => expect(useCalls.getState().phase).toBe("idle"));
+    expect(statusSent).toEqual(["in_meeting", "in_meeting", "away"]);
+  });
+
+  it("room-to-room restores the original status when the second join fails", async () => {
+    goOnline(selfPlayer({ zoneId: "acme_room", status: "away" }));
+    await waitFor(() => expect(useCalls.getState().phase).toBe("live"));
+    setTokenDeps({
+      baseUrl: "http://server:2567",
+      getToken: async () => "dev:Maya",
+      fetchFn: (async () =>
+        new Response(JSON.stringify({ error: "calls_off", message: "calls are off" }), {
+          status: 503,
+          headers: { "Content-Type": "application/json" },
+        })) as typeof fetch,
+    });
+    moveSelfTo("project_room");
+    await waitFor(() => expect(useCalls.getState().phase).toBe("unavailable"));
+    expect(useCalls.getState().notice).toBe("Calls unavailable");
+    expect(statusSent).toEqual(["in_meeting", "away"]);
+  });
+
   it("ignores a join that resolves after the avatar already left", async () => {
     let release!: (value: Response) => void;
     const gate = new Promise<Response>((resolve) => {

@@ -101,3 +101,72 @@ Next: P5-C transcript from the call (needs P5-A + P5-B; the room seam and
    listen-only (unit + mock coverage exists; the LiveKit getUserMedia path is
    what stays unverified).
 4. Frame rate during a call, from a real (visible, GPU) browser.
+
+## Reviewer addendum (2026-11-02, independent re-verification)
+
+Reviewer read every owned implementation and test body (not search output),
+re-ran all checks fresh (`--force`, no turbo cache), and re-ran the package e2e.
+
+Checks re-run (all from the worktree root, branch wp/P5-B-call-ui):
+- `pnpm typecheck --force`: 3/3 pass, 0 cached.
+- `pnpm lint --force`: 3/3 pass, 0 cached.
+- `pnpm test --force`: shared 107, web 135 passed + 4 skipped (133 + 2 new
+  reviewer tests), server 138 + 3 skipped. No failures.
+- `pnpm build --force`: pass; `livekit-client` stays a lazy 599 KB chunk.
+- `npx playwright test e2e/calls.spec.ts`: 3/3 green in 7.0 m (T1 1.2 m,
+  T2 3.7 m, T3 1.9 m), ports 5190/2590 free afterwards.
+
+Verdict per acceptance item (WORK_PACKAGES.md P5-B):
+1. Join/leave follow the avatar; first join asks for the mic; denial joins
+   listen-only with a notice, never blocked: PASS for the verifiable path
+   (22 store tests + e2e T2 mock flow + e2e T3 real CDP mic denial on the
+   mock's real getUserMedia path). The LiveKit `setMicrophoneEnabled` denial
+   path itself is honestly OPEN (needs R3); the open item is real and minimal.
+2. Call bar (mute, camera, share, leave) + camera tiles, right drawer column,
+   collapsible, never over the centre; status `in_meeting` in call: PASS
+   (8 CallPanel tests + e2e T2; CSS is fixed bottom-right 320 px, drawer
+   tokens per DESIGN_SPEC 9). One real bug found and fixed, see below.
+3. Shared screen on the wall display (`VideoTexture`, click opens overlay):
+   PARTIAL — implementation + overlay tests are correct and the TV geometry
+   matches WallDisplays exactly (x 13.7/27.5, z 0.215 + 3 mm), but the mount
+   is not in OfficeScene (verified: only LiveShare.tsx references it), so R1
+   is confirmed real; the live path also needs R3. Honestly OPEN.
+4. LiveKit unreachable -> "Calls unavailable", nothing else changes: PASS
+   (store unavailable tests + e2e T1 on the real no-creds path: the token
+   POST goes on the wire, 404 today / 503 `calls_off` after P5-A, status
+   stays Available, walk-out clears).
+5. e2e two contexts see each other's tiles; one leaves, its tile disappears:
+   OPEN as written (needs P5-A merge + R3 LiveKit Cloud). The T1/T2/T3
+   substitution covers everything headless can prove; confirmed minimal.
+Acceptance G7 "two browsers hear and see each other": OPEN (needs R3).
+"Microphone denied gives listen-only": PASS via mock + CDP; real-room path
+OPEN (needs R3). "Frame rate during a call from a real browser": OPEN
+(headless SwiftShader fps is not a benchmark; needs R3 + visible browser).
+
+No-creds fixture demo: PASS — idle renders null (CallPanel returns null, the
+watcher stays idle offline), no `LIVEKIT_*` in web code (ARCHITECTURE 12.9:
+the browser gets the URL with the token), the SDK loads on first real join
+only, and e2e T1 proves walk-in/out with no service leaves the office
+unchanged.
+No existing test changed/weakened: PASS — `git diff 732acb9..HEAD
+--name-status` shows every test file as Added; the single Modified file is
+the owned 2-line Panels.tsx slot (import + `<CallPanel />`).
+No secrets committed: PASS — grep over owned files for keys/secrets/tokens
+and console logging is clean; the token is returned, never logged.
+Only Owns paths changed: PASS — `apps/web/src/calls/**` (13 files),
+`apps/web/src/office/displays/LiveShare.tsx`, the Panels.tsx slot line,
+`e2e/calls.spec.ts`, `docs/reports/P5-B.md`, plus the reviewer fix below
+(owned files only). Tree clean otherwise; nothing pushed; no merge.
+
+Fix applied by the reviewer (owned files only):
+- Room-to-room walks stranded the status on "In a meeting": `cancelCall`
+  restored the pre-call status and `joinCall` immediately recaptured the
+  snapshot, which still shows `in_meeting` until the server echo arrives
+  (the unit suite's synchronous echo masked this). `store.ts` now carries
+  the pre-call status across a room-to-room transition (`cancelCall(restore)`
+  + guarded capture in `joinCall`) and `failJoin` restores via
+  `restorePreviousStatus()`. Two regression tests added to `store.test.tsx`
+  (lagging-echo carry-over; second-join-fails restore). The lag test was
+  proven to fail on the pre-fix code (`in_meeting, away, in_meeting,
+  in_meeting`) and pass after (`in_meeting, in_meeting, away`).
+- No other fix was needed; R1/R2/R3 and O1/O2 stand as written.
