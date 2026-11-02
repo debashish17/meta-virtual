@@ -3,6 +3,7 @@ import {
   AccountStatus,
   AskRequest,
   AskResult,
+  CallTokenRequest,
   FIXTURE_TRANSCRIPTS,
   Meeting,
   MeetingCreate,
@@ -21,6 +22,12 @@ import {
 } from "@office/shared";
 import { askQuestion } from "../ask/pipeline.js";
 import { UnauthorizedError } from "../auth/verify.js";
+import {
+  CallForbiddenError,
+  CallsOffError,
+  callsEnabled,
+  issueCallToken,
+} from "../calls/tokens.js";
 import type { Deps } from "../deps.js";
 import { NotFoundError, NotPendingError, type Repo } from "../db/repo.js";
 import type { MeetingContext } from "../llm/types.js";
@@ -36,6 +43,7 @@ export interface Health {
   version: string;
   authMode: string;
   llm: string;
+  calls: "on" | "off";
 }
 
 export interface HttpRoutesOptions {
@@ -86,6 +94,14 @@ function sendError(res: Response, error: unknown): void {
     res.status(409).json({ error: "conflict", message: error.message });
     return;
   }
+  if (error instanceof CallsOffError) {
+    res.status(503).json({ error: "calls_off", message: error.message });
+    return;
+  }
+  if (error instanceof CallForbiddenError) {
+    res.status(403).json({ error: "forbidden", message: error.message });
+    return;
+  }
   res.status(500).json({ error: "internal", message: "internal error" });
 }
 
@@ -94,7 +110,8 @@ async function handle(req: Request, res: Response, run: () => Promise<unknown>):
     res.json(await run());
   } catch (error) {
     if (!(error instanceof UnauthorizedError) && !(error instanceof BadRequestError) &&
-      !(error instanceof NotFoundError) && !(error instanceof NotPendingError)) {
+      !(error instanceof NotFoundError) && !(error instanceof NotPendingError) &&
+      !(error instanceof CallsOffError) && !(error instanceof CallForbiddenError)) {
       console.error(
         `[http] ${req.method} ${req.path} failed: ${error instanceof Error ? error.message : "unknown error"}`,
       );
@@ -196,6 +213,7 @@ export function httpRoutes(app: Application, deps: Deps, options: HttpRoutesOpti
       version: deps.version,
       authMode: deps.env.AUTH_MODE,
       llm: deps.env.LLM_API_KEY ? deps.env.LLM_PROVIDER : "fixture",
+      calls: callsEnabled(deps.env) ? "on" : "off",
     };
     res.json(health);
   });
@@ -330,6 +348,16 @@ export function httpRoutes(app: Application, deps: Deps, options: HttpRoutesOpti
       await deps.repo.rejectChange(claims, id);
       deps.bus.recordsChanged(claims.workspaceId, ["proposed_changes"]);
       return OkResult.parse({ ok: true });
+    });
+  });
+
+  app.post("/calls/token", auth, limit, (req, res) => {
+    void handle(req, res, async () => {
+      const parsed = CallTokenRequest.safeParse(req.body);
+      if (!parsed.success) {
+        throw new BadRequestError(`bad call token request: ${issuesText(parsed.error.issues)}`);
+      }
+      return issueCallToken({ env: deps.env, claims: claimsOf(req), zoneId: parsed.data.zoneId });
     });
   });
 

@@ -33,6 +33,10 @@ export interface Env {
   LLM_BASE_URL: string;
   LLM_API_KEY: string;
   LLM_MODEL: string;
+  /** Live calls (P5-A): all three set means calls are on; anything missing means off. */
+  LIVEKIT_URL: string;
+  LIVEKIT_API_KEY: string;
+  LIVEKIT_API_SECRET: string;
   /** The deployed version; `pnpm build` stamps it, otherwise the package version. */
   GIT_COMMIT: string;
 }
@@ -112,6 +116,9 @@ export function loadEnv(from: NodeJS.ProcessEnv = process.env): Env {
     LLM_BASE_URL: url(raw, "LLM_BASE_URL", "https://api.meta.ai/v1"),
     LLM_API_KEY: text(raw, "LLM_API_KEY", ""),
     LLM_MODEL: nonEmpty(raw, "LLM_MODEL", "muse-spark-1.3"),
+    LIVEKIT_URL: text(raw, "LIVEKIT_URL", ""),
+    LIVEKIT_API_KEY: text(raw, "LIVEKIT_API_KEY", ""),
+    LIVEKIT_API_SECRET: text(raw, "LIVEKIT_API_SECRET", ""),
     GIT_COMMIT: text(raw, "GIT_COMMIT", ""),
   };
   if (env.NODE_ENV === "production" && env.AUTH_MODE === "dev") {
