@@ -17,6 +17,7 @@ import {
   type Status,
 } from "@office/shared";
 import { useRecords } from "../api/records.js";
+import { getAuthToken } from "../auth/session.js";
 import { useMe } from "../office/me.js";
 import {
   toNpcView,
@@ -301,7 +302,9 @@ async function joinLoop(gen: number): Promise<void> {
     if (gen !== generation) return;
     try {
       const next = new Client(serverUrl());
-      next.auth.token = `dev:${useMe.getState().name.trim() || "Maya"}`;
+      // The auth session's token (`dev:<name>` locally, the Supabase JWT otherwise),
+      // read fresh on every attempt so a refreshed token is used on the next (re)connect.
+      next.auth.token = (await getAuthToken()) ?? "";
       const opts = joinOptions();
       const newRoom = (await next.joinOrCreate("office", opts)) as OfficeRoom;
       if (gen !== generation) {
@@ -341,6 +344,10 @@ async function reconnectLoop(gen: number): Promise<void> {
     try {
       const current = client;
       if (!current) return;
+      const fresh = await getAuthToken();
+      if (fresh) {
+        current.auth.token = fresh;
+      }
       const newRoom = (await current.reconnect(token)) as OfficeRoom;
       if (gen !== generation) {
         void newRoom.leave().catch(() => undefined);
