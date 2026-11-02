@@ -6,12 +6,14 @@ import { FURNITURE, LOOK_PRESETS, OFFICE_SPOTS, OFFICE_WALK, advance, riseOf, ro
 import Person, { type Motion } from './Person'
 import { useMe } from './me'
 import { TAKEN } from './taken'
+import { useNet } from '../net/store'
 
 /**
  * Colleagues at work: the other preset employees, each with a desk, typing for a while and then
  * walking to the tea point for a drink and a chat (or to the windows for a phone call) and back
- * (routine.ts). They are scenery for now; in M3 the people in the office come from the server and
- * this goes away (`&colleagues=0` hides them today).
+ * (routine.ts). Offline (no server) they run here, as always; online the server runs the shared
+ * routines and `Players.tsx` draws them from the synced `npcs`, so this renders nothing
+ * (`&colleagues=0` hides the offline ones).
  */
 
 const SHOW = typeof window === 'undefined' || new URLSearchParams(window.location.search).get('colleagues') !== '0'
@@ -63,8 +65,17 @@ function Colleague({ name, look, routine, world, seed }: { name: string; look: A
   )
 }
 
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>).__officeNpcs = () =>
+    Object.values(useNet.getState().npcs).map((n) => ({
+      id: n.id, name: n.name, x: n.x, z: n.z, facing: n.facing, pose: n.pose,
+    }))
+}
+
 export default function Colleagues() {
   const myName = useMe((s) => s.name)
+  const status = useNet((s) => s.status)
+  const selfId = useNet((s) => s.selfId)
   const crew = useMemo(() => {
     let seed = 20261101
     const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
@@ -86,7 +97,10 @@ export default function Colleagues() {
     })
     return { world, people }
   }, [myName])
-  if (!SHOW) return null
+  // Online the colleagues come from the server (Players.tsx draws the synced npcs); the local
+  // routines stop with their unmounted frames and resume from their reservations when offline.
+  const online = (status === 'online' || status === 'reconnecting') && selfId !== null
+  if (!SHOW || online) return null
   return (
     <>
       {crew.people.map(({ person, routine }, i) => (
