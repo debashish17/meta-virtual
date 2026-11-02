@@ -1,0 +1,37 @@
+/* The transcript panel (P5-C): the compact white panel look of panels.css, living in
+ * the right drawer area beside P5-B's call bar. Buttons reuse .pan-btn. */
+.cap-panel {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 18px rgba(30, 33, 38, 0.12);
+  border-radius: 10px;
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font: 13px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: #1e2126;
+}
+.cap-title { margin: 0; font-size: 13px; }
+.cap-live {
+  max-height: 22vh;
+  overflow-y: auto;
+  border: 1px solid #e3e6ea;
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: #fafbfc;
+}
+.cap-empty { margin: 0; color: #6b7280; }
+.cap-list { margin: 0; padding: 0; list-style: none; }
+.cap-line { margin: 0 0 4px; }
+.cap-interim { color: #6b7280; }
+.cap-name { font-weight: 600; }
+.cap-hint { margin: 0; color: #6b7280; font-size: 12px; }
+.cap-paste-label { font-weight: 600; }
+.cap-paste {
+  font: inherit;
+  border: 1px solid #d4d8dd;
+  border-radius: 6px;
+  padding: 6px 8px;
+  resize: vertical;
+}
+.cap-outcome { margin: 0; font-weight: 600; }
