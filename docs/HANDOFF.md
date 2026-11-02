@@ -256,9 +256,9 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 | P3-D deploy smoke test | builder/reviewer | wp/P3-D-deploy-smoke | merged config (--no-ff ba1d5b6; deploy execution blocked on owner Fly/Vercel tokens) | P3-D.md |
 | P4-B hardening | builder/reviewer | wp/P4-B-hardening | merged (--no-ff f27c3fc) | P4-B.md |
 | P4-A production deploy | | | blocked (owner hosted Supabase D4 + deploy tokens) | |
-| P5-A call service | builder/reviewer | wp/P5-A-call-service | in progress | |
-| P5-B call UI | builder/reviewer | wp/P5-B-call-ui | in progress | |
-| P5-C call transcript | builder/reviewer | wp/P5-C-transcript | in progress | |
+| P5-A call service | builder/reviewer | wp/P5-A-call-service | merged (--no-ff cf174c1) | P5-A.md |
+| P5-B call UI | builder/reviewer | wp/P5-B-call-ui | merged (--no-ff 3daff7c + lead share mount; live media open on LiveKit creds) | P5-B.md |
+| P5-C call transcript | builder/reviewer | wp/P5-C-transcript | merged (--no-ff 0da0c43 + lead wiring 606c57f; arrival asserts live, mic open) | P5-C.md |
 | P5-D live rehearsal | | | blocked (owner LiveKit project + participation) | |
 | P4-A production deploy | | | not started | |
 | P4-B hardening | | | not started | |
