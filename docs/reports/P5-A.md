@@ -68,3 +68,50 @@ Open questions: none.
 
 Next: P5-B Call UI (joins on zone entry with these tokens) and P5-C
 transcript; not started.
+
+## Reviewer addendum (independent verification)
+
+Checks re-run fresh from the worktree root (`--force`, 0 cached):
+- `pnpm typecheck`: pass (3/3). `pnpm lint`: pass (3/3).
+- `pnpm test`: pass — shared 107, web 93 + 4 skipped, server 158 + 3 skipped.
+- `npx vitest run src/calls` (apps/server): 20/20 pass (12 tokens + 8 HTTP).
+- `pnpm build`: pass (server + web). No e2e defined for P5-A (P5-B owns
+  `e2e/calls.spec.ts`); none run.
+- Live `PORT=2571` probes against `dist`, then server stopped, port verified
+  free: no creds → `/health` `calls:"off"`, `POST /calls/token` 503
+  `calls_off`, `/me/day` 200, `{}` 400; with generated test-only keys →
+  `calls:"on"` and 403 `forbidden` with nobody connected.
+
+Verdict per acceptance item (each read in the implementation, not from search):
+- Task 1 `POST /calls/token`: PASS. Presence comes from the live room via
+  `getRoom(workspaceId)` + `player.userId` match (`""` reads as absent); the
+  client's zone claim is only the requested id, verified against live state.
+  Zone must exist in `ZONES` with a callable type; room is
+  `${workspaceId}--${zoneId}`, identity the user id, name the display name
+  (both from verified auth claims). `AccessToken` grants exactly roomJoin +
+  that room + publish + subscribe, TTL 3600; response parsed with the shared
+  `CallTokenResponse`. Route sits behind `auth` + per-user `limit`
+  (`limiter.check(claimsOf(req).userId)`); 429 covered by test.
+- Task 2 no-creds mode: PASS. `callsEnabled` needs all three `LIVEKIT_*`;
+  otherwise 503 `calls_off` + `calls:"off"`, office untouched (unit, HTTP and
+  live probes agree; fixture demo answers 200 throughout).
+- Task 3 tests: PASS and complete. Token decodes (offline `TokenVerifier`) to
+  that room only with no create/admin/list/record grants; another zone, the
+  open plan (`library`), the kitchen (`cafe`), an unknown zone, a wrong user
+  online, and nobody online all give 403; no keys gives 503. Zone ids used in
+  tests match `packages/shared/src/world/office.ts` types.
+- Acceptance (G7 token scoping proven by tests; checks pass): PASS.
+- Honestly-OPEN items needing LiveKit Cloud or a microphone: NONE — P5-A has
+  no such item. Minting is offline-signed and grant-verified; a real Cloud
+  join belongs to P5-B. Zero open items is real and minimal.
+
+Hygiene: `git diff 732acb9..HEAD --name-status` shows only Owns paths
+(M `.env.example`, A `apps/server/src/calls/*`, M `apps/server/src/env.ts`,
+M `apps/server/src/http/routes.ts`, A `docs/reports/P5-A.md`). No existing
+test file touched (both test files are new). `.env.example` holds only empty
+`LIVEKIT_*` placeholders; no secrets in the diff or the calls sources.
+`LIVEKIT_*` appear only in `env.ts`/`tokens.ts`/`.env.example`; no client or
+shared changes.
+
+Fixes applied: none (no defect found). Requests: none.
+Reviewer verdict: passed.
