@@ -63,3 +63,65 @@ Next:
   G3 check (2.2); on green, P3-D closes and P4-A reuses these files.
 - Not started (stays OPEN): "public URL connects to the deployed server".
 ```
+
+## Reviewer addendum (2026-11-02, config scope)
+
+Re-read in full: `apps/server/Dockerfile`, `fly.toml`, `apps/web/vercel.json`,
+`docs/DEPLOY.md`, `.dockerignore`. Re-ran both local proofs fresh; did not
+attempt any deploy/auth command.
+
+Checks re-run (review image `office-server:review`, since removed):
+- `docker build -f apps/server/Dockerfile --build-arg
+  GIT_COMMIT=$(git rev-parse --short HEAD) -t office-server:review .`: pass.
+- `docker run -p 2569:8080 -e PORT=8080 -e AUTH_MODE=dev` + `curl
+  /health`: `{"ok":true,"version":"e8f43e7","authMode":"dev","llm":"fixture"}`,
+  stamp matches `git rev-parse --short HEAD` (e8f43e7): pass.
+- Colyseus SDK join vs the container (dev:Reviewer, northwind-demo,
+  protocol 1): JOIN_OK: pass.
+- `VITE_SERVER_URL=https://virtual-office-smoke.fly.dev VITE_AUTH_MODE=dev
+  VITE_API=mock pnpm build` in apps/web: pass (6.31 s); server URL confirmed
+  baked into dist bundle; dist removed afterwards: pass.
+- `vercel.json` JSON-parses OK: pass.
+- Secret scan over all six touched files (tokens, keys, secret assignments):
+  none found: pass.
+- `git diff --name-only fde2327..HEAD`: exactly `.dockerignore`,
+  `apps/server/Dockerfile`, `apps/web/vercel.json`, `docs/DEPLOY.md`,
+  `docs/reports/P3-D.md`, `fly.toml` — all deploy configuration + report:
+  pass. No code, lockfile, or env file touched.
+- `git log fde2327..HEAD`: 2 commits (config, report); no deploy was
+  attempted; task 3 honestly OPEN with unblock steps in report + DEPLOY.md
+  1.1/2.1/1.3/2.2: pass.
+- Container stopped/removed, image removed, port 2569 verified free
+  (`ss` shows nothing): pass.
+
+Verdict per item:
+- Task 1 Dockerfile: PASS — Node 22-slim two-stage, corepack pnpm, frozen
+  lockfile, `pnpm --filter @office/server build` (tsup bundles
+  @office/shared), `CMD node dist/index.js`, Docker HEALTHCHECK on /health,
+  PORT from env, no NODE_ENV=production (correct: dev auth refused under
+  production), GIT_COMMIT re-declared in runtime stage. Matches package
+  brief and server's env/health code (empty ALLOWED_ORIGINS answers `*`,
+  verified in `server.ts`).
+- Task 1 fly.toml: PASS — repo-root build context with
+  `dockerfile = "apps/server/Dockerfile"` (correct: workspace install needs
+  root), region lhr, http_service 8080 + force_https (wss upgrade needs no
+  extra config), /health check, shared-cpu-1x, smoke env
+  AUTH_MODE=dev / ALLOWED_ORIGINS empty-until-web-URL.
+- Task 2 vercel.json: PASS — Root Directory apps/web with root-climbing
+  install/build commands, frozen lockfile, filter build, output dist, SPA
+  rewrite to /index.html excluding /assets/ (review sheet keeps serving).
+- Task 2 DEPLOY.md runbook: PASS — exact per-host deploy/verify commands,
+  per-host env tables (placeholders only), rollback + decommission per host,
+  smoke→production checklist. Snippet values cross-checked:
+  `protocol: 1` = PROTOCOL_VERSION, `northwind-demo` = WORKSPACE_ID;
+  relative links (../fly.toml, ../apps/...) resolve. No `vercel build`
+  dependency for local proof (documented CLI-login fallback to vite build).
+- Task 3 public URL: honestly OPEN — credential blocker named, no auth or
+  deploy command attempted.
+- Task 4 secrets: PASS — none in repo; tokens live only in lead's shell/CI.
+
+Fixes applied: none (no defects found; nothing to change inside Owns).
+Requests: none.
+
+Reviewer verdict: config scope PASSES; package stays partial until the lead
+runs the credential-gated deploy + two-browser G3 check.
