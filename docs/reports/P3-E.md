@@ -137,3 +137,63 @@ None.
 
 G5 is proven locally; P3-D stays blocked on the owner's Fly/Vercel tokens;
 P4-A/P4-B can start once G5 is approved. Nothing started.
+
+## Reviewer addendum (2026-11-02, independent re-verification)
+
+Checks re-run from the worktree root on branch `wp/P3-E-demo-e2e`:
+
+- Read `e2e/demo.spec.ts` (172 lines), `e2e/helpers/demo.ts` (176 lines) and
+  `e2e/helpers/twoUsers.ts` in full. Every P3-E task maps to an unweakened
+  assertion: join both (ready + online + co-presence both ways + name pills
+  both ways, spec lines 47-63, 72-77); wall status (Acme Corp,
+  Implementation, "Go-live by 15 Nov", "Go-live · 15 Nov", lines 79-86);
+  process (real "Process meeting" click, "Approvals (4)" in both drawers,
+  summary contains "22 Nov", lines 91-100); approve-3-reject-1 (titled cards,
+  headings stepping 4→3→2→1→"My day", lines 103-114); live update without
+  reload (Arjun's drawer asserted after every decision plus the
+  `__demoNoReload` flag, lines 112-118); cited ask (answer contains
+  `2026-11-22`, sources list non-empty, lines 126-129); CEO abstain (answer
+  contains "I don't have a record of that.", lines 132-134);
+  rejected-untouched (`ownerId` still `maya` over HTTP while milestone,
+  commitment and new task changed, lines 137-154); reload-restores (ready +
+  online, "My day", wall "Go-live · 22 Nov", ask still answers, lines
+  157-171). Constants cross-checked against `packages/shared/src/demo/index.ts`
+  (stable UUIDs, both `DEMO_QUESTIONS`) and the abstain text against
+  `apps/server/src/llm/fixture.ts` / `ask/fixtureAnswer.ts` — all match.
+  The config confirms the in-memory backend (server env sets only `PORT`, no
+  `DATABASE_URL`) on ports 5190/2590.
+- `pnpm test:e2e` (full suite, fresh): 1 passed (demo) + 2 failed in 25.1 m —
+  the identical signature to the builder's run. `test-results/` confirms:
+  multiplayer fails its 60 s online `waitForFunction`
+  (`Timeout 60000ms exceeded`), smoke dies with `Target page, context or
+  browser has been closed` after 15.2 m. Both failing files are
+  byte-identical to `main` (verified with `cmp` against `git show main:`),
+  so these are pre-existing contention failures, not regressions.
+- `pnpm typecheck --force` / `pnpm lint --force`: 3/3 pass.
+  `pnpm test --force`: shared 107, server 138 + 3 skipped, web 89 + 4
+  skipped — match the builder's counts; no test changed or deleted.
+- New-file strict check (`tsc --noEmit --strict --skipLibCheck`, base-config
+  flags) and `eslint` on the two new e2e files: clean. (A bare `tsc`
+  invocation without the base lib/module flags errors on every Playwright
+  project; the builder's "clean" claim holds under the correct flags.)
+- `git diff main...HEAD --name-only`: only `e2e/demo.spec.ts`,
+  `e2e/helpers/demo.ts`, `docs/reports/P3-E.md`. No secrets: the only
+  token-like string is the dev-mode `Bearer [REDACTED]:Maya` header. Ports
+  5190/2590 verified free after the run.
+
+Verdict per item: join-both PASS, wall-status PASS, process PASS,
+approve-3-reject-1 PASS, live-update-no-reload PASS, cited-ask PASS,
+CEO-abstain PASS (note: the spec asserts `toContain`, so the report's word
+"exactly" in Done item 7 overstates the assertion strength slightly; the
+FixtureLlm abstention text itself is exact), rejected-untouched PASS,
+reload-restores PASS, smoke/multiplayer-untouched PASS, owns-only PASS,
+no-secrets PASS.
+
+Fixes applied: none — the spec needed no changes, and the two failing specs
+are outside this package's Owns. I concur with the builder's two measured
+lead Requests (240 s + `polling: 1000` online bound for multiplayer;
+small-viewport fixture for smoke) and add no new ones.
+
+Reviewer status: partial — the P3-E deliverable itself is green and fully
+verified, but the package acceptance criterion `pnpm test:e2e` passes cannot
+hold until the lead fixes the two pre-existing specs.
