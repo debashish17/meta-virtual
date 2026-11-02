@@ -251,10 +251,9 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 | P2-G wall displays | builder/reviewer | wp/P2-G-wall-displays | merged (--no-ff 60f9e0c) | P2-G.md |
 | P3-A shared colleagues | builder/reviewer | wp/P3-A-shared-colleagues | merged (--no-ff 0b480f2 + lead wiring 1661200; NPC sync probe-verified) | P3-A.md |
 | P3-B HTTP API and auth | builder/reviewer | wp/P3-B-http-api-auth | merged (--no-ff 98cf6ba) | P3-B.md |
-| P3-C web wiring and sign-in | builder/reviewer | wp/P3-C-web-wiring | in progress | |
-| P3-C web wiring and sign-in | | | not started | |
-| P3-D deploy smoke test | | | not started | |
-| P3-E demo end to end | | | not started | |
+| P3-C web wiring and sign-in | builder/reviewer | wp/P3-C-web-wiring | merged (--no-ff d8868ee + lead wiring 24cc192; contract 4/4 live) | P3-C.md |
+| P3-E demo end to end | builder/reviewer | wp/P3-E-demo-e2e | in progress | |
+| P3-D deploy smoke test | | | blocked (owner Fly/Vercel tokens) | |
 | P4-A production deploy | | | not started | |
 | P4-B hardening | | | not started | |
 | P4-C rehearsal | | | not started | |
