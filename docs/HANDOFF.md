@@ -254,7 +254,12 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 | P3-C web wiring and sign-in | builder/reviewer | wp/P3-C-web-wiring | merged (--no-ff d8868ee + lead wiring 24cc192; contract 4/4 live) | P3-C.md |
 | P3-E demo end to end | builder/reviewer | wp/P3-E-demo-e2e | merged (--no-ff 080dfcf; demo.spec green in-suite 5.1m, suite red on box contention) | P3-E.md |
 | P3-D deploy smoke test | builder/reviewer | wp/P3-D-deploy-smoke | merged config (--no-ff ba1d5b6; deploy execution blocked on owner Fly/Vercel tokens) | P3-D.md |
-| P4-B hardening | builder/reviewer | wp/P4-B-hardening | in progress | |
+| P4-B hardening | builder/reviewer | wp/P4-B-hardening | merged (--no-ff f27c3fc) | P4-B.md |
+| P4-A production deploy | | | blocked (owner hosted Supabase D4 + deploy tokens) | |
+| P5-A call service | builder/reviewer | wp/P5-A-call-service | in progress | |
+| P5-B call UI | builder/reviewer | wp/P5-B-call-ui | in progress | |
+| P5-C call transcript | builder/reviewer | wp/P5-C-transcript | in progress | |
+| P5-D live rehearsal | | | blocked (owner LiveKit project + participation) | |
 | P4-A production deploy | | | not started | |
 | P4-B hardening | | | not started | |
 | P4-C rehearsal | | | not started | |
