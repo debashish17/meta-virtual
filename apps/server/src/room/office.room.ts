@@ -41,6 +41,7 @@ import {
 } from "@office/shared";
 import { DevAuth, UnauthorizedError, type AuthVerifier } from "../auth/verify.js";
 import { InMemoryChatStore, type ChatStore } from "./chat.js";
+import { TranscriptBuffer, registerCaptionHandlers } from "../calls/transcript.js";
 import { NpcDirector } from "./npcs.js";
 import { registerRoom, unregisterRoom } from "./rooms.js";
 import { OfficeState, PlayerState } from "./schema.js";
@@ -136,6 +137,7 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
   static chatPersist: ChatStore | null = null;
 
   private chat = new InMemoryChatStore();
+  private captions = new TranscriptBuffer();
   private readonly npcs = new NpcDirector();
   private readonly recs = new Map<string, SessionRecord>();
   /** Seat and counter-spot ids held in this room, players (and later colleagues) alike. */
@@ -183,6 +185,7 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
       this.onStatusSet(client, message),
     );
     this.onMessage(CLIENT_MESSAGE.lookSet, (client, message) => this.onLookSet(client, message));
+    this.captions = registerCaptionHandlers(this, this.captions);
     this.npcs.sync(this.state, this.taken, []);
   }
 

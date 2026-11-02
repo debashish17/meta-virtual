@@ -18,6 +18,7 @@ import {
 } from "@office/shared";
 import { useRecords } from "../api/records.js";
 import { getAuthToken } from "../auth/session.js";
+import { bindCaptionRoom, sendCaption } from "../calls/captions/index.js";
 import { useMe } from "../office/me.js";
 import {
   toNpcView,
@@ -118,6 +119,9 @@ export const netSend = {
   },
   chat(text: string): void {
     room?.send(CLIENT_MESSAGE.chatSend, { text });
+  },
+  caption(text: string, final: boolean): void {
+    if (room) sendCaption(room, text, final);
   },
   status(status: Status): void {
     room?.send(CLIENT_MESSAGE.statusSet, { status });
@@ -255,6 +259,9 @@ function attach(newRoom: OfficeRoom, gen: number): void {
       return { npcs: rest };
     });
   });
+  // Live captions arrive on this room (P5-C R2): bound once per room object,
+  // exactly like the chat/history handlers above.
+  bindCaptionRoom(newRoom);
   // A client that drops and rejoins inside the window misses `records_changed`
   // broadcasts while away (P3-C request 2): reload every records slice on attach.
   void useRecords.getState().load();

@@ -1,7 +1,17 @@
 import { create } from "zustand";
 import type { Status } from "@office/shared";
+import { api } from "../api/index.js";
+import { useRecords } from "../api/records.js";
+import { netSend } from "../net/connection.js";
 import { useNet } from "../net/store.js";
 import { useMe } from "../office/me.js";
+import {
+  clearCaptions,
+  createCaptionRecognizer,
+  endMeeting,
+  finalSegments,
+  type CaptionRecognizer,
+} from "./captions/index.js";
 import { createLiveRoom } from "./liveRoom.js";
 import { MockRoom, type MockPeerOptions } from "./mockRoom.js";
 import type {
@@ -106,6 +116,8 @@ let watcherStarted = false;
 /** Counts join attempts; a stale continuation (leave before resolve) exits quietly. */
 let generation = 0;
 let activeRoom: CallRoom | null = null;
+/** Our speech recognizer while live (P5-C R2); null when unsupported or idle. */
+let activeRecognizer: CaptionRecognizer | null = null;
 let lastZone: string | null = null;
 /** The self status to restore when the call ends (null when none was set). */
 let restoreStatus: Status | null = null;
@@ -148,6 +160,22 @@ function restorePreviousStatus(): void {
  */
 function cancelCall(restore = true): void {
   generation += 1;
+  if (activeRecognizer) {
+    activeRecognizer.stop();
+    activeRecognizer = null;
+  }
+  // Last one out posts the transcript (P5-C R3): peers remaining means the meeting
+  // continues. Silent when nothing was captured — leaving a quiet call must not nag.
+  const leaving = useCalls.getState();
+  const segments = [...finalSegments()];
+  clearCaptions();
+  if (leaving.phase === "live" && leaving.zoneId && leaving.peers.length === 0 && segments.length > 0) {
+    const zoneId = leaving.zoneId;
+    void endMeeting(
+      { api, refetch: (kinds) => useRecords.getState().refetch(kinds) },
+      { zoneId, segments },
+    ).catch(() => undefined);
+  }
   const room = activeRoom;
   activeRoom = null;
   if (restore) restorePreviousStatus();
@@ -224,6 +252,10 @@ async function joinCall(zoneId: string): Promise<void> {
     listenOnly,
     notice: listenOnly ? LISTEN_ONLY_NOTICE : null,
   });
+  // Caption our own speech while live (P5-C R2): the recognizer owns its
+  // denial/unsupported paths, so this starts unconditionally.
+  activeRecognizer = createCaptionRecognizer((text, final) => netSend.caption(text, final));
+  activeRecognizer.start();
 }
 
 function handleRoomEvent(gen: number, event: CallRoomEvent): void {

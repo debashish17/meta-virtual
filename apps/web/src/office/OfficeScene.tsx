@@ -13,6 +13,7 @@ import Colleagues from './Colleagues'
 import Desktops from './Desktops'
 import Pedestrians from './Pedestrians'
 import Sprites from './Sprites'
+import LiveShare from './displays/LiveShare'
 import WallDisplays from './displays/WallDisplays'
 import Players from '../net/Players'
 import Panels from '../ui/Panels'
@@ -63,6 +64,7 @@ export default function OfficeScene() {
           <Colleagues />
           <Players />
           <WallDisplays />
+          <LiveShare />
           <Pedestrians />
           <ReadySignal />
         </Suspense>

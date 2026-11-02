@@ -1,6 +1,10 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { api } from "../api/index.js";
+import { useRecords } from "../api/records.js";
 import type { CallVideo } from "./room.js";
+import TranscriptPanel from "./captions/TranscriptPanel.js";
+import { clearCaptions, endMeeting, finalSegments } from "./captions/index.js";
 import {
   debugAddPeer,
   debugPeerScreen,
@@ -129,6 +133,26 @@ export default function CallPanel() {
     };
   }, []);
 
+  async function endMeetingFromBar(): Promise<void> {
+    if (!zoneId) return;
+    // Explicit "End meeting" (P5-C R3): post, then leave. Empty stays with the
+    // notice visible so it can be seen; failures do the same.
+    const result = await endMeeting(
+      { api, refetch: (kinds) => useRecords.getState().refetch(kinds) },
+      { zoneId, segments: [...finalSegments()] },
+    ).catch((): null => null);
+    if (!result) {
+      useCalls.setState({ notice: "Could not post the transcript." });
+      return;
+    }
+    if ("notice" in result) {
+      useCalls.setState({ notice: result.notice });
+      return;
+    }
+    clearCaptions();
+    leaveCall();
+  }
+
   if (phase === "idle") return null;
 
   if (collapsed) {
@@ -240,7 +264,16 @@ export default function CallPanel() {
             <button type="button" className="call-btn danger" onClick={leaveCall}>
               Leave
             </button>
+            <button
+              type="button"
+              className="call-btn"
+              disabled={!zoneId}
+              onClick={() => void endMeetingFromBar()}
+            >
+              End meeting
+            </button>
           </div>
+          {zoneId ? <TranscriptPanel zoneId={zoneId} zoneName={title} /> : null}
         </>
       )}
     </section>,

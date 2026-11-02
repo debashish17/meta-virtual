@@ -208,7 +208,7 @@ test.describe("mock call", () => {
 
       const panel = page.getByTestId("call-panel");
       await expect(panel).toBeVisible({ timeout: 120_000 });
-      await expect(panel.getByText("Acme room")).toBeVisible();
+      await expect(panel.getByRole("heading", { name: "Acme room", exact: true })).toBeVisible();
       for (const name of ["Mute", "Camera", "Share", "Leave"]) {
         await expect(panel.getByRole("button", { name })).toBeVisible();
       }
