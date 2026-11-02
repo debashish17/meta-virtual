@@ -1,0 +1,42 @@
+# Virtual Office server on Fly.io (P3-D smoke test; see docs/DEPLOY.md).
+# Deploy from the REPO ROOT: fly deploy (uses apps/server/Dockerfile).
+# Placeholder name: replace with the real app name from `fly apps create`
+# (or pass -a <name>); keep this file in sync afterwards.
+
+app = "virtual-office-smoke"
+primary_region = "lhr"
+
+[build]
+  dockerfile = "apps/server/Dockerfile"
+
+# Stamped at deploy time so /health reports the deployed commit:
+#   fly deploy --build-arg GIT_COMMIT=$(git rev-parse --short HEAD)
+[build.args]
+  GIT_COMMIT = "unset"
+
+[env]
+  PORT = "8080"
+  # Smoke test only: dev auth. P4-A switches this to supabase with NODE_ENV=production.
+  AUTH_MODE = "dev"
+  # Empty until the web URL exists (server then allows any origin); after the
+  # web deploy, set this to the Vercel URL and redeploy (docs/DEPLOY.md).
+  ALLOWED_ORIGINS = ""
+
+# One long-lived process; Fly's http_service upgrades to WebSocket, so the
+# Colyseus room needs no extra proxy config. force_https keeps wss:// working.
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    path = "/health"
+    protocol = "http"
+    timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"
