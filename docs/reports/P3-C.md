@@ -145,3 +145,63 @@ None.
 ## Next
 
 P3-E full demo script (needs Request 1 on `main`); P3-D smoke. Nothing started.
+
+## Reviewer addendum (independent verification, 2026-11-02)
+
+Reviewed every owned body line by line (`http.ts`, `session.ts`, `AuthGate.tsx`,
+`auth.css`, all three new test files, the `connection.ts` token diff).
+
+**Checks re-run (all uncached, `--force`):**
+
+- `pnpm typecheck`: 3/3 pass. `pnpm lint`: 3/3 pass. `pnpm build`: pass.
+- `pnpm test`: shared 107, web 89 passed + 4 skipped (the gated contract
+  file), server 138 passed + 3 skipped — matches the builder's counts.
+- Contract suite live against a stack I booted myself (`PORT=2591` throwaway
+  server, `/tmp/p3c-rev-srv.log`): `E2E_STACK=1 ... vitest run
+  src/api/http.contract.test.ts` → 4/4 pass.
+- G5 socket probe (`/tmp/p3c-rev-g5.mjs`, run from `apps/web` for SDK
+  resolution, removed afterwards): two room clients joined (`dev:Maya`,
+  `dev:Arjun`); fixture processed over HTTP (201); first change approved
+  (200); **both** clients received `records_changed` with
+  `["milestones","proposed_changes"]` after the approval, no rejoin —
+  PASSED. The client refetch-on-message half is pre-existing P2-B code,
+  verified by read (`connection.ts:174-177` → `useRecords.refetch(kinds)`)
+  plus `records.test.ts` refetch cases.
+- `pnpm test:e2e` not re-run: P3-C owns no e2e, and the builder proved the
+  box-contention failure identical with changes stashed; my change-surface
+  analysis agrees (dev-mode AuthGate renders children unconditionally, so
+  the no-click `__officeReady` join flow in `smoke.spec.ts` /
+  `multiplayer.spec.ts` is preserved).
+
+**Verdict per acceptance item:** all pass.
+
+- G5 live locally: pass (socket-level proof above + builder's two-page
+  browser log `/tmp/p3c-g5v6.log`, which I read and found credible).
+- Contract suite passes against the server: pass (re-ran live, 4/4).
+- Checks pass: pass (typecheck/lint/test/build, all uncached).
+
+**Verdict per task:** 1 pass (dev picker / Join-as / email form all present
+and tested); 2 pass (Bearer on every HTTP call, `client.auth.token` refreshed
+on every join/reconnect attempt); 3 pass (no code needed — P2-B routing
+confirmed present and untouched); 4 pass (AuthGate loading/error, typed
+`ApiError`s, pre-existing net status); 5 pass (gated contract file, live 4/4).
+
+**Scope and hygiene:** committed tree is Owns-only (`git diff
+ef25520..HEAD --name-status`: 8 adds + `AuthGate.tsx` in the owned dir +
+token-only `connection.ts` hunk + this report). No existing test file was
+modified or weakened — all three test files are new. No secrets: the only
+password-like value is the documented local-only seed password, byte-equal
+to the server's `SEED_PASSWORD_FALLBACK`. `api/index.ts` still throws for
+`VITE_API=http`, confirming the committed tree needs exactly Request 1.
+
+**Deviations:** concur with all three. The non-blocking dev picker is
+required by the uneditable specs (both goto and wait for `__officeReady`
+with no click — verified by read); it still satisfies "name picker (no
+network)".
+
+**Fixes applied:** none — no defect found; nothing committed by the reviewer
+except this addendum.
+
+**Requests:** endorse all three. Request 1 still blocks G5/P3-E on `main`.
+Request 3 reproduced in my probe (the `chat_history` warning fired for both
+joins).
