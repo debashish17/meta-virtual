@@ -1,0 +1,160 @@
+/* The call UI (P5-B): the drawer's tokens (DESIGN_SPEC 9), docked bottom-right in
+ * the drawer column, collapsible, never over the centre of the floor. */
+
+.call-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  /* Above the dev name chip (z-index 40, same corner): the panel is transient
+   * (only during a call) and collapsible, while the chip would otherwise eat
+   * the Share and Leave clicks. */
+  z-index: 50;
+  width: 320px;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+  padding: 10px 12px 12px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 18px rgba(30, 33, 38, 0.12);
+  border-radius: 10px;
+  font: 13px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: #1e2126;
+}
+
+.call-tab {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 50;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 18px rgba(30, 33, 38, 0.12);
+  font: 600 13px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: #1e2126;
+  cursor: pointer;
+}
+
+.call-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.call-head h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.call-sub {
+  color: #6b6e73;
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.call-collapse {
+  border: 0;
+  background: none;
+  color: #6b6e73;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.call-status {
+  margin: 0 0 4px;
+  color: #4a4d52;
+}
+
+.call-status p {
+  margin: 0 0 8px;
+}
+
+.call-notice {
+  margin: 0 0 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #fdf3e3;
+  color: #6b4e1f;
+  font-size: 12px;
+}
+
+.call-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.call-tile {
+  width: 144px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #2a3038;
+}
+
+.call-video {
+  width: 144px;
+  height: 90px;
+  background: #2a3038;
+}
+
+.call-video video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.call-name {
+  display: block;
+  padding: 2px 6px 4px;
+  color: #f4f4f2;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.call-muted {
+  color: #d9a05a;
+}
+
+.call-bar {
+  display: flex;
+  gap: 6px;
+}
+
+.call-btn {
+  flex: 1;
+  padding: 7px 4px;
+  border: 1px solid #d9dadc;
+  border-radius: 6px;
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e2126;
+  cursor: pointer;
+}
+
+.call-btn.on {
+  background: #c9803f;
+  border-color: #c9803f;
+  color: #fff;
+}
+
+.call-btn.danger {
+  background: #8c2f2f;
+  border-color: #8c2f2f;
+  color: #fff;
+}
+
+.call-btn:focus-visible, .call-tab:focus-visible, .call-collapse:focus-visible {
+  outline: 2px solid #c9803f;
+  outline-offset: 2px;
+}

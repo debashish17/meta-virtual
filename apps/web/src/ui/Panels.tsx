@@ -3,6 +3,7 @@ import { api } from "../api/index.js";
 import { useRecords } from "../api/records.js";
 import { OVERVIEW } from "../office/state.js";
 import { processAcmeMeeting } from "./actions.js";
+import CallPanel from "../calls/CallPanel.js";
 import AskPanel from "./AskPanel.js";
 import ChatPanel from "./ChatPanel.js";
 import MeetingBar from "./MeetingBar.js";
@@ -55,6 +56,7 @@ export default function Panels() {
       <ChatPanel />
       <AskPanel />
       <RightDrawer />
+      <CallPanel />
     </div>
   );
 }
