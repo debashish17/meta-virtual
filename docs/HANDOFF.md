@@ -56,12 +56,12 @@ The defaults and what each decision blocks are in `docs/IMPLEMENTATION_PLAN.md` 
 |---|---|---|
 | D1 | G2 approved (movement smooth at 60 fps in your browser) | Approved (2026-11-01) |
 | D2 | Visual freeze for M3 to M6 | Yes (2026-11-01) |
-| D3 | Web host and WebSocket host (accounts created by the owner) | |
+| D3 | Web host and WebSocket host (accounts created by the owner) | Default accepted (2026-11-02): web on Vercel, server on Fly.io/Render; deploy access for the lead pending |
 | D4 | Local Supabase now; hosted project before Phase 4 | |
 | D5 | LLM provider for the real adapter | Muse Spark (`muse-spark-1.3`) through the Meta Model API (2026-11-01) |
-| D6 | Colleagues run on the server (or are removed when online) | |
+| D6 | Colleagues run on the server (or are removed when online) | Keep them, run on the server, same for everyone (2026-11-02) |
 | D7 | Player contract additions (look, pose, speed, activity) | Accept (2026-11-01) |
-| D8 | Demo sign-in (seeded test users locally, email and password deployed) | |
+| D8 | Demo sign-in (seeded test users locally, email and password deployed) | Default accepted (2026-11-02): seeded Maya/Arjun picker locally, email and password deployed |
 | D9 | Live meetings with LiveKit after G6, if time permits; the fixture transcript stays the fallback | Yes, if time permits (2026-11-01) |
 
 **What the owner prepares, and when**
