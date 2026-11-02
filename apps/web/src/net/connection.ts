@@ -255,6 +255,9 @@ function attach(newRoom: OfficeRoom, gen: number): void {
       return { npcs: rest };
     });
   });
+  // A client that drops and rejoins inside the window misses `records_changed`
+  // broadcasts while away (P3-C request 2): reload every records slice on attach.
+  void useRecords.getState().load();
 }
 
 /** A look change sends `look_set` (P2-B task 4); the join options carry the first look.

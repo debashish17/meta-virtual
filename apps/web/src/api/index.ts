@@ -1,3 +1,4 @@
+import { createHttpApi } from "./http.js";
 import { createMockApi } from "./mock.js";
 import type { OfficeApi } from "./types.js";
 
@@ -9,7 +10,7 @@ export type { OfficeApi } from "./types.js";
  */
 export function createOfficeApi(): OfficeApi {
   if (import.meta.env.VITE_API === "http") {
-    throw new Error("The http OfficeApi lands in P3-C; unset VITE_API to use the mock.");
+    return createHttpApi();
   }
   return createMockApi();
 }

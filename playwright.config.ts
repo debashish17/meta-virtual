@@ -39,6 +39,8 @@ export default defineConfig({
       env: {
         WEB_PORT: String(WEB_PORT),
         VITE_SERVER_URL: `http://localhost:${SERVER_PORT}`,
+        // The demo spec drives the real stack; the other specs never call the api.
+        VITE_API: "http",
       },
       port: WEB_PORT,
       reuseExistingServer: !process.env.CI,
