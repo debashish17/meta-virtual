@@ -152,3 +152,78 @@ $ curl -s $B/me/day -H "$H"     # followup + meeting items
 $ curl -s -o /dev/null -w '%{http_code}\n' $B/me/day
 401
 ```
+
+## Reviewer addendum (2026-11-02, independent re-verification)
+
+Reviewed from a clean read of every touched body (impl via file reads, tests via
+full new-file diff) on branch `wp/P3-B-http-api-auth` at `de0f2b9`, plus fresh
+uncached re-runs. No fixes were needed; no code changed by the reviewer.
+
+### Checks re-run (all `--force`, from the worktree root)
+
+- `pnpm typecheck`: 3/3 pass, 0 cached.
+- `pnpm lint`: 3/3 pass, 0 cached.
+- `pnpm test`: shared 107, web 58, server 129 passed + 3 skipped. The skips are
+  the three legitimate placeholders: `postgres.test.ts` (P2-C), `seed.test.ts`,
+  and the "Supabase down" arm of `integration.test.ts` — the 5 real DB tests ran.
+- `pnpm build`: pass, 0 cached.
+- P3-B files alone: 5 files, 28 passed + 1 skipped (the down-Supabase placeholder).
+- Independent live lane (`PORT=2571`, dev auth, in-memory, foreground script that
+  boots, curls and kills): `/health` ok/fixture; anon `/me/day` 401; fixture
+  `POST /meetings` 201 with all 4 change types; approve 200 then 409; pending
+  list drops to 3; meeting summary contains 22 Nov; ask status cited with
+  `2026-11-22` (7 sources); CEO abstains exactly; blank ask 400; unknown project
+  404. Port verified free afterwards, no stray processes.
+- No existing test changed or weakened: all 5 P3-B test files are new (`A` in
+  `main...HEAD --name-status`); the only `M` files are the owned `routes.ts`
+  and `deps.ts` (previously P1 stubs).
+- Owns-only: the 11 changed paths are exactly `apps/server/src/http/**`,
+  `apps/server/src/auth/supabase*.ts`, `apps/server/src/deps.ts` and this report.
+- No secrets: diff scan for JWT/key/secret patterns clean (1 false positive in
+  prose); no `.env` touched; `p3b-*` workspaces left in local DB: 0.
+
+### Verdict per acceptance item ("every G4 item, proven by tests, plus curl; checks pass")
+
+- Fixture transcript produces the expected proposed changes: **pass** —
+  `routes.test.ts` (4 types, meeting-tagged, pending) + `integration.test.ts`
+  on Postgres + live lane.
+- Approving updates records and writes audit rows: **pass** — in-memory
+  (milestone to 2026-11-22, 1 audit row) + Postgres (3 approves + reject,
+  4 audit rows, 409 on re-approve) + live lane.
+- `/ask` cited for demo status, abstains for unsupported: **pass** — both
+  suites + live lane (exact abstention object).
+- Works with no LLM key via `FixtureLlm`: **pass** — `deps.ts` wires
+  `createLlm({answer: fixtureAnswer})` without a key; every test and both lane
+  runs are keyless; `/health` reports `fixture`.
+- Workspace isolation at HTTP level (P2-C owns the RLS proof): **pass** —
+  integration test gets 404/empty across workspaces.
+- No secrets in the repo: **pass** — see scan above.
+- Curl session in the report: **pass** — present, and reproduced independently.
+- Checks pass: **pass** — see re-runs above.
+
+### Task-level notes
+
+1. All 9 ARCHITECTURE.md section 5 endpoints plus the pending list are
+   implemented with shared Zod bodies/responses; `/health` carries
+   `version`/`authMode`/`llm`; `POST /meetings` returns 201.
+2. Auth: `jose` against JWKS with 5 s positive-only membership cache is
+   implemented as specified except for the letter of "HS256 with
+   `SUPABASE_JWT_SECRET` for the local CLI" — correctly not followed, since
+   the live local JWKS serves an ES256 key (re-verified). Filed as Request 6;
+   accepted as a spec correction, not a gap.
+3. Rate limit is per-user (300/min default, `Retry-After` on 429), proven by
+   unit and route tests. CORS reads `ALLOWED_ORIGINS` in `server.ts:14-26`
+   (single-origin echo; multi-origin gap filed as Request 5).
+4. Approve runs the repo transaction before `bus.recordsChanged` (route code
+   order verified); reject broadcasts `proposed_changes`; `POST /meetings`
+   broadcasts `meetings` + `proposed_changes`.
+5. Chat: `DatabaseChatStore` keeps the sync shape, persists via `saveChat`,
+   never leaks chat text into errors — proven in-memory and on Postgres.
+   Room wiring (Request 4) and `OfficeRoom.verifier` assignment (Request 2)
+   are outside Owns and correctly left as Requests.
+6. All 8 builder Requests re-checked against current code on this branch and
+   confirmed still accurate (bare `define` at `server.ts:30`, no verifier
+   assignment, turbo dev env still missing the 5 names, private room chat
+   store, CORS echo, outdated HS256 sentence).
+
+Reviewer verdict: **passed**. Nothing further changed; ready for the lead.
