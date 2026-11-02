@@ -124,3 +124,60 @@ Open questions:
 Next: P4-C rehearsal (needs the Request-1 decision); P4-A production deploy
   reuses demo:reset --target=hosted + DEPLOY.md. Not started.
 ```
+
+## Reviewer addendum (P4-B independent review, 2026-11-02)
+
+Scope: 8 files changed vs 135c443, all inside the lead-defined Owns
+(scripts/demo-reset.mjs + .test.mjs NEW, the demo:reset line in root
+package.json, Notices.tsx + Notices.test.tsx, README.md, DEMO_VIDEO.md NEW,
+this report). No `office/*` change (builder's justified no-change = smallest
+diff). No existing test modified (both test files are `A`dded). Diff scanned
+for secrets: clean; `.env` untracked-ignored, not committed.
+
+Checks re-run fresh from the worktree root (`--force`, 0 cached):
+- `pnpm typecheck` 3/3, `pnpm lint` 3/3, `pnpm build` 2/2.
+- `pnpm test` 3/3: shared 107, web 93 passed/4 skipped, server 138 passed/3 skipped.
+- `npx vitest run scripts/demo-reset.test.mjs`: 9/9.
+- `npx vitest run src/ui/Notices.test.tsx` (web): 4/4.
+- `node scripts/demo-reset.mjs --help` / `--dry-run`: OK, exit 0.
+- Hosted refusals (exit 1, no secret values echoed): no env; local
+  SUPABASE_URL/DATABASE_URL; wrong DEMO_RESET_CONFIRM. `db query --linked`
+  syntax confirmed in the bundled CLI's own help (`supabase db query
+  --linked "<sql>"`); the `--linked` transport itself still unverified (no
+  hosted project exists).
+- Local e2e: staged post-demo state (milestone 2026-11-22, 4 tasks incl. a
+  REVIEWER-MUTATION row) via direct SQL, ran `pnpm demo:reset` (exit 0) ->
+  milestone 2026-11-15 upcoming, 3 seeded tasks, 0/0/0/0, plus the
+  PORT-aware restart hint (2568 shown under PORT=2568). Second run:
+  idempotent, exit 0, DB left seeded.
+- Live server on :2599 (in-memory, no DATABASE_URL): /health returns
+  exactly `{"ok":true,"version":"0.1.0","authMode":"dev","llm":"fixture"}`.
+  Live web on :5199 with VITE_API=http: 200 on `/?name=Maya`. Both stopped
+  afterwards; ports 5199/2599/2567/2568/5173/5174 verified free, no strays.
+- Code cross-checks: dpr={[1,2]} (OfficeScene:51), shadowMap.autoUpdate=false
+  + 4096 map (Lighting), InstancedMesh in Furniture/Desktops/Sprites/Cityscape,
+  &noao/&noshadow dev switches, `?name=` parsing (me.ts), "Process meeting"
+  button, "Ask the office..." placeholder, /health `llm` field (routes.ts:198).
+
+Verdict per task:
+1. demo:reset works locally end to end — PASS (independent staged reset above).
+2. Perf numbers with methodology — PASS (numbers + method in report; every
+   cited code fact re-verified; fps not re-measured — SwiftShader-only box,
+   numbers are environment-bound).
+3. Three notice states exercised — PASS with a note: the new Fixture AI pill
+   is covered by 4 re-run unit tests + the live /health shape; the
+   Reconnecting and error/Dismiss paths are confirmed present and
+   byte-untouched by the diff (pre-existing code), with the builder's live
+   drill artifacts still in /tmp as corroboration. A full browser re-drill
+   was not repeated (software-render cost, no code change on those paths).
+4. README setup actually followed — PASS (supabase up, demo:reset run,
+   server+web started and answered, checks+build run, chromium-1248 present).
+5. Video steps complete — PASS (7 scenes ~7 min, per-scene reset discipline,
+   recording + presentation-day fallbacks; referenced UI strings verified).
+
+Fixes applied: none (no defect found; nothing to commit beyond this addendum).
+Requests: endorse the builder's Requests 1-3 to the lead (dev-auth DB gap,
+wiring scripts tests into `pnpm test`, keeping /health `llm` stable).
+Unresolved (carried): hosted `--linked` transport; real-GPU fps (owner browser).
+
+Reviewer verdict: passed.
