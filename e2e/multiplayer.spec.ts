@@ -37,7 +37,9 @@ test("two browsers see each other move", async ({ alice, bob }) => {
           }
         ).__officeNet?.status() === "online",
       null,
-      { timeout: 60_000 },
+      // Schedule bound (P3-E measurement: 60 s failed 3 contested runs; 240 s
+      // passed 12/12 joins; polling:1000 because rAF polling stalls at ~0.3fps).
+      { timeout: 240_000, polling: 1000 },
     );
   }
 

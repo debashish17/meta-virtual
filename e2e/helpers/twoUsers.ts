@@ -8,7 +8,10 @@ async function newUser(
   { browser }: { browser: import("@playwright/test").Browser },
   use: (u: UserContext) => Promise<void>,
 ) {
-  const context = await browser.newContext();
+  // Small viewport: 1280x720 pages die under SwiftShader load (smoke browser
+  // death at 15.2 m twice); 640x360 runs clean (P3-E measurement). All spec
+  // assertions are viewport-independent.
+  const context = await browser.newContext({ viewport: { width: 640, height: 360 } });
   const page = await context.newPage();
   await use({ context, page });
   await context.close();
