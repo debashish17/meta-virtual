@@ -93,3 +93,48 @@ Open questions: none for P3-A. D6 is settled; the acceptance gap is only the wir
 
 Next: P3-E demo e2e can rely on shared colleagues once request 1 is merged; requests 2–3
 unblock stable multi-browser verification on this box for all lanes.
+
+## Reviewer addendum (2026-11-02, independent re-verification)
+
+Checks re-run fresh from the worktree root on the committed tree (`2ff4137`):
+- `pnpm typecheck`: pass (3/3). `pnpm lint`: pass (3/3).
+- `npx turbo run test --force`: shared 107 passed, web 58 passed, server 100 passed +
+  12 pre-existing skips (DB tests needing local Supabase). `npx vitest run
+  src/room/npcs.test.ts`: 9/9 pass.
+- `npx turbo run build --force`: pass (2/2, uncached). No package e2e exists for P3-A.
+- `git diff main...HEAD --name-status`: only `apps/server/src/room/npcs.ts` (new),
+  `apps/server/src/room/npcs.test.ts` (new), `apps/web/src/office/Colleagues.tsx`
+  (modified), `docs/reports/P3-A.md` (new) — all inside Owns. No existing test file
+  modified. Secrets grep over the diff: no match.
+
+Code read in full (not search output): `npcs.ts` (216 lines), `npcs.test.ts` (174 lines),
+`Colleagues.tsx` (diff + full file). Cross-checked read-only: `office.room.ts` has the
+shared `taken` set and `target_taken` refusal but no `NpcDirector` wiring (confirmed
+absent); `DESK_SEATS` ids are `seatKey` (`seat:x,z`), the same id space the room uses for
+player seats, so the shared-set exclusion is sound; `connection.ts` subscribes
+`state.npcs` into the net store and `net/Players.tsx` draws them; online clicks use
+`NO_RESERVATIONS` (server decides), so the hidden local colleagues keeping `TAKEN`
+entries while online is harmless and offline resume is exact.
+
+Independent socket probe (throwaway `p3a-review.test.ts`, deleted after; `/tmp/p3a-wiring.diff`
+applied temporarily, then reverted — tree verified clean afterwards):
+- The wiring diff applies cleanly with `git apply --check`.
+- Two SDK clients (Maya + Arjun) over a real room: both see `LOOK_PRESETS.length - 2`
+  npcs, identical ids and byte-identical snapshots (id/name/x/z/facing/pose), with
+  Maya/Arjun excluded. Pass.
+- After Arjun leaves, Maya's client sees the Arjun preset respawn. Pass.
+
+Verdict per acceptance item:
+- "Two browsers see the same colleagues in the same places": PROVEN modulo the wiring —
+  the sync path is verified over real sockets, but the committed tree is inert online
+  because `office.room.ts` (P2-A owned) has no wiring. Holds on merge of Request 1.
+- "A player and a colleague never hold the same seat (test)": PASS — `npcs.test.ts`
+  (all-held, one-held, join-removal frees desk, mid-outing removal frees desk + both
+  outing spots, 100 s tick keeps exclusive spots) plus the shared id space.
+- Task 3 (name exclusion incl. join/leave/respawn): PASS, unit + socket proven.
+
+Fixes applied: none — no defect found; nothing in Owns needed changing.
+
+Status: partial (unchanged). Only Request 1 (room wiring, exact diff already supplied and
+now reviewer-verified over sockets) blocks online colleagues. Requests 2–4 are endorsed
+as written; no new requests.
