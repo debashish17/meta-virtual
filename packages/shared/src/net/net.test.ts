@@ -16,6 +16,8 @@ import {
   ActivityStop,
   AuthClaims,
   Axis,
+  Caption,
+  CaptionSend,
   ChatHistory,
   ChatMessage,
   ChatSend,
@@ -69,6 +71,7 @@ describe("socket contract", () => {
     expect(ActivityStart.safeParse({ seq: 9, targetId: "counter_1" }).success).toBe(true);
     expect(ActivityStop.safeParse({ seq: 10 }).success).toBe(true);
     expect(ChatSend.parse({ text: "  hello  " }).text).toBe("hello");
+    expect(CaptionSend.parse({ text: "  go live  ", final: false, ts: 1 }).text).toBe("go live");
     expect(StatusSet.parse({ status: "in_meeting" }).status).toBe("in_meeting");
     expect(LookSet.parse({ look }).look).toEqual(look);
     expect(Seq.parse(0)).toBe(0);
@@ -87,6 +90,8 @@ describe("socket contract", () => {
     expect(ChatSend.safeParse({ text: "" }).success).toBe(false);
     expect(ChatSend.safeParse({ text: "   " }).success).toBe(false);
     expect(ChatSend.safeParse({ text: "x".repeat(501) }).success).toBe(false);
+    expect(CaptionSend.safeParse({ text: "", final: true, ts: 1 }).success).toBe(false);
+    expect(CaptionSend.safeParse({ text: "x", final: "yes", ts: 1 }).success).toBe(false);
     expect(StatusSet.safeParse({ status: "busy" }).success).toBe(false);
     expect(Status.safeParse("available").success).toBe(true);
     expect(LookSet.safeParse({ look: { ...look, height: 3 } }).success).toBe(false);
@@ -96,6 +101,7 @@ describe("socket contract", () => {
     expect(ChatMessage.parse(chat)).toBeTruthy();
     expect(ChatHistory.parse({ messages: [chat] }).messages).toHaveLength(1);
     expect(ChatHistory.parse({ messages: [] }).messages).toEqual([]);
+    expect(Caption.parse({ name: "Maya", text: "go live", final: true, ts: 2 })).toBeTruthy();
     expect(ZoneEvent.parse({ userId: "u1", zoneId: "acme_room", kind: "enter" })).toBeTruthy();
     expect(RecordsChanged.parse({ kinds: ["tasks", "meetings"] }).kinds).toHaveLength(2);
     expect(RecordKind.parse("proposed_changes")).toBe("proposed_changes");
@@ -170,8 +176,8 @@ describe("socket contract", () => {
       "MOVE_RATE_PER_SECOND", "CHAT_RATE_MAX", "CHAT_RATE_WINDOW_S", "RECONNECT_SECONDS",
       "PROXIMITY_ENTER_M", "PROXIMITY_LEAVE_M", "DISPLAY_NAME_MIN", "DISPLAY_NAME_MAX",
       "CHAT_TEXT_MAX", "CHAT_HISTORY_MAX", "Seq", "Axis", "JoinOptions", "AuthClaims", "MoveIntent",
-      "MoveTarget", "ActivityStart", "ActivityStop", "ChatSend", "Status", "StatusSet", "LookSet",
-      "ChatMessage", "ChatHistory", "ZoneEvent", "RecordKind", "RecordsChanged", "ErrorCode",
+      "MoveTarget", "ActivityStart", "ActivityStop", "ChatSend", "CaptionSend", "Status", "StatusSet", "LookSet",
+      "ChatMessage", "ChatHistory", "Caption", "ZoneEvent", "RecordKind", "RecordsChanged", "ErrorCode",
       "ServerError", "PlayerActivity", "PlayerView", "NpcView", "CLIENT_MESSAGE", "SERVER_MESSAGE",
       "screenToIntent", "WALK_SPEED", "spawnPlayer", "stepPlayer", "PoseSchema", "OFFICE_SPOTS",
       "seatFor", "besideOf", "roundTheChair", "routineAtDesk", "routineAway", "advance", "seatKey",

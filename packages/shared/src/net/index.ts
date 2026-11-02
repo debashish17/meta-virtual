@@ -110,6 +110,14 @@ export const ChatSend = z.object({
 }).strict();
 export type ChatSend = z.infer<typeof ChatSend>;
 
+/** One caption segment from the browser speech recognizer (Phase 5). */
+export const CaptionSend = z.object({
+  text: z.string().trim().min(1).max(CHAT_TEXT_MAX),
+  final: z.boolean(),
+  ts: z.number().int().nonnegative(),
+}).strict();
+export type CaptionSend = z.infer<typeof CaptionSend>;
+
 export const Status = z.enum(["available", "in_meeting", "away"]);
 export type Status = z.infer<typeof Status>;
 
@@ -139,6 +147,15 @@ export const ChatHistory = z.object({
   messages: z.array(ChatMessage).max(CHAT_HISTORY_MAX),
 }).strict();
 export type ChatHistory = z.infer<typeof ChatHistory>;
+
+/** A caption broadcast to the people in the speaker's zone (Phase 5). */
+export const Caption = z.object({
+  name: z.string().min(1),
+  text: z.string().min(1).max(CHAT_TEXT_MAX),
+  final: z.boolean(),
+  ts: z.number().int().nonnegative(),
+}).strict();
+export type Caption = z.infer<typeof Caption>;
 
 /** Someone entered or left a named zone (`zoneId` is the zone entered or left). */
 export const ZoneEvent = z.object({
@@ -218,6 +235,7 @@ export const CLIENT_MESSAGE = {
   activityStart: "activity_start",
   activityStop: "activity_stop",
   chatSend: "chat_send",
+  captionSend: "caption_send",
   statusSet: "status_set",
   lookSet: "look_set",
 } as const;
@@ -225,6 +243,7 @@ export const CLIENT_MESSAGE = {
 export const SERVER_MESSAGE = {
   chat: "chat",
   chatHistory: "chat_history",
+  caption: "caption",
   zoneEvent: "zone_event",
   recordsChanged: "records_changed",
   error: "error",

@@ -293,3 +293,18 @@ export const OkResult = z.object({
   ok: z.literal(true),
 }).strict();
 export type OkResult = z.infer<typeof OkResult>;
+
+// Live calls (Phase 5, ARCHITECTURE.md 12.9).
+
+/** `POST /calls/token`: the caller's zone is verified server-side, never trusted. */
+export const CallTokenRequest = z.object({
+  zoneId: z.string().min(1),
+}).strict();
+export type CallTokenRequest = z.infer<typeof CallTokenRequest>;
+
+/** `POST /calls/token` answers with the LiveKit URL and a scoped token. */
+export const CallTokenResponse = z.object({
+  url: z.string().min(1),
+  token: z.string().min(1),
+}).strict();
+export type CallTokenResponse = z.infer<typeof CallTokenResponse>;

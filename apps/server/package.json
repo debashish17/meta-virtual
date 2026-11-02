@@ -19,6 +19,7 @@
     "@supabase/supabase-js": "^2.118.0",
     "express": "^4.21.2",
     "jose": "^6.2.14",
+    "livekit-server-sdk": "^2.19.2",
     "openai": "^7.47.0",
     "postgres": "^4.0.0"
   },

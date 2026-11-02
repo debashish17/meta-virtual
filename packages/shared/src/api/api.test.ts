@@ -4,6 +4,8 @@ import {
   Account,
   AccountStatus,
   AskRequest,
+  CallTokenRequest,
+  CallTokenResponse,
   AskResult,
   AskSource,
   AskSourceType,
@@ -273,6 +275,8 @@ describe("http contract", () => {
     expect(ProposedChangeQuery.parse({ status: "pending", meetingId: id(31) })).toBeTruthy();
     expect(ProposedChangeList.parse({ changes: [] }).changes).toEqual([]);
     expect(OkResult.parse({ ok: true })).toEqual({ ok: true });
+    expect(CallTokenRequest.parse({ zoneId: "acme_room" })).toEqual({ zoneId: "acme_room" });
+    expect(CallTokenResponse.parse({ url: "wss://x", token: "t" })).toBeTruthy();
   });
 
   it("rejects bad envelopes", () => {
@@ -282,6 +286,8 @@ describe("http contract", () => {
     expect(ProposedChangeList.safeParse({ changes: [{ ...change, id: "x" }] }).success).toBe(false);
     expect(OkResult.safeParse({ ok: false }).success).toBe(false);
     expect(OkResult.safeParse({}).success).toBe(false);
+    expect(CallTokenRequest.safeParse({ zoneId: "" }).success).toBe(false);
+    expect(CallTokenResponse.safeParse({ url: "wss://x" }).success).toBe(false);
   });
 
   it("re-exports the net RecordKind", () => {
@@ -318,6 +324,8 @@ describe("http contract", () => {
       [ProposedChangeQuery, {}],
       [ProposedChangeList, { changes: [] }],
       [OkResult, { ok: true }],
+      [CallTokenRequest, { zoneId: "z" }],
+      [CallTokenResponse, { url: "wss://x", token: "t" }],
     ];
     for (const [schema, value] of cases) {
       expect(schema.safeParse(value).success).toBe(true);
@@ -333,7 +341,8 @@ describe("http contract", () => {
       "PersonRef", "StatusDecision", "ProjectStatus", "AccountStatus", "ASK_QUESTION_MAX",
       "AskRequest", "AskSourceType", "AskSource", "AskResult", "MeetingFixture",
       "MeetingCreateTranscript", "MeetingCreateFixture", "MeetingCreate", "MeetingProcessResult",
-      "ProposedChangeQuery", "ProposedChangeList", "OkResult", "RecordKind",
+      "ProposedChangeQuery", "ProposedChangeList", "OkResult", "CallTokenRequest",
+      "CallTokenResponse", "RecordKind",
       "DemoPersonKey", "DemoPerson", "DEMO_PEOPLE", "DEMO_ACCOUNT", "DEMO_CONTACT", "DEMO_PROJECT",
       "DEMO_MILESTONE", "DEMO_TASKS", "DEMO_COMMITMENT", "RoomRecordKind", "RoomRecord",
       "ROOM_RECORDS", "ACME_SYNC_TRANSCRIPT", "FIXTURE_TRANSCRIPTS", "acmeSyncExpected",
