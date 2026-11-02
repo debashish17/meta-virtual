@@ -87,3 +87,57 @@ Open questions:
 Next: P5-D live-meeting rehearsal once R1-R3 land and P5-A/B merge; the paste route
 stays as the static-demo fallback regardless.
 ```
+
+## Reviewer addendum (2026-11-02, independent re-verification)
+
+Checks re-run fresh from the worktree root, all observed this session:
+- `pnpm typecheck --force`: 3/3 pass. `pnpm lint --force`: 3/3 pass.
+- `pnpm test --force`: shared 107, web 116 passed + 4 skipped, server 138 passed + 3
+  skipped — identical to the builder's counts. Caption slice alone: 6 files, 23/23.
+- `pnpm build --force`: pass (2/2, uncached).
+- `npx playwright test e2e/live-meeting.spec.ts`: 1 passed in 40.3 s (captured
+  transcript -> `Approvals (8)`), 1 skipped with the R1 reason; total 57.3 s.
+- R4 snapshot (`/tmp/p5c-transcript.test.ts.snapshot`) restored temporarily as
+  `apps/server/src/calls/transcript.test.ts`: 7/7 green on a fresh run (zone
+  broadcast + own echo, zone scoping via a real walk, assembly/take-once,
+  invalid + rate-limit, unknown sender, format + cap), then deleted; tree clean.
+- No-creds lane (`WEB_PORT=5179 PORT=2579`, `LIVEKIT_*` unset, no `.env` keys):
+  `/health` ok with `llm: fixture`, web 200, fixture `POST /meetings` returns
+  changes. Lane stopped afterwards; ports verified free.
+- `git diff --diff-filter=M main...HEAD`: empty — zero existing files modified, so
+  no test was changed or weakened (the web/server skips are baseline).
+  All 16 code/test files are inside Owns; `grep -ci caption` on
+  `apps/server/src/room/office.room.ts` is 0 (R1 genuinely missing); no LiveKit,
+  mic, or service-key material in the diff; secret scan clean.
+
+Verdict per acceptance item (tasks 1-4 + G7 from `docs/WORK_PACKAGES.md` P5-C):
+1. Browser captions + server broadcast/buffer: IMPLEMENTATION PASS, LIVE PATH OPEN.
+   Recognizer (continuous, interim, restart/denial rules), sender, store/binding,
+   and `transcript.ts` (zone broadcast, per-zone finals, 30/s limit,
+   `invalid_message`/`rate_limited`, ghost senders ignored) are correct as read
+   and match the lead's `CaptionSend`/`Caption`/`caption_send`/`caption`
+   contract. Server runtime proven 7/7 under R1's exact composition. Open and
+   real: R1 room wiring (lead file), R2 client binding, real-microphone speech
+   (owner rehearsal O1).
+2. "End meeting" posts the transcript; empty gives `no speech was captured`:
+   MODULE PASS, WIRING OPEN. `endMeeting`/`postTranscriptAsMeeting`, the panel
+   button, and the empty-notice path are unit- and e2e-proven. Open and real:
+   R3 (call-bar button, last-leave auto-post in P5-B/lead files). D1 (client
+   posts, server never POSTs) is sound — same pipeline, room has no auth — but
+   needs the lead's sign-off.
+3. Paste-a-transcript, kept for the static demo: PASS. Same module the panel
+   calls is e2e-proven; only new files, panel exported but unmounted, handler
+   unregistered, so the fixture demo is untouched (health + fixture POST above).
+4. e2e: PASS / HONEST-SKIP. Seeded-transcript-to-drawer passes fresh; the
+   arrival probe skips only via the R1 reason (verified minimal: no other skip
+   path in the test, handler confirmed absent).
+- G7 "a transcript captured from a live call produces proposed changes through
+  the same pipeline": PROVEN on the seeded/pasted path; the live-capture half
+  stays open behind R1-R3 + a microphone. Package status stays **partial**
+  (P5-B precedent), with no verifiable item waived.
+
+Fixes applied: none — no defect found. Reviewer notes for the lead (no action
+in this package): consider hoisting `NO_SPEECH_NOTICE` into `packages/shared`
+after Gate P1 instead of the documented client/server string duplication; the
+e2e arrival probe hardcodes `:2590` and a web `node_modules` SDK deep-import,
+which works but is fragile.
