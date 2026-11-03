@@ -2,7 +2,7 @@ import { Html } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { COUNTERS, DESK_SEATS, OFFICE_WALK, TICK_DT, WalkMap, advanceActivity, inTheWay, keepApart, approachOf, findPath, riseOf, screenToIntent, secondsOf, startActivity, targetNear, zoneAt, type Activity, type Axis, type Point, type Target, type Zone } from '@office/shared'
+import { COUNTERS, DESK_SEATS, OFFICE_WALK, TICK_DT, WalkMap, advanceActivity, inTheWay, keepApart, approachOf, findPath, homeDeskSeatId, personKeyForDisplayName, riseOf, type GoToPlace, screenToIntent, secondsOf, startActivity, targetNear, zoneAt, type Activity, type Axis, type Point, type Target, type Zone } from '@office/shared'
 import { TAKEN } from './taken'
 import ActionChip from './ActionChip'
 import { actionFor, phaseOffline, phaseOnline, sameAction } from './action'
@@ -103,6 +103,11 @@ function takenNow(): ReadonlySet<string> {
     for (const s of DESK_SEATS) if (Math.hypot(s.x - p.x, s.z - p.z) < OCCUPIED) taken.add(s.id)
     for (const c of COUNTERS) if (Math.hypot(c.x - p.x, c.z - p.z) < OCCUPIED) taken.add(c.id)
   }
+  // Your own home desk reads as taken (it is held for you): E, clicks and the halo
+  // still offer it; anyone else's never appears.
+  const key = personKeyForDisplayName(useMe.getState().name)
+  const home = key ? homeDeskSeatId(key) : null
+  if (home) taken.delete(home)
   return taken
 }
 
@@ -122,6 +127,29 @@ function onlineWalkTo(point: Point) {
 
 /** One fixed online tick: send the input for it (with a seq) and predict it, keeping clear of
  * `others` (everyone else as last synced) as the room does. */
+/**
+ * Phase 6: status moves you. Send `go_to` and follow the server there: the room walks
+ * the approach and runs the activity, and the snapshots drive the avatar until it is
+ * free again. Held keys still cancel the trip, exactly like a clicked one.
+ */
+export function goToPlace(place: GoToPlace) {
+  if (!isOnline()) return
+  netSend.goTo(place)
+  online.mode = 'approach'
+  online.followInit = false
+  online.heldSent = false
+  online.queuedTarget = null
+  online.dest = null
+}
+
+/** Test hook: ask the room to start an activity there, exactly as a click would. */
+function requestSeat(targetId: string) {
+  if (!isOnline()) return
+  online.pendingActivity = targetId
+  online.pendingTarget = null
+  online.dest = null
+}
+
 function onlineTick(sx: number, sy: number, run: boolean, others: readonly Point[]) {
   const p = online.predictor
   if (!p) return
@@ -253,13 +281,13 @@ function onlineFrame(dt: number, refs: FrameRefs, setZone: (zone: Zone | null) =
   if (err && err.n !== online.seenError) {
     online.seenError = err.n
     if (err.code === 'target_taken' && online.requested) online.refused.set(online.requested, performance.now() + 30_000)
-    if (online.mode === 'approach' && (err.code === 'target_taken' || err.code === 'unwalkable')) {
+    if (online.mode === 'approach' && (err.code === 'target_taken' || err.code === 'unwalkable' || err.code === 'no_home_desk')) {
       online.mode = 'free' // the trip is refused: stand where the server says
       if (snap) p.reset(snap.x, snap.z, snap.facing)
     }
   }
   if (snap) {
-    if (online.mode === 'approach' && snap.activity) {
+    if ((online.mode === 'approach' || online.mode === 'free') && snap.activity) {
       online.mode = 'activity'
     } else if ((online.mode === 'activity' || online.mode === 'leaving') && !snap.activity) {
       // Stood up: predict again from the snapshot, picking up the queued click if any.
@@ -389,7 +417,7 @@ export function hoverAt(point: Point | null) {
 if (import.meta.env.DEV && typeof window !== 'undefined') {
   // test hook for screenshots and manual checks: __officeDebug.teleport(x, z), .walkTo({x, z})
   (window as unknown as Record<string, unknown>).__officeDebug = {
-    avatar, walkTo, route, walk: OFFICE_WALK, doing, interact,
+    avatar, walkTo, route, walk: OFFICE_WALK, doing, interact, requestSeat,
     teleport: (x: number, z: number) => {
       // Online the server applies the same coords, but no ack arrives without new
       // inputs — so reset the predictor too, or it keeps the old position and the

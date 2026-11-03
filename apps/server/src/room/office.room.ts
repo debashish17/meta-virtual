@@ -10,6 +10,7 @@ import {
   COUNTERS,
   ChatSend,
   DESK_SEATS,
+  GoTo,
   HistoryRequest,
   TeleportAdmin,
   JoinOptions,
@@ -26,7 +27,11 @@ import {
   WORLD,
   advanceActivity,
   approachOf,
+  homeDeskSeatIds,
+  homeDeskTarget,
   inTheWay,
+  isHomeDeskSeat,
+  personKeyForDisplayName,
   riseOf,
   secondsOf,
   startActivity,
@@ -36,6 +41,7 @@ import {
   type AuthClaims as AuthClaimsType,
   type AvatarLook,
   type ErrorCode,
+  type GoToPlace,
   type MeetingInvite,
   type Moves,
   type Point,
@@ -116,6 +122,24 @@ function movesFor(look: AvatarLook): Moves {
   };
 }
 
+/**
+ * The room's reservation set. Home desks are held for their owners whether present or not
+ * (ARCHITECTURE.md 12.10), so `delete` never frees one: standing up, teleporting away and
+ * a colleague's release all keep the owner's hold. Seeded in `onCreate`.
+ */
+function reservations(): Set<string> {
+  const taken = new Set<string>();
+  const remove = taken.delete.bind(taken);
+  taken.delete = (id: string): boolean => (isHomeDeskSeat(id) ? false : remove(id));
+  return taken;
+}
+
+/** A signed-in display name's home desk as an activity target, or null without one. */
+function homeDeskOf(displayName: string): Target | null {
+  const key = personKeyForDisplayName(displayName);
+  return key ? homeDeskTarget(key) : null;
+}
+
 function targetById(targetId: string): Target | null {
   const seat = DESK_SEATS.find((s) => s.id === targetId);
   if (seat) return { kind: "seat", id: seat.id, seat };
@@ -153,7 +177,7 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
   /** Sessions that dropped and are waiting in their reconnection window, by session id. */
   private readonly dropped = new Map<string, ReturnType<Room["allowReconnection"]>>();
   /** Seat and counter-spot ids held in this room, players (and later colleagues) alike. */
-  private readonly taken = new Set<string>();
+  private readonly taken = reservations();
   private workspaceId: string | null = null;
   private chatSeq = 0;
   private readonly steps = new FixedStep(TICK_DT * 1000);
@@ -181,6 +205,9 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
   override onCreate(): void {
     this.setState(new OfficeState());
     this.chat = new InMemoryChatStore();
+    // Home desks are held for their owners whether present or not (12.10): anyone else
+    // gets `target_taken`, and the sit offer never shows them. Never freed; see `release`.
+    for (const id of homeDeskSeatIds()) this.taken.add(id);
     // Patches go out right after the ticks (poll), one per batch, so every snapshot a client
     // sees is the state of the tick that set its lastSeq: TICK_HZ patches a second.
     this.patchRate = null;
@@ -209,6 +236,7 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
       this.onStatusSet(client, message),
     );
     this.onMessage(CLIENT_MESSAGE.lookSet, (client, message) => this.onLookSet(client, message));
+    this.onMessage(CLIENT_MESSAGE.goTo, (client, message) => this.onGoTo(client, message));
     this.captions = registerCaptionHandlers(this, this.captions);
     this.npcs.sync(this.state, this.taken, []);
   }
@@ -390,7 +418,9 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
       this.fail(client, "invalid_message", "unknown activity target");
       return;
     }
-    if (this.taken.has(target.id)) {
+    // Your own home desk reads as taken (it is held for you): you may still sit at it.
+    const ownHome = homeDeskOf(player.name);
+    if (this.taken.has(target.id) && target.id !== ownHome?.id) {
       this.fail(client, "target_taken", "target is taken");
       return;
     }
@@ -494,6 +524,72 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
     player.z = parsed.data.z;
     player.pose = "stand";
     player.speed = 0;
+  }
+
+  /**
+   * Phase 6 (12.10): status decides where a person is. `desk` walks to the home desk
+   * (sit, type, status `working`); `break` walks to the nearest free counter spot
+   * (make a drink, then stand until the next action, status `on_break`). A player with
+   * no home desk gets the status only, and `error no_home_desk`.
+   *
+   * NOTE (P6-0): `netSend.goTo` carries a module-level seq, not the predictor's, so this
+   * handler never writes `lastSeq`: reconciliation keys off the predictor's own seqs.
+   */
+  private onGoTo(client: Client, message: unknown): void {
+    const rec = this.recs.get(client.sessionId);
+    const player = this.state.players.get(client.sessionId);
+    if (!rec || !player) return;
+    const parsed = GoTo.safeParse(message);
+    if (!parsed.success) {
+      this.fail(client, "invalid_message", "bad go_to");
+      return;
+    }
+    if (!this.checkMoveRate(client, rec)) return;
+    const place: GoToPlace = parsed.data.place;
+    if (place === "desk") {
+      player.status = "working";
+      const target = homeDeskOf(player.name);
+      if (!target) {
+        this.fail(client, "no_home_desk", "you have no home desk");
+        return;
+      }
+      this.walkToTarget(client, rec, player, target);
+      return;
+    }
+    player.status = "on_break";
+    const spot = COUNTERS.filter((s) => !this.taken.has(s.id)).sort(
+      (a, b) =>
+        Math.hypot(a.x - player.x, a.z - player.z) - Math.hypot(b.x - player.x, b.z - player.z),
+    )[0];
+    if (!spot) {
+      this.fail(client, "target_taken", "no free counter spot");
+      return;
+    }
+    this.walkToTarget(client, rec, player, { kind: "counter", id: spot.id, spot });
+  }
+
+  /** End any activity and walk the approach to `target`, holding it (the trip behind
+   * `go_to`; `activity_start` keeps its inline copy, which also reports `lastSeq`). False when unreachable. */
+  private walkToTarget(
+    client: Client,
+    rec: SessionRecord,
+    player: PlayerState,
+    target: Target,
+  ): boolean {
+    this.endActivity(rec, player);
+    const route = OFFICE_WALK.findPath({ x: player.x, z: player.z }, approachOf(target));
+    if (route.length === 0) {
+      this.fail(client, "unwalkable", "target cannot be reached");
+      return false;
+    }
+    this.taken.add(target.id);
+    rec.heldTargetId = target.id;
+    rec.route = route;
+    rec.inputs.clear();
+    rec.queued = null;
+    rec.stopRequested = false;
+    rec.pendingTarget = target;
+    return true;
   }
 
   private onStatusSet(client: Client, message: unknown): void {

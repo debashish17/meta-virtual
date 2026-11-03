@@ -1,0 +1,43 @@
+/* The check-in bar (DESIGN_SPEC 9): a compact pill at the top centre, beside the zone
+ * pill, never over the centre of the floor. The button reuses the product button style. */
+.pan-officelife {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(calc(-50% + 190px));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px 5px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 18px rgba(30, 33, 38, 0.12);
+  font: 600 12px/1.2 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: #4a4d52;
+  z-index: 30;
+}
+
+.pan-officelife-status {
+  white-space: nowrap;
+}
+
+.pan-officelife .pan-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+/* Narrow windows (and the 640 px e2e viewport): there is no room beside the pill
+ * without covering the drawer tab, so the bar docks bottom-centre above the ask
+ * panel, clear of every clickable. Learned the hard way: a force-click on a covered
+ * tab lands on this bar instead (demo.spec). */
+@media (max-width: 1279px) {
+  .pan-officelife {
+    top: auto;
+    bottom: 76px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .pan-officelife-status {
+    display: none;
+  }
+}

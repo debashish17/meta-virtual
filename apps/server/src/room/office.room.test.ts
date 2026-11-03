@@ -4,6 +4,7 @@ import { ColyseusTestServer } from "@colyseus/testing";
 import { WebSocketTransport } from "@colyseus/ws-transport";
 import {
   CLIENT_MESSAGE,
+  COUNTERS,
   DESK_SEATS,
   OFFICE_WALK,
   PROTOCOL_VERSION,
@@ -13,6 +14,8 @@ import {
   WalkMap,
   WORKSPACE_ID,
   WORLD,
+  homeDeskSeatId,
+  isHomeDeskSeat,
   spawnPlayer,
   stepPlayer,
   zoneAt,
@@ -136,11 +139,12 @@ function unwalkableNear(from: Point): Point {
   throw new Error("no unwalkable point found");
 }
 
-/** The desk seat with the shortest route from spawn (keeps activity tests fast). */
+/** The free desk seat with the shortest route from spawn (keeps activity tests fast). Home desks are held for their owners, so they are never the answer. */
 function nearestSeat(): { id: string } {
-  let best = DESK_SEATS[0];
+  const open = DESK_SEATS.filter((s) => !isHomeDeskSeat(s.id));
+  let best = open[0];
   let bestLen = Number.POSITIVE_INFINITY;
-  for (const seat of DESK_SEATS) {
+  for (const seat of open) {
     const route = OFFICE_WALK.findPath(SPAWN, seat.aisle);
     if (route.length > 0 && route.length < bestLen) {
       best = seat;
@@ -631,6 +635,146 @@ describe("OfficeRoom", () => {
     expect(await waiting).toEqual({ kinds: ["tasks", "meetings"] });
     // A workspace with no live room is a quiet no-op.
     expect(() => new RegistryBus().recordsChanged("no-such-workspace", ["tasks"])).not.toThrow();
+  });
+
+  it("holds home desks for their owners, present or not", { timeout: 15000 }, async () => {
+    const { testServer } = await setup();
+    // Only Arjun joined: Maya's desk is held anyway, and his own too.
+    const arjun = await join(testServer, "Arjun");
+    await waitFor(
+      () => getRoom(WORKSPACE_ID)?.reservations.has(homeDeskSeatId("maya")!) === true,
+      5000,
+      "Maya's home desk to be held",
+    );
+    expect(getRoom(WORKSPACE_ID)?.reservations.has(homeDeskSeatId("arjun")!)).toBe(true);
+    const waiting = arjun.waitForMessage(SERVER_MESSAGE.error, 5000);
+    arjun.send(CLIENT_MESSAGE.activityStart, { seq: 1, targetId: homeDeskSeatId("maya")! });
+    expect((await waiting).code).toBe("target_taken");
+  });
+
+  it("lets the owner sit at their own home desk", { timeout: 60000 }, async () => {
+    const { testServer } = await setup();
+    const room = await join(testServer, "Maya");
+    const errors: { code: string }[] = [];
+    room.onMessage(SERVER_MESSAGE.error, (msg) => errors.push(msg));
+    const home = DESK_SEATS.find((s) => s.id === homeDeskSeatId("maya"))!;
+    room.send(CLIENT_MESSAGE.activityStart, { seq: 1, targetId: home.id });
+    await waitFor(
+      () => serverPlayer(room.sessionId)?.activity.kind === "seat",
+      45000,
+      "arrival at the home desk",
+    );
+    expect(serverPlayer(room.sessionId)?.activity.targetId).toBe(home.id);
+    await waitFor(() => serverPlayer(room.sessionId)?.pose === "type", 30000, "typing");
+    expect(errors).toEqual([]);
+    // Standing up keeps the hold: the desk is still hers while she is away.
+    room.send(CLIENT_MESSAGE.moveIntent, { seq: 2, dx: 0, dz: 1, run: false });
+    await waitFor(
+      () => serverPlayer(room.sessionId)?.activity.kind === "",
+      30000,
+      "standing up",
+    );
+    expect(getRoom(WORKSPACE_ID)?.reservations.has(home.id)).toBe(true);
+  });
+
+  it("checks in with go_to desk: status working, seated and typing, lastSeq untouched", { timeout: 120000 }, async () => {
+    const { testServer } = await setup();
+    const room = await join(testServer, "Maya");
+    const home = DESK_SEATS.find((s) => s.id === homeDeskSeatId("maya"))!;
+    room.send(CLIENT_MESSAGE.goTo, { seq: 1, place: "desk" });
+    await waitFor(() => serverPlayer(room.sessionId)?.status === "working", 5000, "working");
+    await waitFor(
+      () => serverPlayer(room.sessionId)?.activity.kind === "seat",
+      60000,
+      "arrival at the home desk",
+    );
+    expect(serverPlayer(room.sessionId)?.activity.targetId).toBe(home.id);
+    await waitFor(() => serverPlayer(room.sessionId)?.pose === "type", 30000, "typing");
+    const p = serverPlayer(room.sessionId)!;
+    expect(Math.hypot(p.x - home.x, p.z - home.z)).toBeLessThan(0.5);
+    // The go_to seq is the net module's own counter, not the predictor's: lastSeq is untouched.
+    expect(p.lastSeq).toBe(0);
+  });
+
+  it("takes a break with go_to break and comes back with go_to desk", { timeout: 180000 }, async () => {
+    const { testServer } = await setup();
+    const room = await join(testServer, "Maya");
+    // Start near the tea point so the break walk stays short.
+    const near = OFFICE_WALK.nearestWalkable({ x: 48.5, z: 7.5 }, 3)!;
+    room.send(CLIENT_MESSAGE.teleportAdmin, { x: near.x, z: near.z });
+    await waitFor(() => {
+      const p = serverPlayer(room.sessionId);
+      return p?.x === near.x && p?.z === near.z;
+    }, 5000, "the teleport");
+    room.send(CLIENT_MESSAGE.goTo, { seq: 1, place: "break" });
+    await waitFor(() => serverPlayer(room.sessionId)?.status === "on_break", 5000, "on_break");
+    await waitFor(
+      () => serverPlayer(room.sessionId)?.activity.kind === "counter",
+      60000,
+      "arrival at the counter",
+    );
+    await waitFor(
+      () => serverPlayer(room.sessionId)?.pose === "interact",
+      30000,
+      "making a drink",
+    );
+    // The drink ends, and she stands there until the next action.
+    await waitFor(
+      () => serverPlayer(room.sessionId)?.activity.kind === "",
+      30000,
+      "standing with the drink",
+    );
+    const rest = serverPlayer(room.sessionId)!;
+    expect(rest.pose).toBe("stand");
+    expect(rest.lastSeq).toBe(0);
+    const spotAt = COUNTERS.find((s) => Math.hypot(s.x - rest.x, s.z - rest.z) < 1);
+    expect(spotAt, "standing at a counter spot").toBeDefined();
+    // Back to work: up from the counter, home, seated and typing.
+    room.send(CLIENT_MESSAGE.goTo, { seq: 2, place: "desk" });
+    await waitFor(() => serverPlayer(room.sessionId)?.status === "working", 5000, "working");
+    await waitFor(
+      () => serverPlayer(room.sessionId)?.activity.kind === "seat",
+      90000,
+      "arrival back at the home desk",
+    );
+    await waitFor(() => serverPlayer(room.sessionId)?.pose === "type", 30000, "typing again");
+    expect(serverPlayer(room.sessionId)?.activity.targetId).toBe(homeDeskSeatId("maya"));
+  });
+
+  it("answers go_to desk without a home desk with no_home_desk and the status only", { timeout: 15000 }, async () => {
+    const { testServer } = await setup();
+    const room = await join(testServer, "Zed");
+    const me = serverPlayer(room.sessionId)!;
+    const at = { x: me.x, z: me.z };
+    const waiting = room.waitForMessage(SERVER_MESSAGE.error, 5000);
+    room.send(CLIENT_MESSAGE.goTo, { seq: 1, place: "desk" });
+    expect((await waiting).code).toBe("no_home_desk");
+    await waitFor(() => serverPlayer(room.sessionId)?.status === "working", 5000, "working");
+    await sleep(1000);
+    const p = serverPlayer(room.sessionId)!;
+    expect(Math.hypot(p.x - at.x, p.z - at.z)).toBeLessThan(0.01);
+    expect(p.pose).toBe("stand");
+    expect(p.lastSeq).toBe(0);
+    // A place that is not a desk or a break is rejected like any bad message.
+    const bad = room.waitForMessage(SERVER_MESSAGE.error, 5000);
+    room.send(CLIENT_MESSAGE.goTo, { seq: 2, place: "roof" });
+    expect((await bad).code).toBe("invalid_message");
+  });
+
+  it("never moves anyone on status_set", { timeout: 15000 }, async () => {
+    const { testServer } = await setup();
+    const room = await join(testServer, "Maya");
+    const me = serverPlayer(room.sessionId)!;
+    const at = { x: me.x, z: me.z };
+    room.send(CLIENT_MESSAGE.statusSet, { status: "working" });
+    await waitFor(() => serverPlayer(room.sessionId)?.status === "working", 5000, "working");
+    room.send(CLIENT_MESSAGE.statusSet, { status: "on_break" });
+    await waitFor(() => serverPlayer(room.sessionId)?.status === "on_break", 5000, "on_break");
+    await sleep(1000);
+    const p = serverPlayer(room.sessionId)!;
+    expect(Math.hypot(p.x - at.x, p.z - at.z)).toBeLessThan(0.01);
+    expect(p.pose).toBe("stand");
+    expect(p.lastSeq).toBe(0);
   });
 
   it("uses a wired verifier, and fails closed without one", { timeout: 15000 }, async () => {
