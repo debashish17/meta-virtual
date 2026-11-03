@@ -184,7 +184,7 @@ Record the answers in `docs/HANDOFF.md` section 3.
 | D12 | Colleagues (NPCs) | Keep a few for life in the office: four, at their own desks on their routines (owner, 2026-11-03) | P6-A |
 | D13 | Meetings | In one of the existing rooms, never new geometry; when every room is busy, a virtual call-only meeting (needs LiveKit, so cut first) (owner, 2026-11-03) | P6-B |
 | D15 | USP A Phase 0 (receipts) before the deadline | Yes, as P6-R (owner, 2026-11-03); USP A Phases 1 to 4 after the deadline | P6-R |
-| D14 | Deploy mode | Open. Default: the full deploy (Supabase Auth and Postgres) now that the hosted project exists; fallback: `AUTH_MODE=dev` with the in-memory repo (no `DATABASE_URL`, `NODE_ENV` not `production`), name picker, data lost on restart | P4-A |
+| D14 | Deploy mode | Fast mode is live since 2026-11-03: `AUTH_MODE=dev` with the in-memory repo (no `DATABASE_URL`, `NODE_ENV` not `production`), name picker, data lost on restart. The full deploy (Supabase Auth and Postgres) is optional and needs a Supabase project in Singapore beside the server (`HANDOFF.md` section 0); the owner decides | P4-A |
 
 ## 6. If time runs short
 
