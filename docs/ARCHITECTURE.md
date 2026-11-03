@@ -181,8 +181,6 @@ ExtractionResult = {
 2. Run structured queries for the matching class. Semantic search is post-MVP.
 3. If the retrieved set is empty or the class is `other`, return `abstained: true` with a fixed message.
 4. Otherwise give the LLM only the retrieved records and require JSON `{ answer, sourceIds }`.
-   For `my_day` the LLM is also told who is asking and that the records are their own (the
-   records do not say so, and a live model otherwise answered that it had no record of their day).
 5. Validate: every `sourceId` must exist in the retrieved set; otherwise discard the answer and abstain.
 6. Return the answer with resolved source labels.
 
