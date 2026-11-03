@@ -9,9 +9,12 @@ import {
   PROTOCOL_VERSION,
   SERVER_MESSAGE,
   TICK_DT,
+  WALK_SPEED,
   WalkMap,
   WORKSPACE_ID,
   WORLD,
+  spawnPlayer,
+  stepPlayer,
   zoneAt,
   type Point,
 } from "@office/shared";
@@ -348,6 +351,54 @@ describe("OfficeRoom", () => {
       // Fixed steps cap each tick at MAX_SPEED * TICK_DT; sampling can only add one tick.
       expect(dist).toBeLessThanOrEqual(WalkMap.MAX_SPEED * dt + WalkMap.MAX_SPEED * TICK_DT);
     }
+  });
+
+  it("walks at WALK_SPEED in wall-clock time, whatever the timer granularity", { timeout: 30000 }, async () => {
+    // The client predicts TICK_HZ steps a second. A 50 ms setInterval fires every 62.5 ms
+    // on Windows, which made the room walk at 80% of that and the avatar snap back.
+    const { testServer } = await setup();
+    const room = await join(testServer, "Maya");
+    const me = serverPlayer(room.sessionId);
+    const target = walkableNear({ x: me!.x, z: me!.z }, 6, 12);
+    room.send(CLIENT_MESSAGE.moveTarget, { seq: 1, ...target });
+    await waitFor(() => (serverPlayer(room.sessionId)?.speed ?? 0) > 0, 5000, "walking");
+    const samples: { at: number; x: number; z: number }[] = [];
+    const start = performance.now();
+    while (performance.now() - start < 1500) {
+      const p = serverPlayer(room.sessionId)!;
+      const last = samples.at(-1);
+      if (!last || last.x !== p.x || last.z !== p.z) {
+        samples.push({ at: performance.now(), x: p.x, z: p.z });
+      }
+      await sleep(5);
+    }
+    let dist = 0;
+    for (let i = 1; i < samples.length; i += 1) {
+      dist += Math.hypot(samples[i].x - samples[i - 1].x, samples[i].z - samples[i - 1].z);
+    }
+    const secs = (samples.at(-1)!.at - samples[0].at) / 1000;
+    expect(dist / secs).toBeGreaterThan(WALK_SPEED * 0.85);
+    expect(dist / secs).toBeLessThan(WALK_SPEED * 1.1);
+  });
+
+  it("applies every held input once, even when several arrive between ticks", { timeout: 15000 }, async () => {
+    // The client predicts one step per input; the room used to keep only the newest input
+    // of a tick, so a burst lost steps and the avatar was corrected backwards.
+    const { testServer } = await setup();
+    const room = await join(testServer, "Maya");
+    const me = serverPlayer(room.sessionId)!;
+    const reference = spawnPlayer({ x: me.x, z: me.z }, me.facing);
+    stepPlayer(reference, { kind: "intent", dx: 1, dz: 0, run: false }, TICK_DT);
+    stepPlayer(reference, { kind: "intent", dx: 1, dz: 0, run: false }, TICK_DT);
+    stepPlayer(reference, { kind: "intent", dx: 0, dz: 0, run: false }, TICK_DT);
+    room.send(CLIENT_MESSAGE.moveIntent, { seq: 1, dx: 1, dz: 0, run: false });
+    room.send(CLIENT_MESSAGE.moveIntent, { seq: 2, dx: 1, dz: 0, run: false });
+    room.send(CLIENT_MESSAGE.moveIntent, { seq: 3, dx: 0, dz: 0, run: false });
+    await waitFor(() => serverPlayer(room.sessionId)?.lastSeq === 3, 5000, "lastSeq 3");
+    const p = serverPlayer(room.sessionId)!;
+    expect(p.x).toBeCloseTo(reference.x, 9);
+    expect(p.z).toBeCloseTo(reference.z, 9);
+    expect(p.pose).toBe("stand");
   });
 
   it("restores the player and their seat on reconnect", { timeout: 30000 }, async () => {
