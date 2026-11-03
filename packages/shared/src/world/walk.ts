@@ -9,7 +9,9 @@ import type { Obstacle } from "./schema.js";
  * - findPath runs A* on a 0.5 m grid of those checks, moving only between neighbouring cells
  *   joined by a clear straight line (a thin wall can fall between two cell centres), then pulls
  *   the path straight wherever the line of sight is clear.
- * - step moves a disc by speed x dt, sliding along whatever it meets, never into it.
+ * - step moves a disc by speed x dt, sliding along whatever it meets, never into it. A disc that
+ *   stands inside an obstacle's margin (standing up beside a desk chair puts people there) may
+ *   walk out of it, never further in.
  */
 
 export const AVATAR_RADIUS = 0.22;
@@ -79,6 +81,29 @@ export class WalkMap {
       if (x > o.x && x < o.x + o.w && z > o.z && z < o.z + o.d) return false;
     }
     return true;
+  }
+
+  /** How far (x, z) is inside the no-go area: 0 where walkable, otherwise the distance to the
+   * nearest way out of the deepest no-go rectangle (or of the band along the floor's edge). */
+  depth(x: number, z: number): number {
+    const r = this.radius;
+    let d = Math.max(0, r - x, r - z, x - (this.bounds.width - r), z - (this.bounds.depth - r));
+    for (const i of this.buckets.get(this.bucketKey(Math.floor(x / BUCKET), Math.floor(z / BUCKET))) ?? []) {
+      const o = this.inflated[i];
+      if (x > o.x && x < o.x + o.w && z > o.z && z < o.z + o.d) {
+        d = Math.max(d, Math.min(x - o.x, o.x + o.w - x, z - o.z, o.z + o.d - z));
+      }
+    }
+    return d;
+  }
+
+  /** May a disc at `from` move to `to`? Onto walkable floor always; within a margin it stands in,
+   * if the move takes it no deeper (out, or along the edge it is nearest, which is how it gets
+   * out from between a desk and a chair), never further in. */
+  canStep(from: Point, to: Point): boolean {
+    if (this.isWalkable(to.x, to.z)) return true;
+    const here = this.depth(from.x, from.z);
+    return here > 0 && this.depth(to.x, to.z) <= here + 1e-9;
   }
 
   /** Is every point on the straight line a to b walkable? Exact: the line is tested against each
@@ -227,9 +252,10 @@ export class WalkMap {
     const steps = Math.ceil(distance / SUBSTEP);
     const d = distance / steps;
     for (let k = 0; k < steps; k++) {
-      if (this.isWalkable(x + ux * d, z + uz * d)) [x, z] = [x + ux * d, z + uz * d];
-      else if (Math.abs(ux) > 1e-6 && this.isWalkable(x + ux * d, z)) x += ux * d;
-      else if (Math.abs(uz) > 1e-6 && this.isWalkable(x, z + uz * d)) z += uz * d;
+      const here = { x, z };
+      if (this.canStep(here, { x: x + ux * d, z: z + uz * d })) [x, z] = [x + ux * d, z + uz * d];
+      else if (Math.abs(ux) > 1e-6 && this.canStep(here, { x: x + ux * d, z })) x += ux * d;
+      else if (Math.abs(uz) > 1e-6 && this.canStep(here, { x, z: z + uz * d })) z += uz * d;
       else break;
     }
     return { x, z };

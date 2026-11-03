@@ -63,11 +63,11 @@ function clear(from: Point, vx: number, vz: number, others: readonly Point[]): P
   return { x: vx, z: vz };
 }
 
-/** Where the move `v` from `from` lands, or `from` itself if that is not walkable. */
+/** Where the move `v` from `from` lands, or `from` itself if the walk map refuses it (it may
+ * still step out of a margin it stands in: `WalkMap.canStep`). */
 function landing(from: Point, v: Point, walk: WalkMap): Point {
-  const x = from.x + v.x;
-  const z = from.z + v.z;
-  return walk.isWalkable(x, z) ? { x, z } : { ...from };
+  const to = { x: from.x + v.x, z: from.z + v.z };
+  return walk.canStep(from, to) ? to : { ...from };
 }
 
 /** Poses of someone in a chair (sitting down, seated, typing, standing up): the chair is where
