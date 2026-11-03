@@ -26,7 +26,24 @@ design in `ARCHITECTURE.md` 12.10). The order, the feature freeze and the cut li
   Phase 6 docs. If `git status` still shows them, the lead commits them first, on `main`, as
   "Lead: hosting accounts and the Phase 6 plan".
 
-**Hosting accounts (all set up 2026-11-03; nothing is deployed)**
+**Deployed 2026-11-03 (P4-A, fast mode, owner approved):** web
+`https://meta-virtual-office.vercel.app`, server `https://meta-virtual-office.fly.dev` (Fly `sin`,
+one machine). Fast mode: `AUTH_MODE=dev` (name picker), in-memory repo (no `DATABASE_URL`),
+`FixtureLlm`; data resets when the machine stops. Verified live: `/health`, two players join over
+the internet and see each other, `/me/day`, `/ask` answers the Acme question with sources and
+abstains on the CEO question, CORS answers only the Vercel origins. How it was done (repeat it for
+redeploys): `fly deploy` from the repo root; for the web, `vercel pull --yes --environment=production`,
+`vercel build --prod --yes`, `vercel deploy --prebuilt --prod --yes`, all from the repo root.
+
+**Region (measured, not guessed).** Connect times from the owner's machine: Mumbai 0.09 s,
+Singapore 0.10 s, Frankfurt 0.22 s, US East 0.28 s. Fly no longer provisions Mumbai (`bom`), so
+the server runs in Singapore (`sin`). The hosted Supabase project was auto-placed in **Frankfurt**
+(AWS eu-central-1, found from its address), and the two migrations are applied there. Before the
+full deploy, either create a new Supabase project in Singapore (ap-southeast-1), re-apply the
+migrations and point `.mcp.json` at it, or move the server to Frankfurt (`fra`). The server and
+the database must share a region.
+
+**Hosting accounts (set up 2026-11-03)**
 
 | Service | What exists | How to reach it |
 |---|---|---|
@@ -350,7 +367,7 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 | P3-E demo end to end | builder/reviewer | wp/P3-E-demo-e2e | merged (--no-ff 080dfcf; demo.spec green in-suite 5.1m, suite red on box contention) | P3-E.md |
 | P3-D deploy smoke test | builder/reviewer | wp/P3-D-deploy-smoke | merged config (--no-ff ba1d5b6; deploy execution blocked on owner Fly/Vercel tokens) | P3-D.md |
 | P4-B hardening | builder/reviewer | wp/P4-B-hardening | merged (--no-ff f27c3fc) | P4-B.md |
-| P4-A production deploy | | | ready: Fly app, Vercel project and hosted Supabase set up 2026-11-03 (section 0); waits for D14, the region, and the owner's OK per deploy | |
+| P4-A production deploy | lead | main | fast mode live 2026-11-03 (section 0): web on Vercel, server on Fly `sin`, in-memory data; full mode waits for D14, a database in the server's region, and `.env.hosted.local` | |
 | P5-A call service | builder/reviewer | wp/P5-A-call-service | merged (--no-ff cf174c1) | P5-A.md |
 | P5-B call UI | builder/reviewer | wp/P5-B-call-ui | merged (--no-ff 3daff7c + lead share mount; live media open on LiveKit creds) | P5-B.md |
 | P5-C call transcript | builder/reviewer | wp/P5-C-transcript | merged (--no-ff 0da0c43 + lead wiring 606c57f; arrival asserts live, mic open) | P5-C.md |

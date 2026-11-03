@@ -4,7 +4,10 @@
 # (the "Dibya Debashish Bhoi" org). Keep this file in sync if it changes.
 
 app = "meta-virtual-office"
-primary_region = "lhr"
+# Singapore: the fastest Fly region measured from the owner's machine on 2026-11-03 (Mumbai,
+# `bom`, was faster but Fly no longer provisions there). The database must sit in the same
+# region (Supabase ap-southeast-1); see docs/HANDOFF.md section 0.
+primary_region = "sin"
 
 [build]
   dockerfile = "apps/server/Dockerfile"
@@ -20,7 +23,7 @@ primary_region = "lhr"
   AUTH_MODE = "dev"
   # Empty until the web URL exists (server then allows any origin); after the
   # web deploy, set this to the Vercel URL and redeploy (docs/DEPLOY.md).
-  ALLOWED_ORIGINS = ""
+  ALLOWED_ORIGINS = "https://meta-virtual-office.vercel.app,https://meta-virtual-office-debashish17s-projects.vercel.app"
 
 # One long-lived process; Fly's http_service upgrades to WebSocket, so the
 # Colyseus room needs no extra proxy config. force_https keeps wss:// working.

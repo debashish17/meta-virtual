@@ -8,3 +8,20 @@ docs/screenshots
 supabase/.branches
 supabase/.temp
 *.tsbuildinfo
+# The server image needs only the workspace manifests and the server and shared sources.
+# Local worktrees (full repo copies), web assets, docs and test output stay out of the upload.
+.worktrees
+blender-asset-pipeline
+apps/web/public
+docs
+e2e
+test-results
+playwright-report
+*.txt
+trajectory-*.json
+# Local config and secrets never go into an image.
+.env
+.env.*
+!.env.example
+.vercel
+.mcp.json
