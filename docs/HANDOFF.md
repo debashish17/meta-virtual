@@ -111,6 +111,15 @@ it does not match the server. That only matters for the full deploy; see decisio
    roughly USD 2 a month): no cold start, and the in-memory demo data survives idle periods.
 3. **Pushing `main`** to the remote: only when the owner asks (see the memory note on the rewritten
    history: reset stale copies to `origin/main` first).
+4. **The live AI model on the deployed server.** Not wired: `/health` says `llm: "fixture"`, and
+   Fly has no secrets. The owner's Meta Model API key is set locally as `LLM_API_KEY` in the root
+   `.env`, so `pnpm dev` already uses Muse Spark. Setting that one secret on Fly switches the server
+   to it (`createLlm`: a key selects `MetaLlm`, defaults `https://api.meta.ai/v1` and
+   `muse-spark-1.3`). Steps under "Live model" below.
+5. **LiveKit (calls, live captions):** no LiveKit project exists (the `LIVEKIT_*` names are empty
+   locally and unset on Fly), so `/health` says `calls: "off"` and the office shows "Calls
+   unavailable". It stays that way unless the owner creates a LiveKit Cloud project (decision D9);
+   virtual meetings in P6-B are cut until then.
 
 **What to do next, in order**
 1. **P6-0 contract and slots** (lead agent; `WORK_PACKAGES.md` P6-0). Branch
@@ -159,6 +168,21 @@ it does not match the server. That only matters for the full deploy; see decisio
    (the MCP's `get_publishable_keys`); rebuild and redeploy the web.
 7. Verify: sign in as Maya and as Arjun in two browsers and run the Acme demo. Then delete or
    pause the Frankfurt project (the free plan allows two active projects).
+
+**Live model (only if the owner approves decision 4)**
+1. Check it locally first, because the live model's output is not fixed the way the fixture is.
+   With the key in `.env`, run `pnpm dev` and walk the Acme demo in two browsers. "Process
+   meeting" must propose the four changes the script expects: Go-live 15 Nov to 22 Nov, the
+   commitment updated, the blocked task reassigned to Arjun, the new task "Notify Acme of new
+   date". The status question must be answered with sources, and the CEO question must abstain.
+   Note how long each call takes (the timeout is 30 s).
+2. If that holds, set the secret on Fly without printing it, then restart with the current image:
+   1. `grep '^LLM_API_KEY=' .env | ~/.fly/bin/flyctl.exe secrets import --stage -a meta-virtual-office`
+   2. `~/.fly/bin/flyctl.exe deploy --image <current image tag> --ha=false --yes`
+3. Check that `/health` says `llm: "meta"`, then run the Acme demo on the public URL.
+4. To go back: `flyctl secrets unset LLM_API_KEY -a meta-virtual-office` gives `FixtureLlm` again.
+   Keep the fixture as the fallback if the live run misses a change or is slow. Tests and e2e
+   always run on `FixtureLlm`: never point them at the key.
 
 **Prompt for the next lead agent** (copy as is)
 
