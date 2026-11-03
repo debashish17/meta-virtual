@@ -1,5 +1,6 @@
 import { type LayoutPart } from "../layouts/index.js";
 import { FURNITURE, OFFICE_WALK, type Point, type WalkMap } from "../world/index.js";
+import { keepApart } from "../sim/apart.js";
 import type { Pose } from "./pose.js";
 
 /**
@@ -33,6 +34,7 @@ export type Routine = {
   steps: Step[]
   current: Step | null
   left: number                  // seconds left in the current hold
+  waited?: number               // seconds held up by someone in the way (see PATIENCE)
 }
 
 export type RoutineWorld = {
@@ -41,12 +43,15 @@ export type RoutineWorld = {
   taken: Set<string>
   clips: { sit_down: number; stand_up: number; interact: number }   // seconds of the one-shot moves
   rand: () => number
+  /** Other people to keep `PERSON_GAP` away from while walking (sim/apart.ts); not this person. */
+  others?: readonly Point[]
 }
 
 const SPEED = 1.3            // m/s, an unhurried office walk
 const TURN = 7               // how quickly people turn to face where they are going (1/s)
 const BEHIND_CHAIR = 0.85    // metres behind the seat to the aisle
 const SWIVEL = 0.8           // seconds turning in the chair between the desk and the side
+const PATIENCE = 2.5         // seconds held up by someone before going past anyway (a corridor too narrow to share)
 const SETTLE = 0.7           // ... turning your back to the chair before sitting down
 const STEADY = 0.4           // ... standing still after getting up
 const facingOf = (dx: number, dz: number) => Math.atan2(dx, dz)
@@ -178,6 +183,22 @@ function finish(r: Routine, s: Step, w: RoutineWorld) {
   r.current = null
 }
 
+/**
+ * Where a walking step to `free` really ends with other people about: kept clear of them
+ * (`keepApart`), or, once held up for `PATIENCE` seconds (nobody can pass in a narrow corridor),
+ * straight through until the way is clear again, so no two people wait for each other forever.
+ */
+function makeWay(r: Routine, free: Point, step: number, w: RoutineWorld): Point {
+  if (!w.others?.length) return free
+  const kept = keepApart(r, free, w.others, w.walk)
+  if (Math.hypot(kept.x - r.x, kept.z - r.z) >= step * 0.4) {
+    r.waited = 0
+    return kept
+  }
+  r.waited = (r.waited ?? 0) + step / SPEED
+  return r.waited >= PATIENCE ? free : kept
+}
+
 /** Move the routine on by `dt` seconds. */
 export function advance(r: Routine, dt: number, w: RoutineWorld) {
   let remaining = dt
@@ -213,10 +234,13 @@ export function advance(r: Routine, dt: number, w: RoutineWorld) {
     const dist = Math.hypot(dx, dz)
     if (dist < 1e-6) { s.i!++; continue }
     const step = Math.min(dist, remaining * SPEED)
-    r.x += (dx / dist) * step
-    r.z += (dz / dist) * step
+    const next = makeWay(r, { x: r.x + (dx / dist) * step, z: r.z + (dz / dist) * step }, step, w)
+    const moved = Math.hypot(next.x - r.x, next.z - r.z)
+    r.x = next.x
+    r.z = next.z
     turnTowards(r, facingOf(dx, dz), step / SPEED)
     remaining -= step / SPEED
-    if (step >= dist - 1e-9) s.i!++
+    if (moved < step * 0.2) { r.pose = 'stand'; r.speed = 0 }   // waiting for someone, not walking on the spot
+    if (Math.hypot(target.x - r.x, target.z - r.z) < 1e-6) s.i!++
   }
 }

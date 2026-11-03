@@ -1,9 +1,11 @@
 import {
+  OFFICE_WALK,
   SNAP_DISTANCE,
   TICK_DT,
   WALK_SPEED,
   spawnPlayer,
   stepPlayer,
+  type Point,
   type StepInput,
 } from "@office/shared";
 
@@ -61,12 +63,18 @@ export class Predictor {
 
   /**
    * Run one fixed step. `seq` is given for a sent input (recorded in the ring buffer)
-   * and null for a silent continuation (route following with nothing to send).
+   * and null for a silent continuation (route following with nothing to send). `others` are
+   * the other people as last synced, kept apart as the room does (`keepApart`).
    */
-  tick(input: StepInput | null, seq: number | null = null, dt: number = TICK_DT): void {
+  tick(
+    input: StepInput | null,
+    seq: number | null = null,
+    dt: number = TICK_DT,
+    others: readonly Point[] = [],
+  ): void {
     this.prev.x = this.sim.x;
     this.prev.z = this.sim.z;
-    stepPlayer(this.sim, input, dt);
+    stepPlayer(this.sim, input, dt, OFFICE_WALK, others);
     if (seq !== null) {
       this.buffer.set(seq, { x: this.sim.x, z: this.sim.z });
       while (this.buffer.size > BUFFER_KEEP) {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { FURNITURE, OFFICE_WALK, zoneAt } from '../world/index.js'
+import { FURNITURE, OFFICE_WALK, WalkMap, zoneAt } from '../world/index.js'
+import { PERSON_GAP } from '../sim/apart.js'
 import { OFFICE_SPOTS, advance, besideOf, routineAtDesk, routineAway, seatFor, type Routine, type RoutineWorld } from './routine.js'
 
 /** Desk chairs in the team areas, as the colleagues use them. */
@@ -114,5 +115,45 @@ describe('colleague routines', () => {
 
   it('places every spot on open floor', () => {
     for (const s of OFFICE_SPOTS) expect(OFFICE_WALK.isWalkable(s.x, s.z), s.id).toBe(true)
+  })
+})
+
+describe('colleagues and other people', () => {
+  const seat = seatFor(chairs[0], 'type', OFFICE_WALK)
+  /** Someone walking from `from` to `to`, then standing there. */
+  const walker = (from: { x: number; z: number }, to: { x: number; z: number }): Routine => ({
+    x: from.x, z: from.z, facing: 0, pose: 'stand', speed: 0, seat, rise: RISE, spot: null,
+    steps: [{ kind: 'hold', pose: 'talk', seconds: 1e6, facing: 0 }],
+    current: { kind: 'walk', path: [to], i: 0 }, left: 0,
+  })
+  const gap = (a: { x: number; z: number }, b: { x: number; z: number }) => Math.hypot(a.x - b.x, a.z - b.z)
+
+  it('two colleagues walking at each other pass without touching', () => {
+    const o = OFFICE_WALK.nearestWalkable({ x: 30, z: 20 }, 3)!
+    const a = walker({ x: o.x - 2, z: o.z }, { x: o.x + 2, z: o.z })
+    const b = walker({ x: o.x + 2, z: o.z }, { x: o.x - 2, z: o.z })
+    const w = world()
+    for (let t = 0; t < 8; t += 0.05) {
+      advance(a, 0.05, { ...w, others: [{ x: b.x, z: b.z }] })
+      advance(b, 0.05, { ...w, others: [{ x: a.x, z: a.z }] })
+      expect(gap(a, b)).toBeGreaterThanOrEqual(PERSON_GAP - 1e-6)
+    }
+    expect(gap(a, { x: o.x + 2, z: o.z })).toBeLessThan(0.05)
+    expect(gap(b, { x: o.x - 2, z: o.z })).toBeLessThan(0.05)
+  })
+
+  it('wait for someone in a corridor too narrow to pass, then give way after a few seconds', () => {
+    // walls 0.7 m apart: no room for two people side by side
+    const corridor = new WalkMap([{ id: 'n', x: 0, z: 4, w: 20, d: 0.4 }, { id: 's', x: 0, z: 5.1, w: 20, d: 0.4 }], { width: 20, depth: 10 })
+    const standing = { x: 10, z: 4.75 }
+    const a = walker({ x: 6, z: 4.75 }, { x: 14, z: 4.75 })
+    const w = { ...world(), walk: corridor, others: [standing] }
+    let waited = 0
+    for (let t = 0; t < 12; t += 0.05) {
+      advance(a, 0.05, w)
+      if (a.x < standing.x && gap(a, standing) <= PERSON_GAP + 0.01) waited += 0.05
+    }
+    expect(waited).toBeGreaterThan(2)               // stood back first
+    expect(gap(a, { x: 14, z: 4.75 })).toBeLessThan(0.05)   // and got through in the end
   })
 })

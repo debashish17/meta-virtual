@@ -26,6 +26,7 @@ import {
   WORLD,
   advanceActivity,
   approachOf,
+  inTheWay,
   riseOf,
   secondsOf,
   startActivity,
@@ -493,9 +494,9 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
       if (!rec) continue;
       try {
         if (rec.pendingTarget || rec.activity.kind !== "free") {
-          this.tickActivity(player, rec);
+          this.tickActivity(player, rec, this.othersThan(sessionId));
         } else {
-          this.tickMovement(player, rec);
+          this.tickMovement(player, rec, this.othersThan(sessionId));
         }
         this.checkZone(player, rec);
       } catch (err) {
@@ -512,7 +513,17 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
     this.npcs.sync(this.state, this.taken, names);
   }
 
-  private tickMovement(player: PlayerState, rec: SessionRecord): void {
+  /** Everyone else in the way, players and colleagues, for `keepApart` (ARCHITECTURE 12.1). */
+  private othersThan(sessionId: string): Point[] {
+    const others: Point[] = [];
+    for (const [id, p] of this.state.players.entries()) {
+      if (id !== sessionId && inTheWay(p.pose)) others.push({ x: p.x, z: p.z });
+    }
+    for (const n of this.state.npcs.values()) if (inTheWay(n.pose)) others.push({ x: n.x, z: n.z });
+    return others;
+  }
+
+  private tickMovement(player: PlayerState, rec: SessionRecord, others: readonly Point[]): void {
     const sim: MoveState = {
       x: player.x,
       z: player.z,
@@ -530,10 +541,10 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
     if (move.kind === "apply") {
       // Held-key steps the client never took (its next input was not those keys) are undone.
       if (move.restore) Object.assign(sim, move.restore, { route: [...move.restore.route] });
-      stepPlayer(sim, move.input, TICK_DT);
+      stepPlayer(sim, move.input, TICK_DT, OFFICE_WALK, others);
       player.lastSeq = move.seq;
     } else {
-      stepPlayer(sim, move.kind === "hold" ? move.input : null, TICK_DT);
+      stepPlayer(sim, move.kind === "hold" ? move.input : null, TICK_DT, OFFICE_WALK, others);
     }
     player.x = sim.x;
     player.z = sim.z;
@@ -543,7 +554,7 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
     rec.route = sim.route;
   }
 
-  private tickActivity(player: PlayerState, rec: SessionRecord): void {
+  private tickActivity(player: PlayerState, rec: SessionRecord, others: readonly Point[]): void {
     const pending = rec.pendingTarget;
     if (pending) {
       // Walk the approach with the shared sim; the activity starts on arrival.
@@ -555,7 +566,7 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
         speed: player.speed,
         route: rec.route,
       };
-      stepPlayer(sim, null, TICK_DT);
+      stepPlayer(sim, null, TICK_DT, OFFICE_WALK, others);
       player.x = sim.x;
       player.z = sim.z;
       player.facing = sim.facing;

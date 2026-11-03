@@ -1,11 +1,12 @@
 import { Html } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { FURNITURE, LOOK_PRESETS, OFFICE_SPOTS, OFFICE_WALK, advance, riseOf, routineAtDesk, routineAway, seatFor, seatKey, secondsOf, zoneAt, type AvatarLook, type Routine, type RoutineWorld } from '@office/shared'
+import { FURNITURE, LOOK_PRESETS, OFFICE_SPOTS, OFFICE_WALK, advance, inTheWay, riseOf, routineAtDesk, routineAway, seatFor, seatKey, secondsOf, zoneAt, type AvatarLook, type Point, type Routine, type RoutineWorld } from '@office/shared'
 import Person, { type Motion } from './Person'
 import { useMe } from './me'
 import { TAKEN } from './taken'
+import { avatar } from './state'
 import { useNet } from '../net/store'
 
 /**
@@ -40,12 +41,29 @@ function seats(count: number) {
 // who starts the day away from their desk: (preset id, spot, seconds before heading back)
 const STARTS_AWAY: Record<string, [string, number]> = { kenji: ['chat_1', 25], sofia: ['chat_2', 25], ben: ['window_1', 18] }
 
+/** The colleagues walking about offline (online the server runs them), for keeping apart. */
+const live = new Set<Routine>()
+
+/** Where the offline colleagues in the way are, but for `except` (sim/apart.ts). */
+export function colleaguesInTheWay(except?: Routine): Point[] {
+  const out: Point[] = []
+  for (const r of live) if (r !== except && inTheWay(r.pose)) out.push({ x: r.x, z: r.z })
+  return out
+}
+
 function Colleague({ name, look, routine, world, seed }: { name: string; look: AvatarLook; routine: Routine; world: RoutineWorld; seed: number }) {
   const group = useRef<THREE.Group>(null)
   const label = useRef<THREE.Group>(null)
   const motion = useRef<Motion>({ pose: routine.pose, speed: 0 })
+  useEffect(() => {
+    live.add(routine)
+    return () => { live.delete(routine) }
+  }, [routine])
   useFrame((_, dt) => {
-    advance(routine, Math.min(dt, 0.1), world)
+    // the other colleagues and you, when in the way
+    const others = colleaguesInTheWay(routine)
+    if (inTheWay(avatar.pose)) others.push({ x: avatar.x, z: avatar.z })
+    advance(routine, Math.min(dt, 0.1), { ...world, others })
     motion.current.pose = routine.pose
     motion.current.speed = routine.speed
     group.current?.position.set(routine.x, 0, routine.z)

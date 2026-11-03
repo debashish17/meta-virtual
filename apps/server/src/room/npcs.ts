@@ -4,6 +4,7 @@ import {
   OFFICE_SPOTS,
   OFFICE_WALK,
   advance,
+  inTheWay,
   riseOf,
   routineAtDesk,
   routineAway,
@@ -145,7 +146,13 @@ export class NpcDirector {
   tick(state: OfficeState, taken: Set<string>, dt: number): void {
     const world = this.world(taken);
     for (const [id, entry] of this.npcs) {
-      advance(entry.routine, dt, world);
+      // Everyone else in the way: the players and the other colleagues (ARCHITECTURE 12.1).
+      const others: { x: number; z: number }[] = [];
+      for (const p of state.players.values()) if (inTheWay(p.pose)) others.push({ x: p.x, z: p.z });
+      for (const [otherId, other] of this.npcs) {
+        if (otherId !== id && inTheWay(other.routine.pose)) others.push({ x: other.routine.x, z: other.routine.z });
+      }
+      advance(entry.routine, dt, { ...world, others });
       const npc = state.npcs.get(id);
       if (!npc) continue;
       npc.x = entry.routine.x;
