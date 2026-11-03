@@ -260,13 +260,8 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 | P5-B call UI | builder/reviewer | wp/P5-B-call-ui | merged (--no-ff 3daff7c + lead share mount; live media open on LiveKit creds) | P5-B.md |
 | P5-C call transcript | builder/reviewer | wp/P5-C-transcript | merged (--no-ff 0da0c43 + lead wiring 606c57f; arrival asserts live, mic open) | P5-C.md |
 | P5-D live rehearsal | | | blocked (owner LiveKit project + participation) | |
-| P4-A production deploy | | | not started | |
-| P4-B hardening | | | not started | |
-| P4-C rehearsal | | | not started | |
-| P5-A call service (optional) | | | not started | |
-| P5-B call UI (optional) | | | not started | |
-| P5-C transcript from the call (optional) | | | not started | |
-| P5-D live-meeting rehearsal (optional) | | | not started | |
+| P4-C rehearsal | | | blocked (needs P4-A deploy first) | |
+| Improvement loop (lead) | lead | main (fba1251 + demo/teleport fix) | done: dev-auth Postgres ids, Players memo, chat history pull, dev teleport (idle-reconcile fixed), test:scripts; gates green, contract 4/4, e2e spot-check green (demo 5.1m, calls + live-meeting 5/5). Demo fix: dismiss Calls-unavailable panel (covers drawer) + idle-sync decision clicks. Request to P5-B: call panel structurally overlaps the drawer column during live calls | |
 
 States: not started, in progress, blocked (say why), in review, merged.
 

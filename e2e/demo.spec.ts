@@ -68,6 +68,12 @@ test("the demo, end to end", async ({ alice: maya, bob: arjun }) => {
   await maya.page
     .getByRole("button", { name: "Process meeting" })
     .waitFor({ state: "visible", timeout: 480_000 });
+  // Entering the room mounts the call panel ("Calls unavailable" with no call
+  // service; calls.spec pins this). It docks over the drawer column, so dismiss
+  // it the way a user would before the drawer decisions below.
+  await expect(maya.page.getByTestId("call-panel")).toBeVisible({ timeout: 120_000 });
+  await maya.page.getByRole("button", { name: "Dismiss" }).click({ timeout: 60_000 });
+  await expect(maya.page.getByTestId("call-panel")).toBeHidden({ timeout: 60_000 });
   await freezeRender(maya.page);
   await expect(maya.page.locator('[data-testid="remote-name"]', { hasText: "Arjun" })).toBeVisible({
     timeout: 240_000,
@@ -108,7 +114,12 @@ test("the demo, end to end", async ({ alice: maya, bob: arjun }) => {
   ] as const;
   for (const step of decisions) {
     const card = maya.page.locator(".pan-change", { hasText: step.title });
-    await card.getByRole("button", { name: step.decision }).click({ force: true, timeout: 60_000 });
+    const button = card.getByRole("button", { name: step.decision });
+    // Idle-sync: a decision disables every card until its refetch lands, but the
+    // heading can flip first over the live broadcast — and force:click skips the
+    // enabled check, so an unguarded click is silently swallowed by the busy guard.
+    await expect(button).toBeEnabled({ timeout: 120_000 });
+    await button.click({ force: true, timeout: 60_000 });
     await waitDrawerHeading(maya.page, "maya", step.heading);
     await waitDrawerHeading(arjun.page, "arjun", step.heading);
   }

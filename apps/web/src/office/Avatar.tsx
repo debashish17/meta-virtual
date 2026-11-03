@@ -315,9 +315,19 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
   (window as unknown as Record<string, unknown>).__officeDebug = {
     avatar, walkTo, route, walk: OFFICE_WALK, doing, interact,
     teleport: (x: number, z: number) => {
-      // Online the server is authoritative: a local set would be overwritten by the
-      // next reconcile, so route through the dev-only server teleport instead.
-      if (isOnline()) { netSend.teleport(x, z); return; }
+      // Online the server applies the same coords, but no ack arrives without new
+      // inputs — so reset the predictor too, or it keeps the old position and the
+      // zone never updates. A rejected target surfaces as an error pill; walk to resync.
+      if (isOnline()) {
+        netSend.teleport(x, z);
+        online.predictor?.reset(x, z, avatar.facing);
+        online.mode = 'free';
+        online.pendingTarget = null;
+        online.queuedTarget = null;
+        online.dest = null;
+        avatar.x = x; avatar.z = z;
+        return;
+      }
       letGo(); doing.activity = { kind: 'free' }; avatar.x = x; avatar.z = z; route.points = []
     },
   }
