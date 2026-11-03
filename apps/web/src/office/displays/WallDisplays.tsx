@@ -2,7 +2,9 @@ import { useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import * as THREE from "three";
+import { DEMO_ACCOUNT, DEMO_PROJECT } from "@office/shared";
 import { useRecords } from "../../api/records";
+import { useReceipts } from "../../receipts/store";
 import DisplayOverlay from "./DisplayOverlay";
 import { SCREEN_H, SCREEN_W, drawScreen } from "./draw";
 import { buildAcmeScreen, buildProjectScreen, screenHash, type ScreenData } from "./screens";
@@ -100,6 +102,9 @@ export default function WallDisplays() {
   const project = useRecords((s) => s.project);
   const account = useRecords((s) => s.account);
   const load = useRecords((s) => s.load);
+  // P6-R: the latest approved receipts per wall, refetched live on `records_changed`.
+  const acmeReceipts = useReceipts({ accountId: DEMO_ACCOUNT.id });
+  const projectReceipts = useReceipts({ projectId: DEMO_PROJECT.id });
   const [open, setOpen] = useState<"acme" | "project" | null>(null);
 
   useEffect(() => {
@@ -109,11 +114,14 @@ export default function WallDisplays() {
   const screens: Record<"acme" | "project", ScreenData> = useMemo(() => {
     if (!project || !account) return { acme: loadingScreen("acme"), project: loadingScreen("project") };
     try {
-      return { acme: buildAcmeScreen(account, project), project: buildProjectScreen(project) };
+      return {
+        acme: buildAcmeScreen(account, project, acmeReceipts),
+        project: buildProjectScreen(project, projectReceipts),
+      };
     } catch {
       return { acme: errorScreen("acme"), project: errorScreen("project") };
     }
-  }, [project, account]);
+  }, [project, account, acmeReceipts, projectReceipts]);
 
   // DEV hook for screenshots and manual checks: __wallDisplays.open("acme" | "project" | null)
   // opens the overlay, and .aim(room) returns the screen centre in client pixels for clicks.
