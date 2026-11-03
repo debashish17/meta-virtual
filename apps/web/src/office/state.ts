@@ -8,6 +8,7 @@ export const avatar = {
   x: WORLD.spawn.x,
   z: WORLD.spawn.z,
   facing: Math.PI * 0.75,   // radians about +y; starts looking into the office (north-east)
+  pose: 'stand' as string,  // as drawn; in a chair it is in nobody's way (sim/apart.ts inTheWay)
 }
 
 /** The camera's look-at point, which eases after the avatar. */

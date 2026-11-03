@@ -224,23 +224,32 @@ Checked against the installed libraries: Colyseus 0.18 (`@colyseus/core` 0.18.24
   and once more on release) and `move_target` (a floor click) carry `seq`, which counts the
   client's ticks.
 - One function, `stepPlayer(player, input, dt)` in `packages/shared/src/sim`, moves a player. The
-  server runs it in a fixed tick (`setSimulationInterval(..., 1000 / TICK_HZ)`, `TICK_HZ = 20`) and
-  records `lastSeq`, the seq of the last input it applied. The client runs the same function at the
-  same rate for its own avatar (prediction) and renders between ticks.
+  server runs it in a fixed tick of `TICK_DT` (`TICK_HZ = 20`), counted off the wall clock
+  (`FixedStep`, polled every 5 ms through `setSimulationInterval`): a plain
+  `setInterval(1000 / TICK_HZ)` fires every 62.5 ms on Windows, which ran the room at 16 Hz. The
+  server records `lastSeq`, the seq of the last input it applied. The client runs the same function
+  at the same rate for its own avatar (prediction) and draws it between its last two ticks.
+- The room queues movement inputs and applies exactly one per tick, in order (`InputQueue`): the
+  client predicts one step per input. While none is queued the held keys are re-applied; such a step
+  is paid for by the late input if it carries the same keys, and undone if it does not (a release,
+  Shift, a click), so the position at `lastSeq` is always the client's prediction.
 - Reconciliation without input replay: the client keeps a ring buffer of its predicted position per
   seq. When a snapshot arrives with `lastSeq = k`, the error is the server position minus the
-  predicted position at k. Below `SNAP_DISTANCE` (0.3 m) the error is added to the current
-  prediction over about 100 ms; above it the avatar snaps to the server position. The simulation is
-  deterministic, so the error is normally zero and the correction invisible.
+  predicted position at k. The error moves the prediction at once, together with the predictions
+  still in flight (so it is not reported again). Below `SNAP_DISTANCE` (0.3 m) the drawn avatar eases
+  onto it over about 100 ms; above it the drawn avatar jumps. The simulation is deterministic and
+  the room applies the inputs as predicted, so the error is normally zero.
 - Remote players are drawn from a snapshot buffer `INTERP_DELAY_MS` (100 ms) behind, interpolating
-  position and facing. Pose and activity step with the snapshot. A position jump above
-  `SNAP_DISTANCE` between two snapshots (sitting down, standing up) snaps instead of sliding, so the
-  cut in `Person` lines up with the move.
+  position and facing. Snapshots are stamped one tick apart (`ArrivalPacer`, drifting towards the
+  arrival times), so uneven delivery does not pulse the walk. Pose and activity step with the
+  snapshot. A position jump above `SNAP_DISTANCE` between two snapshots (sitting down, standing up)
+  snaps instead of sliding, so the cut in `Person` lines up with the move.
 - Activities (desk seat, counter) run on the server with the shared `advanceActivity`. While one
   runs, the local avatar is drawn from snapshots, not predicted.
 - Colleagues run on the server tick with the shared routine code and the room's reservation set,
   synced as `NpcView` (decision D6).
-- `setPatchRate(1000 / TICK_HZ)`. Per connection: at most 30 movement messages a second and 5 chat
+- One patch right after each batch of ticks (`patchRate = null`, `broadcastPatch()`), so every
+  snapshot is the state of the tick that set its `lastSeq`: `TICK_HZ` patches a second. Per connection: at most 30 movement messages a second and 5 chat
   messages per 10 seconds; anything above is dropped and answered with `error rate_limited`.
 
 ### 12.2 Rooms

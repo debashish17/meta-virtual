@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SNAP_DISTANCE, type Pose } from "@office/shared";
 import {
+  ArrivalPacer,
   SnapshotBuffer,
   toNpcView,
   toPlayerView,
@@ -121,5 +122,46 @@ describe("SnapshotBuffer", () => {
     buf.push(snap(200, 2));
     buf.push(snap(100, 99));
     expect(buf.latest!.x).toBe(2);
+  });
+});
+
+describe("ArrivalPacer", () => {
+  it("spaces snapshots one tick apart when a coarse server timer makes them arrive unevenly", () => {
+    // A 20 Hz server on Windows' 15.625 ms timer grid sends after gaps of 62.5 and
+    // 46.875 ms (mean 50). Interpolating on arrival times would pulse the walking speed.
+    const pacer = new ArrivalPacer(50);
+    const gaps = [62.5, 46.875, 46.875, 46.875, 46.875];
+    const arrivals: number[] = [];
+    const stamps: number[] = [];
+    let at = 1000;
+    for (let i = 0; i < 60; i += 1) {
+      arrivals.push(at);
+      stamps.push(pacer.stamp(at));
+      at += gaps[i % gaps.length];
+    }
+    for (let i = 20; i < stamps.length; i += 1) {
+      const spacing = stamps[i] - stamps[i - 1];
+      expect(spacing).toBeGreaterThan(48);
+      expect(spacing).toBeLessThan(52);
+      expect(Math.abs(stamps[i] - arrivals[i])).toBeLessThan(15);
+    }
+  });
+
+  it("starts afresh after a gap (the person stood still)", () => {
+    const pacer = new ArrivalPacer(50);
+    expect(pacer.stamp(0)).toBe(0);
+    expect(pacer.stamp(50)).toBeCloseTo(50, 9);
+    expect(pacer.stamp(1000)).toBe(1000);
+  });
+
+  it("keeps stamps in order and at most one tick ahead when snapshots bunch up", () => {
+    const pacer = new ArrivalPacer(50);
+    let last = pacer.stamp(0);
+    for (let i = 0; i < 6; i += 1) {
+      const t = pacer.stamp(10); // a burst, all arriving together
+      expect(t).toBeGreaterThanOrEqual(last);
+      expect(t).toBeLessThanOrEqual(10 + 50);
+      last = t;
+    }
   });
 });

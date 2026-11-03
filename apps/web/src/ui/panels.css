@@ -59,8 +59,20 @@
 .pan-ask-result { padding: 10px 12px; margin: 0 0 8px; max-height: 32vh; overflow-y: auto; }
 .pan-ask-result p { margin: 0 0 6px; }
 .pan-ask-result p:last-child { margin-bottom: 0; }
-.pan-ask-form { display: flex; gap: 8px; }
+.pan-ask-form { display: flex; gap: 8px; align-items: center; }
 .pan-ask-form input { flex: 1; }
+/* after .pan-collapse in specificity: a round white button that reads on the scene */
+.pan-ask-form .pan-ask-close {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 18px rgba(30, 33, 38, 0.12);
+  color: #1e2126;
+}
+.pan-ask-form .pan-ask-close:hover { background: #fff; }
+.pan-mini-ask { top: auto; bottom: 16px; left: 50%; transform: translateX(-50%); }
 
 .pan-drawer {
   position: fixed;

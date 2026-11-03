@@ -23,10 +23,10 @@ import {
   SERVER_MESSAGE,
   StatusSet,
   TICK_DT,
-  TICK_HZ,
   WORLD,
   advanceActivity,
   approachOf,
+  inTheWay,
   riseOf,
   secondsOf,
   startActivity,
@@ -38,11 +38,13 @@ import {
   type ErrorCode,
   type Moves,
   type Point,
-  type StepInput,
+  type SimPlayer,
   type Target,
 } from "@office/shared";
 import { DevAuth, UnauthorizedError, type AuthVerifier } from "../auth/verify.js";
 import { InMemoryChatStore, type ChatStore } from "./chat.js";
+import { FixedStep } from "./fixedStep.js";
+import { InputQueue, type QueuedInput } from "./inputs.js";
 import { TranscriptBuffer, registerCaptionHandlers } from "../calls/transcript.js";
 import { NpcDirector } from "./npcs.js";
 import { registerRoom, unregisterRoom } from "./rooms.js";
@@ -50,16 +52,19 @@ import { OfficeState, PlayerState } from "./schema.js";
 
 /**
  * The office room (ARCHITECTURE.md 12.1, 12.2): one per workspace, server-authoritative
- * movement at a fixed 20 Hz tick.
+ * movement at a fixed 20 Hz tick. The tick is counted off the wall clock (`FixedStep`, polled
+ * every `TICK_POLL_MS`) and each batch of ticks is followed by one patch, so the rate holds
+ * where timers are coarse: a plain 50 ms interval fires every 62.5 ms on Windows.
  *
  * - Auth: `static onAuth` verifies the SDK's `client.auth.token` through an `AuthVerifier`
  *   (wiring sets `OfficeRoom.verifier`; until P3-B wires the Supabase verifier it defaults
  *   to `DevAuth`, which refuses production). `onJoin` validates `JoinOptions`, checks the
  *   protocol, and refuses a `workspaceId` that is not the token's.
- * - Movement: `move_intent` (held keys, retained and re-applied each tick until replaced)
- *   and `move_target` (server-routed with `findPath`; unwalkable targets are rejected).
- *   Every step runs the shared `stepPlayer`, so the client predicts the same moves. `seq`
- *   counts the client's ticks; `lastSeq` is the seq of the last input the tick applied.
+ * - Movement: `move_intent` (held keys) and `move_target` (server-routed with `findPath`;
+ *   unwalkable targets are rejected) are queued and applied one per tick, in order
+ *   (`InputQueue`); while none is queued the held keys are re-applied. Every step runs the
+ *   shared `stepPlayer`, so the client predicts the same moves. `seq` counts the client's
+ *   ticks; `lastSeq` is the seq of the last input the tick applied.
  * - Activities: `activity_start` reserves a known, free desk seat or counter spot, walks
  *   the player to its approach point with the shared sim, then runs the shared
  *   `advanceActivity`. The synced `activity` appears on arrival, not while walking over.
@@ -75,19 +80,21 @@ import { OfficeState, PlayerState } from "./schema.js";
  * `define("office", ...)` line so matchmaking makes one room per workspace.
  */
 
-type HeldInput = { input: StepInput; seq: number };
+/** How often the room checks whether a tick is due (the ticks themselves stay `TICK_DT`). */
+const TICK_POLL_MS = 5;
+
+/** A player's plain-movement state, as the shared sim steps it. */
+type MoveState = SimPlayer;
 
 type SessionRecord = {
   userId: string;
   name: string;
   /** Remaining waypoints of a `move_target` or an activity approach; the sim owns it. */
   route: Point[];
-  /** Held keys, re-applied every tick until a new input replaces them. */
-  intent: { dx: number; dz: number; run: boolean } | null;
-  /** Movement received since the last tick; a queued `activity_stop` is `stopRequested`. */
-  fresh: HeldInput | null;
+  /** Movement received and not yet applied, plus the held keys; a queued `activity_stop` is `stopRequested`. */
+  inputs: InputQueue<MoveState>;
   /** Movement received mid-activity, applied once the player is free again. */
-  queued: HeldInput | null;
+  queued: QueuedInput | null;
   stopRequested: boolean;
   /** Reserved target being walked to; the synced `activity` appears on arrival. */
   pendingTarget: Target | null;
@@ -146,6 +153,8 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
   private readonly taken = new Set<string>();
   private workspaceId: string | null = null;
   private chatSeq = 0;
+  private readonly steps = new FixedStep(TICK_DT * 1000);
+  private lastPoll = 0;
 
   /** Reservation ids held in this room. Test seam. */
   get reservations(): ReadonlySet<string> {
@@ -168,8 +177,11 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
   override onCreate(): void {
     this.setState(new OfficeState());
     this.chat = new InMemoryChatStore();
-    this.setPatchRate(Math.floor(1000 / TICK_HZ));
-    this.setSimulationInterval(() => this.tick(), Math.floor(1000 / TICK_HZ));
+    // Patches go out right after the ticks (poll), one per batch, so every snapshot a client
+    // sees is the state of the tick that set its lastSeq: TICK_HZ patches a second.
+    this.patchRate = null;
+    this.lastPoll = performance.now();
+    this.setSimulationInterval(() => this.poll(), TICK_POLL_MS);
     this.onMessage(CLIENT_MESSAGE.moveIntent, (client, message) =>
       this.onMoveIntent(client, message),
     );
@@ -240,8 +252,7 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
       userId: claims.data.userId,
       name: claims.data.name,
       route: [],
-      intent: null,
-      fresh: null,
+      inputs: new InputQueue<MoveState>(),
       queued: null,
       stopRequested: false,
       pendingTarget: null,
@@ -286,10 +297,10 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
     }
     if (!this.checkMoveRate(client, rec)) return;
     this.cancelApproach(rec);
-    rec.fresh = {
+    rec.inputs.push({
       input: { kind: "intent", dx: parsed.data.dx, dz: parsed.data.dz, run: parsed.data.run },
       seq: parsed.data.seq,
-    };
+    });
   }
 
   private onMoveTarget(client: Client, message: unknown): void {
@@ -315,10 +326,10 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
       return;
     }
     this.cancelApproach(rec);
-    rec.fresh = {
+    rec.inputs.push({
       input: { kind: "target", x: parsed.data.x, z: parsed.data.z },
       seq: parsed.data.seq,
-    };
+    });
   }
 
   private onActivityStart(client: Client, message: unknown): void {
@@ -349,8 +360,7 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
     this.taken.add(target.id);
     rec.heldTargetId = target.id;
     rec.route = route;
-    rec.intent = null;
-    rec.fresh = null;
+    rec.inputs.clear();
     rec.queued = null;
     rec.stopRequested = false;
     rec.pendingTarget = target;
@@ -432,7 +442,7 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
       rec.heldTargetId = null;
     }
     this.cancelApproach(rec);
-    rec.fresh = null;
+    rec.inputs.clear(); // the client resets its prediction to standing here too
     rec.queued = null;
     rec.pendingTarget = null;
     rec.stopRequested = false;
@@ -469,15 +479,24 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
 
   // The fixed tick. Input handlers only stash; this is the one place that moves players.
 
+  /** Run the ticks the wall clock says are due, then send their patch. */
+  private poll(): void {
+    const now = performance.now();
+    const due = this.steps.advance(now - this.lastPoll);
+    this.lastPoll = now;
+    for (let i = 0; i < due; i += 1) this.tick();
+    if (due > 0) this.broadcastPatch();
+  }
+
   private tick(): void {
     for (const [sessionId, player] of this.state.players.entries()) {
       const rec = this.recs.get(sessionId);
       if (!rec) continue;
       try {
         if (rec.pendingTarget || rec.activity.kind !== "free") {
-          this.tickActivity(player, rec);
+          this.tickActivity(player, rec, this.othersThan(sessionId));
         } else {
-          this.tickMovement(player, rec);
+          this.tickMovement(player, rec, this.othersThan(sessionId));
         }
         this.checkZone(player, rec);
       } catch (err) {
@@ -494,8 +513,18 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
     this.npcs.sync(this.state, this.taken, names);
   }
 
-  private tickMovement(player: PlayerState, rec: SessionRecord): void {
-    const sim = {
+  /** Everyone else in the way, players and colleagues, for `keepApart` (ARCHITECTURE 12.1). */
+  private othersThan(sessionId: string): Point[] {
+    const others: Point[] = [];
+    for (const [id, p] of this.state.players.entries()) {
+      if (id !== sessionId && inTheWay(p.pose)) others.push({ x: p.x, z: p.z });
+    }
+    for (const n of this.state.npcs.values()) if (inTheWay(n.pose)) others.push({ x: n.x, z: n.z });
+    return others;
+  }
+
+  private tickMovement(player: PlayerState, rec: SessionRecord, others: readonly Point[]): void {
+    const sim: MoveState = {
       x: player.x,
       z: player.z,
       facing: player.facing,
@@ -503,19 +532,19 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
       speed: player.speed,
       route: rec.route,
     };
-    const fresh = rec.fresh;
-    rec.fresh = null;
-    if (fresh) {
-      stepPlayer(sim, fresh.input, TICK_DT);
-      player.lastSeq = fresh.seq;
-      rec.intent =
-        fresh.input.kind === "intent"
-          ? { dx: fresh.input.dx, dz: fresh.input.dz, run: fresh.input.run }
-          : null;
-    } else if (rec.intent) {
-      stepPlayer(sim, { kind: "intent", ...rec.intent }, TICK_DT);
+    const move = rec.inputs.next({ ...sim, route: [...sim.route] });
+    if (move.kind === "ack") {
+      // This input's step was taken while it was late (InputQueue): count it, do not repeat it.
+      player.lastSeq = move.seq;
+      return;
+    }
+    if (move.kind === "apply") {
+      // Held-key steps the client never took (its next input was not those keys) are undone.
+      if (move.restore) Object.assign(sim, move.restore, { route: [...move.restore.route] });
+      stepPlayer(sim, move.input, TICK_DT, OFFICE_WALK, others);
+      player.lastSeq = move.seq;
     } else {
-      stepPlayer(sim, null, TICK_DT);
+      stepPlayer(sim, move.kind === "hold" ? move.input : null, TICK_DT, OFFICE_WALK, others);
     }
     player.x = sim.x;
     player.z = sim.z;
@@ -525,7 +554,7 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
     rec.route = sim.route;
   }
 
-  private tickActivity(player: PlayerState, rec: SessionRecord): void {
+  private tickActivity(player: PlayerState, rec: SessionRecord, others: readonly Point[]): void {
     const pending = rec.pendingTarget;
     if (pending) {
       // Walk the approach with the shared sim; the activity starts on arrival.
@@ -537,7 +566,7 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
         speed: player.speed,
         route: rec.route,
       };
-      stepPlayer(sim, null, TICK_DT);
+      stepPlayer(sim, null, TICK_DT, OFFICE_WALK, others);
       player.x = sim.x;
       player.z = sim.z;
       player.facing = sim.facing;
@@ -552,10 +581,10 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
       }
       return;
     }
-    if (rec.fresh) {
-      // Movement mid-activity stands the player up first; the input applies once free.
-      rec.queued = rec.fresh;
-      rec.fresh = null;
+    const fresh = rec.inputs.takeLatest();
+    if (fresh) {
+      // Movement mid-activity stands the player up first; the newest input applies once free.
+      rec.queued = fresh;
     }
     const body = { x: player.x, z: player.z, facing: player.facing };
     const res = advanceActivity(
@@ -577,7 +606,7 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
       player.activity.targetId = "";
       rec.stopRequested = false;
       // The stashed movement applies on the next tick, now that the player is free.
-      rec.fresh = rec.queued;
+      if (rec.queued) rec.inputs.push(rec.queued);
       rec.queued = null;
     }
   }

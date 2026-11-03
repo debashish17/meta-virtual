@@ -1,9 +1,11 @@
 import {
+  OFFICE_WALK,
   SNAP_DISTANCE,
   TICK_DT,
   WALK_SPEED,
   spawnPlayer,
   stepPlayer,
+  type Point,
   type StepInput,
 } from "@office/shared";
 
@@ -11,11 +13,13 @@ import {
  * Client-side prediction and reconciliation (ARCHITECTURE.md 12.1).
  *
  * The local avatar runs the same `stepPlayer` at the same `TICK_DT` as the server and
- * renders between ticks. Every sent input carries a `seq`; the predictor keeps a ring
- * buffer of the predicted position per seq and reconciles on each snapshot without
+ * renders between ticks (`draw`). Every sent input carries a `seq`; the predictor keeps a
+ * ring buffer of the predicted position per seq and reconciles on each snapshot without
  * replaying inputs: the error is the server position minus the predicted position at the
- * snapshot's `lastSeq`. Below `SNAP_DISTANCE` it is added to the current prediction over
- * about 100 ms; above it the avatar snaps to the server position.
+ * snapshot's `lastSeq`. The error moves the prediction at once, together with every
+ * prediction still in flight (so a later snapshot does not report it again). Below
+ * `SNAP_DISTANCE` the drawn avatar eases onto it over about 100 ms; above it the drawn
+ * avatar jumps with it.
  *
  * While an activity runs, the server drives the avatar (`advanceActivity`), so the client
  * draws from snapshots instead of predicting (`followSnapshot`).
@@ -37,13 +41,18 @@ export class Predictor {
   readonly sim = spawnPlayer({ x: 0, z: 0 });
   seq = 0;
   private readonly buffer = new Map<number, { x: number; z: number }>();
-  private readonly correction = { x: 0, z: 0 };
+  /** Where the sim stood before its latest tick: `draw` interpolates from here. */
+  private readonly prev = { x: 0, z: 0 };
+  /** Drawn minus predicted position: a correction not shown yet, eased out by `decay`. */
+  private readonly offset = { x: 0, z: 0 };
   private initialised = false;
 
   constructor(spawn: { x: number; z: number }, facing = 0) {
     this.sim.x = spawn.x;
     this.sim.z = spawn.z;
     this.sim.facing = facing;
+    this.prev.x = spawn.x;
+    this.prev.z = spawn.z;
   }
 
   /** The seq the next sent input carries. */
@@ -54,10 +63,18 @@ export class Predictor {
 
   /**
    * Run one fixed step. `seq` is given for a sent input (recorded in the ring buffer)
-   * and null for a silent continuation (route following with nothing to send).
+   * and null for a silent continuation (route following with nothing to send). `others` are
+   * the other people as last synced, kept apart as the room does (`keepApart`).
    */
-  tick(input: StepInput | null, seq: number | null = null, dt: number = TICK_DT): void {
-    stepPlayer(this.sim, input, dt);
+  tick(
+    input: StepInput | null,
+    seq: number | null = null,
+    dt: number = TICK_DT,
+    others: readonly Point[] = [],
+  ): void {
+    this.prev.x = this.sim.x;
+    this.prev.z = this.sim.z;
+    stepPlayer(this.sim, input, dt, OFFICE_WALK, others);
     if (seq !== null) {
       this.buffer.set(seq, { x: this.sim.x, z: this.sim.z });
       while (this.buffer.size > BUFFER_KEEP) {
@@ -69,9 +86,9 @@ export class Predictor {
   }
 
   /**
-   * Fold one server snapshot in. Only call this when the snapshot is newer than the last
-   * one reconciled (the caller tracks `lastSeq` and the position): reconciling the same
-   * snapshot twice would add its error twice.
+   * Fold one server snapshot in. Call it when the snapshot is newer than the last one
+   * reconciled (the caller tracks `lastSeq`); folding the same snapshot again finds no
+   * error, because the prediction at `lastSeq` moved with the first fold.
    */
   reconcile(fix: ServerFix): ReconcileOutcome {
     if (!this.initialised) {
@@ -82,39 +99,64 @@ export class Predictor {
     if (!pred) return "none"; // stale, untracked, or rejected seq
     const ex = fix.x - pred.x;
     const ez = fix.z - pred.z;
+    // The server's word moves the prediction now, and every prediction from `lastSeq` on:
+    // the inputs still in flight were predicted from the same wrong place.
+    this.sim.x += ex;
+    this.sim.z += ez;
+    this.prev.x += ex;
+    this.prev.z += ez;
+    for (const [seq, p] of this.buffer) {
+      if (seq >= fix.lastSeq) {
+        p.x += ex;
+        p.z += ez;
+      }
+    }
     if (Math.hypot(ex, ez) >= SNAP_DISTANCE) {
-      this.sim.x = fix.x;
-      this.sim.z = fix.z;
       this.sim.facing = fix.facing;
-      this.correction.x = 0;
-      this.correction.z = 0;
+      this.offset.x = 0;
+      this.offset.z = 0;
       return "snap";
     }
-    this.correction.x += ex;
-    this.correction.z += ez;
+    // Small: keep drawing where the avatar was and ease onto the new prediction.
+    this.offset.x -= ex;
+    this.offset.z -= ez;
     return "smooth";
   }
 
-  /** Decay the pending correction over about `CORRECTION_MS`. Call every frame. */
+  /** Ease the drawn avatar onto the prediction over about `CORRECTION_MS`. Call every frame. */
   decay(dt: number): void {
     if (dt <= 0) return;
     const k = Math.max(0, 1 - dt / (CORRECTION_MS / 1000));
-    this.correction.x *= k;
-    this.correction.z *= k;
-    if (Math.hypot(this.correction.x, this.correction.z) < 1e-4) {
-      this.correction.x = 0;
-      this.correction.z = 0;
+    this.offset.x *= k;
+    this.offset.z *= k;
+    if (Math.hypot(this.offset.x, this.offset.z) < 1e-4) {
+      this.offset.x = 0;
+      this.offset.z = 0;
     }
   }
 
-  /** Where to draw the avatar: the prediction plus the undecayed correction. */
+  /** The corrected prediction: where the server's word puts the avatar after its latest tick. */
   pos(): { x: number; z: number } {
-    return { x: this.sim.x + this.correction.x, z: this.sim.z + this.correction.z };
+    return { x: this.sim.x, z: this.sim.z };
   }
 
-  /** The pending correction, for tests. */
+  /**
+   * Where to draw the avatar: `alpha` (0..1, the time since the latest tick over `TICK_DT`)
+   * of the way from the previous tick to the latest, plus the correction still easing out.
+   * Drawing only at the ticks moved the avatar 20 times a second while the camera and the
+   * walk cycle move every frame.
+   */
+  draw(alpha = 1): { x: number; z: number } {
+    const a = Math.min(1, Math.max(0, alpha));
+    return {
+      x: this.prev.x + (this.sim.x - this.prev.x) * a + this.offset.x,
+      z: this.prev.z + (this.sim.z - this.prev.z) * a + this.offset.z,
+    };
+  }
+
+  /** The correction not drawn yet (prediction minus drawn position), for tests. */
   pending(): { x: number; z: number } {
-    return { ...this.correction };
+    return { x: 0 - this.offset.x, z: 0 - this.offset.z };
   }
 
   /** Forget everything and stand on the snapshot (mode changes, join, reconnect). */
@@ -125,9 +167,11 @@ export class Predictor {
     this.sim.pose = "stand";
     this.sim.speed = 0;
     this.sim.route = [];
+    this.prev.x = x;
+    this.prev.z = z;
     this.buffer.clear();
-    this.correction.x = 0;
-    this.correction.z = 0;
+    this.offset.x = 0;
+    this.offset.z = 0;
     this.initialised = true;
   }
 

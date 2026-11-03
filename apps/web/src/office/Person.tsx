@@ -3,7 +3,8 @@ import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js'
-import { BODIES, bodyOf, type AvatarLook, type Move, type Pose } from '@office/shared'
+import { BODIES, bodyOf, inTheWay, type AvatarLook, type Move, type Pose } from '@office/shared'
+import { sitting } from './chairs'
 import { keepHandsOnDesk } from './deskReach'
 
 /**
@@ -78,6 +79,8 @@ export default function Person({ look, motion, seed = 0 }: { look: AvatarLook; m
   const current = useRef<{ action: THREE.AnimationAction; pose: Pose } | null>(null)
   // stopped on unmount (and on React's dev double-mount), so the next frame starts the move afresh
   useEffect(() => () => { mixer.stopAllAction(); current.current = null }, [mixer])
+  useEffect(() => () => { sitting.delete(root) }, [root])
+  const at = useMemo(() => new THREE.Vector3(), [])
   useEffect(() => {
     if (!import.meta.env.DEV) return
     const people = ((window as unknown as { __officePeople?: Set<unknown> }).__officePeople ??= new Set())
@@ -104,6 +107,12 @@ export default function Person({ look, motion, seed = 0 }: { look: AvatarLook; m
     } else if (next) next.timeScale = 1
     mixer.update(Math.min(dt, 0.1))
     if (AT_DESK.has(motion.pose)) keepHandsOnDesk(root, root.parent ?? root)
+    // in a chair: say where and which way, so the chair turns with you (chairs.ts)
+    const body = root.parent
+    if (body && !inTheWay(motion.pose)) {
+      body.getWorldPosition(at)
+      sitting.set(root, { x: at.x, z: at.z, facing: body.rotation.y })
+    } else sitting.delete(root)
   })
 
   return <primitive object={root} scale={scale} />

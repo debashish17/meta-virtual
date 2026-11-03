@@ -2,8 +2,9 @@ import { Html } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { OFFICE_WALK, TICK_DT, WalkMap, advanceActivity, approachOf, findPath, riseOf, screenToIntent, secondsOf, startActivity, targetNear, zoneAt, type Activity, type Axis, type Point, type Target, type Zone } from '@office/shared'
+import { OFFICE_WALK, TICK_DT, WalkMap, advanceActivity, inTheWay, keepApart, approachOf, findPath, riseOf, screenToIntent, secondsOf, startActivity, targetNear, zoneAt, type Activity, type Axis, type Point, type Target, type Zone } from '@office/shared'
 import { TAKEN } from './taken'
+import { colleaguesInTheWay } from './Colleagues'
 import Person, { type Motion } from './Person'
 import { useMe } from './me'
 import { avatar, useOfficeUi } from './state'
@@ -23,7 +24,8 @@ import { useNet } from '../net/store'
  * Online (P2-B) the same gestures send inputs to the room instead (`move_intent` at TICK_HZ
  * while held plus once on release, `move_target` per click, `activity_start` / `activity_stop`
  * for chairs and the counter): the avatar predicts with the shared stepPlayer, reconciles
- * against the snapshot's lastSeq, and is drawn from snapshots while an activity runs.
+ * against the snapshot's lastSeq, is drawn between its last two prediction ticks (so it moves
+ * every frame, not 20 times a second), and is drawn from snapshots while an activity runs.
  * Offline the frame below is exactly as before.
  */
 
@@ -89,8 +91,9 @@ function onlineWalkTo(point: Point) {
   }
 }
 
-/** One fixed online tick: send the input for it (with a seq) and predict it. */
-function onlineTick(sx: number, sy: number, run: boolean) {
+/** One fixed online tick: send the input for it (with a seq) and predict it, keeping clear of
+ * `others` (everyone else as last synced) as the room does. */
+function onlineTick(sx: number, sy: number, run: boolean, others: readonly Point[]) {
   const p = online.predictor
   if (!p) return
   syncLook() // a changed look goes out on the same path as movement
@@ -129,7 +132,9 @@ function onlineTick(sx: number, sy: number, run: boolean) {
     if (sx || sy) { online.dest = null } else if (online.mode === 'free') {
       const seq = p.nextSeq()
       netSend.moveTarget(seq, t.x, t.z)
-      p.tick({ kind: 'target', x: t.x, z: t.z }, seq)
+      p.tick({ kind: 'target', x: t.x, z: t.z }, seq, TICK_DT, others)
+      // The click replaces held keys on both sides: a release sent after it would clear the route.
+      online.heldSent = false
     } else {
       // The server stands up first and walks there after; predicted on arrival back at free.
       netSend.moveTarget(p.nextSeq(), t.x, t.z)
@@ -144,7 +149,7 @@ function onlineTick(sx: number, sy: number, run: boolean) {
     if (online.mode === 'free') {
       const seq = p.nextSeq()
       netSend.moveIntent(seq, dx, dz, run)
-      p.tick({ kind: 'intent', dx, dz, run }, seq)
+      p.tick({ kind: 'intent', dx, dz, run }, seq, TICK_DT, others)
       online.heldSent = true
       online.dest = null
     } else if (online.mode === 'approach') {
@@ -153,7 +158,7 @@ function onlineTick(sx: number, sy: number, run: boolean) {
       resync()
       const seq = p.nextSeq()
       netSend.moveIntent(seq, dx, dz, run)
-      p.tick({ kind: 'intent', dx, dz, run }, seq)
+      p.tick({ kind: 'intent', dx, dz, run }, seq, TICK_DT, others)
       online.heldSent = true
     } else if (!online.stopSent) {
       // Moving out of an activity stands up first: one activity_stop, then intents flow once free.
@@ -169,10 +174,10 @@ function onlineTick(sx: number, sy: number, run: boolean) {
     if (online.mode === 'free') {
       const seq = p.nextSeq()
       netSend.moveIntent(seq, 0, 0, false)
-      p.tick({ kind: 'intent', dx: 0, dz: 0, run: false }, seq)
+      p.tick({ kind: 'intent', dx: 0, dz: 0, run: false }, seq, TICK_DT, others)
     }
   } else if (online.mode === 'free') {
-    p.tick(null) // keep following the route with nothing to send
+    p.tick(null, null, TICK_DT, others) // keep following the route with nothing to send
   }
 }
 
@@ -181,6 +186,15 @@ type FrameRefs = {
   motion: { current: Motion }
   root: { current: THREE.Group | null }
   marker: { current: THREE.Mesh | null }
+}
+
+/** Everyone else in the way as last synced (players and colleagues): the room keeps the same distance. */
+function othersOnline(): Point[] {
+  const net = useNet.getState()
+  const others: Point[] = []
+  for (const [id, pl] of Object.entries(net.players)) if (id !== net.selfId && inTheWay(pl.pose)) others.push({ x: pl.x, z: pl.z })
+  for (const n of Object.values(net.npcs)) if (inTheWay(n.pose)) others.push({ x: n.x, z: n.z })
+  return others
 }
 
 /** The online frame: fixed prediction ticks, reconcile, and draw (or follow snapshots). */
@@ -225,22 +239,23 @@ function onlineFrame(dt: number, refs: FrameRefs, setZone: (zone: Zone | null) =
       if (online.queuedTarget) {
         const t = online.queuedTarget
         online.queuedTarget = null
-        p.tick({ kind: 'target', x: t.x, z: t.z })
+        p.tick({ kind: 'target', x: t.x, z: t.z }, null, TICK_DT, othersOnline())
       }
     }
   }
   let [sx, sy] = [0, 0]
   for (const code of refs.held.current) if (KEYS[code]) { sx += KEYS[code][0]; sy += KEYS[code][1] }
   const run = [...refs.held.current].some((c) => c.startsWith('Shift'))
+  const others = othersOnline()
   online.acc = Math.min(online.acc + dt, 0.25)
   while (online.acc >= TICK_DT) {
     online.acc -= TICK_DT
-    onlineTick(sx, sy, run)
+    onlineTick(sx, sy, run, others)
   }
   p.decay(dt)
   const m = refs.motion.current
   if (online.mode === 'free') {
-    const pos = p.pos()
+    const pos = p.draw(online.acc / TICK_DT)   // between the last two ticks, every frame
     avatar.x = pos.x
     avatar.z = pos.z
     const delta = Math.atan2(Math.sin(p.sim.facing - avatar.facing), Math.cos(p.sim.facing - avatar.facing))
@@ -264,6 +279,7 @@ function onlineFrame(dt: number, refs: FrameRefs, setZone: (zone: Zone | null) =
     avatar.z = online.follow.z
     avatar.facing = online.follow.facing
   }
+  avatar.pose = m.pose
   refs.root.current?.position.set(avatar.x, 0, avatar.z)
   if (refs.root.current) refs.root.current.rotation.y = avatar.facing
   const dest = online.dest
@@ -413,6 +429,7 @@ export default function Avatar() {
       const out = advanceActivity(doing.activity, avatar, dt, !!(sx || sy) || doing.after !== null || doing.standUp, { ...SECONDS, rise: riseOf(look) })
       doing.activity = out.activity
       m.pose = out.pose ?? 'stand'
+      avatar.pose = m.pose
       m.speed = out.speed
       if (out.activity.kind === 'free') {
         if (using) TAKEN.delete(using)   // the chair or counter is free again
@@ -441,9 +458,11 @@ export default function Avatar() {
     const before = { x: avatar.x, z: avatar.z }
     const following = !(sx || sy) && route.points.length > 0
     const toWaypoint = following ? Math.hypot(route.points[0].x - before.x, route.points[0].z - before.z) : Infinity
-    const next = OFFICE_WALK.step(before, dir, Math.min(dt, toWaypoint / speed), speed)   // stop on the waypoint
+    const walled = OFFICE_WALK.step(before, dir, Math.min(dt, toWaypoint / speed), speed)   // stop on the waypoint
+    const next = keepApart(before, walled, colleaguesInTheWay(), OFFICE_WALK)   // and clear of the colleagues
     const moved = Math.hypot(next.x - before.x, next.z - before.z)
-    if (following && dt > 0 && moved < 1e-5) { route.points = []; letGo() }   // tried to move and could not: give up the route
+    // a wall in the way: give up the route; a colleague in the way: wait for them
+    if (following && dt > 0 && Math.hypot(walled.x - before.x, walled.z - before.z) < 1e-5) { route.points = []; letGo() }
     if (doing.pending && !route.points.length) {
       // arrived (or as near as the route goes): start sitting down or using the counter
       const at = approachOf(doing.pending)
@@ -461,6 +480,7 @@ export default function Avatar() {
     }
     m.speed += ((dt > 0 ? moved / dt : 0) - m.speed) * Math.min(1, dt * 12)
     m.pose = m.speed < 0.15 ? 'stand' : m.speed > (WALK + JOG) / 2 ? 'jog' : 'walk'
+    avatar.pose = m.pose
     if (root.current) {
       root.current.position.set(avatar.x, 0, avatar.z)
       root.current.rotation.y = avatar.facing

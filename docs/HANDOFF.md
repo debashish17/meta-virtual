@@ -108,6 +108,12 @@ pnpm dev                      # web http://localhost:5173/  server http://localh
   prints the local URLs and keys; the local JWT secret is HS256. Local ports: 54321 (API), 54322
   (Postgres), 54323 (Studio). One local Supabase per machine.
 - After `pnpm install`, run `npx playwright install chromium` once per machine.
+- Right after `pnpm install` rewrites the turbo binary, `pnpm dev` / `pnpm test` (turbo) can fail
+  with `Error: spawn UNKNOWN` for a while, even `npx turbo --version` (seen 2026-11-03; most likely
+  Windows scanning the new 50 MB exe). It clears by itself; meanwhile run a package's script
+  directly (`pnpm --filter @office/server dev`).
+- Node timers on Windows fire on a 15.625 ms grid: `setInterval(50)` runs every 62.5 ms. Anything
+  that must keep a rate counts the wall clock (the room's `FixedStep`), never the interval.
 - Every git worktree needs its own `pnpm install` (about 30 s); it gets its own `node_modules` and
   Vite cache.
 - Colyseus 0.18: subscribe to state with `getStateCallbacks(room)` from `@colyseus/sdk`; the
@@ -262,6 +268,7 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 | P5-D live rehearsal | | | blocked (owner LiveKit project + participation) | |
 | P4-C rehearsal | | | blocked (needs P4-A deploy first) | |
 | Improvement loop (lead) | lead | main (fba1251 + demo/teleport fix) | done: dev-auth Postgres ids, Players memo, chat history pull, dev teleport (idle-reconcile fixed), test:scripts; gates green, contract 4/4, e2e spot-check green (demo 5.1m, calls + live-meeting 5/5). Demo fix: dismiss Calls-unavailable panel (covers drawer) + idle-sync decision clicks. Request to P5-B: call panel structurally overlaps the drawer column during live calls | |
+| FIX avatar-sync + office-glitches (owner) | owner session | fix/avatar-sync, fix/office-glitches | merged (--no-ff, owner request 2026-11-03): room at a true 20 Hz with an input queue, reconcile and draw-between-ticks, paced remote snapshots; name tags under panels, Ask close, typing above the desk, people keep apart, chairs swivel; open items closed | FIX-avatar-sync.md, FIX-office-glitches.md |
 
 States: not started, in progress, blocked (say why), in review, merged.
 

@@ -1,5 +1,8 @@
 import { TICK_DT } from "../net/index.js";
 import { OFFICE_WALK, WalkMap, type Point } from "../world/index.js";
+import { keepApart } from "./apart.js";
+
+export * from "./apart.js";
 
 /**
  * The one movement function the server (authority) and the client (prediction) both run, at fixed
@@ -48,6 +51,8 @@ export function stepPlayer(
   input: StepInput | null,
   dt: number = TICK_DT,
   walk: WalkMap = OFFICE_WALK,
+  /** Other people, kept `PERSON_GAP` away (keepApart); the player itself is not among them. */
+  others: readonly Point[] = [],
 ): void {
   if (input?.kind === "stop") {
     p.route = [];
@@ -66,7 +71,7 @@ export function stepPlayer(
       return;
     }
     const len = Math.hypot(dx, dz);
-    moveBy(p, { x: dx / len, z: dz / len }, dt, input.run ? WalkMap.MAX_SPEED : WALK_SPEED, walk);
+    moveBy(p, { x: dx / len, z: dz / len }, dt, input.run ? WalkMap.MAX_SPEED : WALK_SPEED, walk, others);
     if (p.speed < 0.15) {
       p.pose = "stand"; // pressed into a wall: not moving
     } else {
@@ -98,13 +103,13 @@ export function stepPlayer(
   }
   const toWaypoint = Math.hypot(p.route[0].x - p.x, p.route[0].z - p.z);
   const dir = { x: (p.route[0].x - p.x) / toWaypoint, z: (p.route[0].z - p.z) / toWaypoint };
-  moveBy(p, dir, Math.min(dt, toWaypoint / WALK_SPEED), WALK_SPEED, walk); // stop on the waypoint
+  moveBy(p, dir, Math.min(dt, toWaypoint / WALK_SPEED), WALK_SPEED, walk, others); // stop on the waypoint
   p.pose = p.speed < 0.15 ? "stand" : "walk";
 }
 
-function moveBy(p: SimPlayer, dir: Point, dt: number, speed: number, walk: WalkMap) {
+function moveBy(p: SimPlayer, dir: Point, dt: number, speed: number, walk: WalkMap, others: readonly Point[]) {
   const before = { x: p.x, z: p.z };
-  const next = walk.step(before, dir, dt, speed);
+  const next = keepApart(before, walk.step(before, dir, dt, speed), others, walk);
   const moved = Math.hypot(next.x - before.x, next.z - before.z);
   p.x = next.x;
   p.z = next.z;

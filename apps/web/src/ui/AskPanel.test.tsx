@@ -30,4 +30,14 @@ describe("AskPanel", () => {
     render(<AskPanel />);
     expect((screen.getByRole("button", { name: "Ask" }) as HTMLButtonElement).disabled).toBe(true);
   });
+
+  it("closes to a small button and reopens without the old answer", async () => {
+    await ask("What's the status of the Acme integration?");
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(screen.queryByLabelText("Your question")).toBeNull();
+    expect(screen.queryByRole("status")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Ask the office" }));
+    expect(screen.getByLabelText("Your question")).toBeTruthy();
+    expect(screen.queryByRole("status")).toBeNull();
+  });
 });
