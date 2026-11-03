@@ -49,8 +49,10 @@ function ReadySignal() {
 export default function OfficeScene() {
   return (
     <div style={{ position: 'fixed', inset: 0, background: PALETTE.background }}>
+      {/* isolation: the name pills (drei Html, z-index up to 20) stay inside the scene's own
+          stacking layer, under the panels and the HUD, which come after it */}
       <Canvas orthographic shadows={SHADOWS ? 'soft' : false} dpr={[1, 2]} gl={{ antialias: false, powerPreference: 'high-performance' }}
-        camera={{ position: [0, 50, 0], zoom: 60 }}>
+        camera={{ position: [0, 50, 0], zoom: 60 }} style={{ isolation: 'isolate' }}>
         <color attach="background" args={[PALETTE.background]} />
         <CameraRig />
         <Lighting />

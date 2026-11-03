@@ -6,12 +6,20 @@ import { api } from "../api/index.js";
  * Ask-the-office (DESIGN_SPEC 9): a single-line input at the bottom centre; the answer
  * renders above it so the panel expands upwards. Answers show their sources; an
  * abstention shows the no-record state. Reads through `api` (the mock until P3-C).
+ * The close button collapses it to a small button, like the chat; reopening starts afresh.
  */
 export default function AskPanel() {
+  const [open, setOpen] = useState(true);
   const [question, setQuestion] = useState("");
   const [result, setResult] = useState<AskResultData | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function close() {
+    setOpen(false);
+    setResult(null);
+    setError(null);
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -29,6 +37,13 @@ export default function AskPanel() {
     }
   }
 
+  if (!open) {
+    return (
+      <button type="button" className="pan-mini pan-mini-ask" aria-expanded="false" onClick={() => setOpen(true)}>
+        Ask the office
+      </button>
+    );
+  }
   return (
     <section className="pan-ask" aria-label="Ask the office">
       {result && (
@@ -63,6 +78,9 @@ export default function AskPanel() {
         />
         <button type="submit" className="pan-btn" disabled={pending || question.trim().length === 0}>
           {pending ? "Asking…" : "Ask"}
+        </button>
+        <button type="button" className="pan-collapse pan-ask-close" aria-label="Close ask the office" onClick={close}>
+          ×
         </button>
       </form>
     </section>
