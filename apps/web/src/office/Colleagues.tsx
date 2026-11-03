@@ -2,7 +2,7 @@ import { Html } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { FURNITURE, LOOK_PRESETS, OFFICE_SPOTS, OFFICE_WALK, advance, inTheWay, riseOf, routineAtDesk, routineAway, seatFor, seatKey, secondsOf, zoneAt, type AvatarLook, type Point, type Routine, type RoutineWorld } from '@office/shared'
+import { DESK_SEATS, LOOK_PRESETS, NPC_PRESET_IDS, OFFICE_SPOTS, OFFICE_WALK, advance, homeDeskSeatId, inTheWay, riseOf, routineAtDesk, routineAway, secondsOf, type AvatarLook, type Point, type Routine, type RoutineWorld } from '@office/shared'
 import Person, { type Motion } from './Person'
 import { useMe } from './me'
 import { TAKEN } from './taken'
@@ -18,25 +18,6 @@ import { useNet } from '../net/store'
  */
 
 const SHOW = typeof window === 'undefined' || new URLSearchParams(window.location.search).get('colleagues') !== '0'
-
-/** Desk chairs in the team areas, spread across the teams and rows. */
-function seats(count: number) {
-  const chairs = FURNITURE.filter((p) => p.part === 'seating.task-chair-black' && zoneAt(p.x, p.z)?.id.startsWith('team_'))
-  const byTeam = new Map<string, typeof chairs>()
-  for (const c of chairs) {
-    const team = zoneAt(c.x, c.z)!.id
-    byTeam.set(team, [...(byTeam.get(team) ?? []), c])
-  }
-  const picks: typeof chairs = []
-  for (let round = 0; picks.length < count && round < 6; round++) {
-    for (const list of byTeam.values()) {
-      const step = Math.floor(list.length / 3)
-      const chair = list[(round * step + round * 5 + 3) % list.length]
-      if (picks.length < count && !picks.includes(chair)) picks.push(chair)
-    }
-  }
-  return picks
-}
 
 // who starts the day away from their desk: (preset id, spot, seconds before heading back)
 const STARTS_AWAY: Record<string, [string, number]> = { kenji: ['chat_1', 25], sofia: ['chat_2', 25], ben: ['window_1', 18] }
@@ -97,21 +78,24 @@ export default function Colleagues() {
   const crew = useMemo(() => {
     let seed = 20261101
     const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
-    const others = LOOK_PRESETS.filter((p) => p.name.toLowerCase() !== myName.trim().toLowerCase())
-    const chairs = seats(others.length)
+    // The same four colleagues the server runs online (ARCHITECTURE.md 12.10), at their
+    // home desks; a preset whose person is signed in does not run, as online.
+    const others = LOOK_PRESETS.filter((p) => NPC_PRESET_IDS.includes(p.id) && p.name.toLowerCase() !== myName.trim().toLowerCase())
     // one shared world for the reservations
     const world: RoutineWorld = {
       walk: OFFICE_WALK, spots: OFFICE_SPOTS, taken: TAKEN, rand,   // shared with you, so neither takes the other's place
       clips: { sit_down: secondsOf('sit_down'), stand_up: secondsOf('stand_up'), interact: secondsOf('interact') },
     }
-    const people = others.map((person, i) => {
-      const seat = seatFor(chairs[i], i === 2 ? 'sit_talk' : 'type', OFFICE_WALK)
-      TAKEN.add(seatKey(chairs[i]))   // their desk is theirs
+    const people = others.flatMap((person, i) => {
+      const home = DESK_SEATS.find((s) => s.id === homeDeskSeatId(person.id))
+      if (!home) return []
+      const seat = { ...home, pose: (i === 2 ? 'sit_talk' : 'type') as typeof home.pose }
+      TAKEN.add(home.id)   // their desk is theirs
       const away = STARTS_AWAY[person.id]
       const spot = away && OFFICE_SPOTS.find((s) => s.id === away[0])
       const rise = riseOf(person.look)
       const routine = spot ? routineAway(seat, spot, away[1], rise, world) : routineAtDesk(seat, 6 + i * 9 + rand() * 10, rise)
-      return { person, routine }
+      return [{ person, routine }]
     })
     return { world, people }
   }, [myName])
