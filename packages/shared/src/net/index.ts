@@ -7,7 +7,7 @@ import { PoseSchema } from "../people/pose.js";
  * send each other, and the shape of the synced state. Every object schema is `.strict()`: unknown
  * fields are rejected, so a stale or tampered client fails loudly instead of smuggling state.
  *
- * `seq` counts the client's ticks: every input message (`move_intent`, `move_target`,
+ * `seq` counts the client's ticks: every input message (`move_intent`, `move_target`, `go_to`,
  * `activity_start`, `activity_stop`) carries the tick it was made on. The server records `lastSeq`,
  * the seq of the last input it applied for that player, in the synced state; the client reconciles
  * its prediction against the snapshot's `lastSeq` (ARCHITECTURE.md 12.1).
@@ -18,7 +18,7 @@ import { PoseSchema } from "../people/pose.js";
  */
 
 /** Bumped whenever this contract changes incompatibly; the server refuses other protocols. */
-export const PROTOCOL_VERSION = 1;
+export const PROTOCOL_VERSION = 2;
 
 /** Server tick and client prediction rate; one step is `TICK_DT` seconds. */
 export const TICK_HZ = 20;
@@ -136,7 +136,7 @@ export const CaptionSend = z.object({
 }).strict();
 export type CaptionSend = z.infer<typeof CaptionSend>;
 
-export const Status = z.enum(["available", "in_meeting", "away"]);
+export const Status = z.enum(["available", "working", "on_break", "in_meeting", "away"]);
 export type Status = z.infer<typeof Status>;
 
 export const StatusSet = z.object({
@@ -148,6 +148,22 @@ export const LookSet = z.object({
   look: AvatarLook,
 }).strict();
 export type LookSet = z.infer<typeof LookSet>;
+
+export const GoToPlace = z.enum(["desk", "break"]);
+export type GoToPlace = z.infer<typeof GoToPlace>;
+
+/**
+ * Phase 6: status decides where a person is (ARCHITECTURE.md 12.10). The server sets the
+ * status (`desk` gives `working`, `break` gives `on_break`) and walks the player there
+ * through the activity pipeline: home desk (sit, type) or the nearest free counter spot.
+ * `status_set` never moves anyone. A player with no home desk gets the status only, and
+ * `error no_home_desk`.
+ */
+export const GoTo = z.object({
+  seq: Seq,
+  place: GoToPlace,
+}).strict();
+export type GoTo = z.infer<typeof GoTo>;
 
 // Server to client.
 
@@ -184,13 +200,25 @@ export const ZoneEvent = z.object({
 export type ZoneEvent = z.infer<typeof ZoneEvent>;
 
 /** Which queries to refetch; the HTTP contract (`src/api`) re-exports this. */
-export const RecordKind = z.enum(["tasks", "milestones", "commitments", "proposed_changes", "meetings"]);
+export const RecordKind = z.enum(["tasks", "milestones", "commitments", "proposed_changes", "meetings", "bookings", "board"]);
 export type RecordKind = z.infer<typeof RecordKind>;
 
 export const RecordsChanged = z.object({
   kinds: z.array(RecordKind),
 }).strict();
 export type RecordsChanged = z.infer<typeof RecordsChanged>;
+
+/**
+ * Phase 6: after a booking is created, each connected invitee gets one of these
+ * (ARCHITECTURE.md 12.10). `zoneId` is null for a virtual call-only meeting.
+ */
+export const MeetingInvite = z.object({
+  bookingId: z.string().uuid(),
+  zoneId: z.string().min(1).nullable(),
+  title: z.string().trim().min(1).max(120),
+  hostName: z.string().trim().min(1),
+}).strict();
+export type MeetingInvite = z.infer<typeof MeetingInvite>;
 
 export const ErrorCode = z.enum([
   "invalid_message",
@@ -199,6 +227,7 @@ export const ErrorCode = z.enum([
   "target_taken",
   "unauthorized",
   "protocol_mismatch",
+  "no_home_desk",
 ]);
 export type ErrorCode = z.infer<typeof ErrorCode>;
 
@@ -258,6 +287,7 @@ export const CLIENT_MESSAGE = {
   captionSend: "caption_send",
   statusSet: "status_set",
   lookSet: "look_set",
+  goTo: "go_to",
 } as const;
 
 export const SERVER_MESSAGE = {
@@ -266,6 +296,7 @@ export const SERVER_MESSAGE = {
   caption: "caption",
   zoneEvent: "zone_event",
   recordsChanged: "records_changed",
+  meetingInvite: "meeting_invite",
   error: "error",
 } as const;
 

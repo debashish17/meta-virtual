@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { ProposedChange } from "@office/shared";
 import { api } from "../api/index.js";
 import { useRecords } from "../api/records.js";
+import MeetingAgenda from "../bookings/MeetingAgenda.js";
 import { refetchAfterDecision } from "./actions.js";
 import { changeRows, changeTitle } from "./format.js";
 
@@ -90,6 +91,7 @@ export default function ApprovalsPanel() {
     <div>
       {meeting && (
         <section className="pan-meeting-summary" aria-label="Meeting summary">
+          <MeetingAgenda meetingId={meeting.id} />
           <h3>Meeting summary</h3>
           <p>{meeting.summary}</p>
           {meeting.decisions.length > 0 && (

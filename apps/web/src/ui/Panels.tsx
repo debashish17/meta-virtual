@@ -10,6 +10,9 @@ import MeetingBar from "./MeetingBar.js";
 import Notices from "./Notices.js";
 import Participants from "./Participants.js";
 import RightDrawer from "./RightDrawer.js";
+import BookingPanel from "../bookings/BookingPanel.js";
+import BoardOverlay from "../board/BoardOverlay.js";
+import OfficeLifeBar from "../officeLife/OfficeLifeBar.js";
 import { isMovementKey } from "./format.js";
 import "./panels.css";
 
@@ -57,6 +60,9 @@ export default function Panels() {
       <AskPanel />
       <RightDrawer />
       <CallPanel />
+      <OfficeLifeBar />
+      <BookingPanel />
+      <BoardOverlay />
     </div>
   );
 }

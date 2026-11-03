@@ -40,6 +40,24 @@ import {
   Task,
   TaskStatus,
   ASK_QUESTION_MAX,
+  BOOKING_AGENDA_MAX,
+  BOOKING_INVITEES_MAX,
+  BOOKING_TITLE_MAX,
+  BoardPin,
+  BoardPinCreate,
+  BoardPinList,
+  Booking,
+  BookingCreate,
+  BookingList,
+  BookingStatus,
+  Note,
+  NoteCreate,
+  NoteList,
+  NoteUpdate,
+  Receipt,
+  ReceiptDecision,
+  ReceiptList,
+  ReceiptQuery,
 } from "./index.js";
 
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
@@ -77,6 +95,28 @@ const extraction = {
   milestoneChanges: [
     { projectName: "Acme Payments Integration", milestoneName: "Go-live", newTargetDate: "2026-11-22" },
   ],
+} as const;
+
+const booking = {
+  id: id(51), workspaceId: "northwind-demo", zoneId: "acme_room",
+  title: "Acme sync", agenda: "Go-live date", hostId: "maya",
+  inviteeIds: ["arjun"], status: "open", createdAt: 1730419200000, endedAt: null,
+} as const;
+const note = {
+  id: id(61), workspaceId: "northwind-demo", userId: "maya",
+  text: "Ask Alex about the firewall rule", color: "yellow", done: false,
+  createdAt: 1730419200000,
+} as const;
+const pin = {
+  id: id(71), workspaceId: "northwind-demo", authorId: "maya", authorName: "Maya",
+  text: "Ship it Friday", color: "pink", createdAt: 1730419200000,
+} as const;
+const receipt = {
+  changeId: id(41), kind: "milestone_date", recordType: "milestone",
+  recordId: id(4), recordLabel: "Go-live",
+  before: { targetDate: "2026-11-15" }, after: { targetDate: "2026-11-22" },
+  meetingId: id(31), meetingLabel: "Acme sync", decision: "approved",
+  deciderId: "maya", deciderName: "Maya", decidedAt: 1730419300000,
 } as const;
 
 describe("http contract", () => {
@@ -290,6 +330,101 @@ describe("http contract", () => {
     expect(CallTokenResponse.safeParse({ url: "wss://x" }).success).toBe(false);
   });
 
+  it("accepts bookings, notes and board pins", () => {
+    expect(BookingStatus.parse("ended")).toBe("ended");
+    expect(Booking.parse(booking)).toBeTruthy();
+    expect(Booking.parse({ ...booking, zoneId: null }).zoneId).toBeNull();
+    expect(BookingCreate.parse({
+      zoneId: "acme_room", title: "Acme sync", agenda: "", inviteeIds: ["arjun"],
+    }).agenda).toBe("");
+    expect(BookingList.parse({ bookings: [booking] }).bookings).toHaveLength(1);
+    expect(BookingList.parse({ bookings: [] }).bookings).toEqual([]);
+    expect(Note.parse(note)).toBeTruthy();
+    expect(NoteCreate.parse({ text: "Buy milk", color: "yellow" })).toBeTruthy();
+    expect(NoteUpdate.parse({ done: true })).toEqual({ done: true });
+    expect(NoteUpdate.parse({})).toEqual({});
+    expect(NoteList.parse({ notes: [note] }).notes).toHaveLength(1);
+    expect(BoardPin.parse(pin)).toBeTruthy();
+    expect(BoardPinCreate.parse({ text: "Ship it", color: "pink" })).toBeTruthy();
+    expect(BoardPinList.parse({ pins: [] }).pins).toEqual([]);
+  });
+
+  it("rejects bad bookings, notes and board pins", () => {
+    expect(Booking.safeParse({ ...booking, title: "" }).success).toBe(false);
+    expect(Booking.safeParse({ ...booking, title: "x".repeat(BOOKING_TITLE_MAX + 1) }).success).toBe(false);
+    expect(Booking.safeParse({ ...booking, agenda: "x".repeat(BOOKING_AGENDA_MAX + 1) }).success).toBe(false);
+    expect(Booking.safeParse({ ...booking, inviteeIds: [] }).success).toBe(false);
+    expect(Booking.safeParse({
+      ...booking,
+      inviteeIds: Array.from({ length: BOOKING_INVITEES_MAX + 1 }, (_, i) => `u${i}`),
+    }).success).toBe(false);
+    expect(Booking.safeParse({ ...booking, zoneId: "" }).success).toBe(false);
+    expect(Booking.safeParse({ ...booking, status: "cancelled" }).success).toBe(false);
+    expect(BookingCreate.safeParse({
+      zoneId: "z", title: "t", agenda: "", inviteeIds: [""],
+    }).success).toBe(false);
+    expect(Note.safeParse({ ...note, text: "  " }).success).toBe(false);
+    expect(NoteCreate.safeParse({ text: "t" }).success).toBe(false);
+    expect(NoteUpdate.safeParse({ text: "" }).success).toBe(false);
+    expect(NoteUpdate.safeParse({ done: "yes" }).success).toBe(false);
+    expect(BoardPin.safeParse({ ...pin, authorName: "" }).success).toBe(false);
+    expect(BoardPinCreate.safeParse({ text: "t", color: "" }).success).toBe(false);
+  });
+
+  it("accepts the meeting agenda and booking link", () => {
+    expect(Meeting.parse(meeting).agenda).toBeUndefined();
+    expect(Meeting.parse({ ...meeting, agenda: "Go-live date" }).agenda).toBe("Go-live date");
+    expect(MeetingCreate.parse({ zoneId: "z", transcript: "hi", bookingId: id(51) }).bookingId).toBe(id(51));
+    expect(MeetingCreate.parse({ zoneId: "z", fixture: "acme-sync", bookingId: id(51) })).toBeTruthy();
+    expect(MeetingCreate.parse({ zoneId: "z", transcript: "hi" })).toBeTruthy();
+  });
+
+  it("rejects a bad meeting agenda and booking link", () => {
+    expect(Meeting.safeParse({ ...meeting, agenda: "x".repeat(BOOKING_AGENDA_MAX + 1) }).success).toBe(false);
+    expect(Meeting.safeParse({ ...meeting, agenda: 42 }).success).toBe(false);
+    expect(MeetingCreate.safeParse({ zoneId: "z", transcript: "hi", bookingId: "nope" }).success).toBe(false);
+    expect(MeetingCreate.safeParse({ zoneId: "z", fixture: "acme-sync", bookingId: "nope" }).success).toBe(false);
+  });
+
+  it("accepts ask sources with receipt details", () => {
+    expect(AskSource.parse({
+      type: "milestone", id: id(4), label: "Go-live",
+      meetingLabel: "Acme sync", approverName: "Maya",
+    })).toBeTruthy();
+    expect(AskSource.parse({ type: "task", id: id(11), label: "Fix it" })).toBeTruthy();
+  });
+
+  it("rejects bad receipt details on ask sources", () => {
+    expect(AskSource.safeParse({
+      type: "task", id: id(11), label: "Fix it", meetingLabel: "",
+    }).success).toBe(false);
+    expect(AskSource.safeParse({
+      type: "task", id: id(11), label: "Fix it", approverName: "  ",
+    }).success).toBe(false);
+  });
+
+  it("accepts receipts and receipt queries", () => {
+    expect(ReceiptDecision.parse("rejected")).toBe("rejected");
+    expect(Receipt.parse(receipt)).toBeTruthy();
+    expect(Receipt.parse({ ...receipt, decision: "rejected" }).decision).toBe("rejected");
+    expect(ReceiptQuery.parse({})).toEqual({});
+    expect(ReceiptQuery.parse({ accountId: id(1), limit: 10 })).toBeTruthy();
+    expect(ReceiptList.parse({ receipts: [receipt] }).receipts).toHaveLength(1);
+    expect(ReceiptList.parse({ receipts: [] }).receipts).toEqual([]);
+  });
+
+  it("rejects bad receipts and receipt queries", () => {
+    expect(Receipt.safeParse({ ...receipt, changeId: "nope" }).success).toBe(false);
+    const missingDecider = { ...receipt, deciderId: undefined };
+    expect(Receipt.safeParse(missingDecider).success).toBe(false);
+    expect(Receipt.safeParse({ ...receipt, decision: "pending" }).success).toBe(false);
+    expect(Receipt.safeParse({ ...receipt, after: null }).success).toBe(false);
+    expect(Receipt.safeParse({ ...receipt, smuggled: 1 }).success).toBe(false);
+    expect(ReceiptQuery.safeParse({ accountId: "nope" }).success).toBe(false);
+    expect(ReceiptQuery.safeParse({ limit: 0 }).success).toBe(false);
+    expect(ReceiptQuery.safeParse({ limit: -3 }).success).toBe(false);
+  });
+
   it("re-exports the net RecordKind", () => {
     expect(RecordKind.parse("tasks")).toBe("tasks");
     expect(RecordKind.safeParse("accounts").success).toBe(false);
@@ -326,6 +461,19 @@ describe("http contract", () => {
       [OkResult, { ok: true }],
       [CallTokenRequest, { zoneId: "z" }],
       [CallTokenResponse, { url: "wss://x", token: "t" }],
+      [Booking, booking],
+      [BookingCreate, { zoneId: "z", title: "t", agenda: "", inviteeIds: ["u"] }],
+      [BookingList, { bookings: [] }],
+      [Note, note],
+      [NoteCreate, { text: "t", color: "c" }],
+      [NoteUpdate, { done: true }],
+      [NoteList, { notes: [] }],
+      [BoardPin, pin],
+      [BoardPinCreate, { text: "t", color: "c" }],
+      [BoardPinList, { pins: [] }],
+      [Receipt, receipt],
+      [ReceiptQuery, {}],
+      [ReceiptList, { receipts: [] }],
     ];
     for (const [schema, value] of cases) {
       expect(schema.safeParse(value).success).toBe(true);
@@ -342,7 +490,10 @@ describe("http contract", () => {
       "AskRequest", "AskSourceType", "AskSource", "AskResult", "MeetingFixture",
       "MeetingCreateTranscript", "MeetingCreateFixture", "MeetingCreate", "MeetingProcessResult",
       "ProposedChangeQuery", "ProposedChangeList", "OkResult", "CallTokenRequest",
-      "CallTokenResponse", "RecordKind",
+      "CallTokenResponse", "RecordKind", "BOOKING_TITLE_MAX", "BOOKING_AGENDA_MAX",
+      "BOOKING_INVITEES_MAX", "BookingStatus", "Booking", "BookingCreate", "BookingList",
+      "Note", "NoteCreate", "NoteUpdate", "NoteList", "BoardPin", "BoardPinCreate",
+      "BoardPinList", "ReceiptDecision", "Receipt", "ReceiptQuery", "ReceiptList",
       "DemoPersonKey", "DemoPerson", "DEMO_PEOPLE", "DEMO_ACCOUNT", "DEMO_CONTACT", "DEMO_PROJECT",
       "DEMO_MILESTONE", "DEMO_TASKS", "DEMO_COMMITMENT", "RoomRecordKind", "RoomRecord",
       "ROOM_RECORDS", "ACME_SYNC_TRANSCRIPT", "FIXTURE_TRANSCRIPTS", "acmeSyncExpected",

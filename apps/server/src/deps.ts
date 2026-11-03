@@ -8,11 +8,15 @@ import {
   type WorkspaceMembership,
 } from "./auth/supabase.js";
 import { createInMemoryRepo, type Repo } from "./db/repo.js";
+import { createInMemoryBoardStore, type BoardStore } from "./board/store.js";
+import { createInMemoryBookingStore, type BookingStore } from "./bookings/store.js";
 import { createPostgresRepo, PostgresRepo } from "./db/postgres.js";
 import type { Env } from "./env.js";
 import { DatabaseChatStore } from "./http/chatStore.js";
 import { createLlm } from "./llm/factory.js";
 import type { LlmClient } from "./llm/types.js";
+import { createInMemoryNoteStore, type NoteStore } from "./notes/store.js";
+import { createReceiptStore, type ReceiptStore } from "./receipts/store.js";
 import { RegistryBus, type RoomBus } from "./room/bus.js";
 import type { ChatStore } from "./room/chat.js";
 
@@ -29,6 +33,11 @@ export interface Deps {
   auth: AuthVerifier;
   bus: RoomBus;
   chat: ChatStore;
+  /** P6-0 slots (ARCHITECTURE.md 12.10): the office-life feature stores. */
+  bookings?: BookingStore;
+  notes?: NoteStore;
+  board?: BoardStore;
+  receipts?: ReceiptStore;
 }
 
 function packageVersion(): string {
@@ -88,6 +97,10 @@ export function buildDeps(env: Env): Deps {
     // The live bus: approvals reach the workspace's room (nobody online: no-op).
     bus: new RegistryBus(),
     chat: new DatabaseChatStore(repo, lookup),
+    bookings: createInMemoryBookingStore(),
+    notes: createInMemoryNoteStore(),
+    board: createInMemoryBoardStore(),
+    receipts: createReceiptStore(repo),
   };
 }
 

@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEMO_MILESTONE } from "@office/shared";
 import { api } from "./index.js";
-import { useRecords } from "./records.js";
+import { onRecordsChanged, useRecords } from "./records.js";
 
 describe("records store", () => {
   beforeEach(async () => {
@@ -31,5 +31,43 @@ describe("records store", () => {
     expect(
       useRecords.getState().project?.milestones.find((m) => m.id === DEMO_MILESTONE.id)?.targetDate,
     ).toBe("2026-11-22");
+  });
+});
+
+describe("onRecordsChanged", () => {
+  it("notifies only the refetched kind's listeners", async () => {
+    const seen: string[] = [];
+    const offBoard = onRecordsChanged("board", () => {
+      seen.push("board");
+    });
+    const offTasks = onRecordsChanged("tasks", () => {
+      seen.push("tasks");
+    });
+    await useRecords.getState().refetch(["board"]);
+    expect(seen).toEqual(["board"]);
+    offBoard();
+    offTasks();
+    await useRecords.getState().refetch(["tasks", "board"]);
+    expect(seen).toEqual(["board"]);
+  });
+
+  it("skips a throwing listener and still notifies the rest", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const seen: string[] = [];
+      const offBad = onRecordsChanged("bookings", () => {
+        throw new Error("lane bug");
+      });
+      const offGood = onRecordsChanged("bookings", () => {
+        seen.push("bookings");
+      });
+      await useRecords.getState().refetch(["bookings"]);
+      expect(seen).toEqual(["bookings"]);
+      expect(warn).toHaveBeenCalledOnce();
+      offBad();
+      offGood();
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
