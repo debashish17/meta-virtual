@@ -186,6 +186,27 @@ describe("askQuestion", () => {
     expect(llm.calls).toBe(2);
   });
 
+  it("tells the model a 'my day' question is about the asker's own records, and only then", async () => {
+    // A live model was given Maya's tasks but not told they were hers, and answered "no record".
+    const contexts: (string | undefined)[] = [];
+    const llm: LlmClient = {
+      async extractMeeting(): Promise<unknown> {
+        throw new Error("not used by ask");
+      },
+      async answer(_question: string, _records: unknown[], context?: string): Promise<unknown> {
+        contexts.push(context);
+        return { answer: "x", sourceIds: [] };
+      },
+    };
+    const repo = new InMemoryRepo();
+    await askQuestion({ repo, claims: MAYA, userId: "maya", question: "What does my day look like?", llm });
+    await askQuestion({ repo, claims: MAYA, userId: "maya", question: STATUS_QUESTION, llm });
+    expect(contexts).toHaveLength(2);
+    expect(contexts[0]).toContain("Maya");
+    expect(contexts[0]).toMatch(/own open tasks/);
+    expect(contexts[1]).toBeUndefined();
+  });
+
   it("never calls the LLM for other questions", async () => {
     const repo = new InMemoryRepo();
     const llm = scriptedLlm([{ answer: "x", sourceIds: [] }]);

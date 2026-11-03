@@ -61,6 +61,15 @@ describe("MetaLlm", () => {
     expect(messages[1].content).toContain("Maya: hi");
   });
 
+  it("hands the model the question's context with the records", async () => {
+    const captured: CapturedRequest[] = [];
+    const llm = new MetaLlm({ ...OPTIONS, fetch: stubTransport('{"answer":"a","sourceIds":[]}', captured) });
+    await llm.answer("What does my day look like?", [{ id: "t1" }], "Asked by Maya. The records are Maya's own open tasks.");
+    const messages = captured[0].body["messages"] as { role: string; content: string }[];
+    expect(messages[1].content).toContain("Asked by Maya. The records are Maya's own open tasks.");
+    expect(messages[1].content).toContain("What does my day look like?");
+  });
+
   it("supports the json_object fallback mode", async () => {
     const captured: CapturedRequest[] = [];
     const llm = new MetaLlm({
