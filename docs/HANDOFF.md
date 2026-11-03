@@ -29,6 +29,9 @@ applies. **Nothing in Phase 6 has been started.**
 **Live now (P4-A, fast mode, deployed 2026-11-03 with the owner's OK)**
 - Web: `https://meta-virtual-office.vercel.app`. Server: `https://meta-virtual-office.fly.dev`
   (one machine, Fly region `sin`). Both run `13cd161`.
+- First visit to the deployed site: a "Who are you?" card (type your own name, or Join as Maya /
+  Arjun for the demo script), remembered per browser; development builds skip it (`644d96f`).
+  Two people who pick the same name still share one identity, as dev auth has always done.
 - Fast mode: `AUTH_MODE=dev` (the "Join as" name picker), the in-memory repo (no `DATABASE_URL`),
   and the live model, Muse Spark (since 2026-11-03; decision 4 below). Data resets whenever the machine stops; it stops when idle and starts on the next
   visit in a few seconds.
