@@ -102,6 +102,7 @@ The scene is the hero. Overlays are compact and never cover the centre of the fl
 | Chat | Bottom-left, collapsible |
 | Status and room label | Top-centre pill (for example "Acme room") |
 | Wall displays | Rendered on in-scene screens (canvas textures), with a larger overlay view on click |
+| What E does (sit down, get a drink, cancel, stand up, step away) | In-scene chip under the avatar's feet, clickable, with the oak key cap; a halo marks the chair or counter it means |
 
 Style: white and light-grey panels, dark text, oak accent for primary buttons, small radius, subtle shadow. System font stack.
 
