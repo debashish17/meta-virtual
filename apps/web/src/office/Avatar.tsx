@@ -2,13 +2,15 @@ import { Html } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { OFFICE_WALK, TICK_DT, WalkMap, advanceActivity, inTheWay, keepApart, approachOf, findPath, riseOf, screenToIntent, secondsOf, startActivity, targetNear, zoneAt, type Activity, type Axis, type Point, type Target, type Zone } from '@office/shared'
+import { COUNTERS, DESK_SEATS, OFFICE_WALK, TICK_DT, WalkMap, advanceActivity, inTheWay, keepApart, approachOf, findPath, riseOf, screenToIntent, secondsOf, startActivity, targetNear, zoneAt, type Activity, type Axis, type Point, type Target, type Zone } from '@office/shared'
 import { TAKEN } from './taken'
+import ActionChip from './ActionChip'
+import { actionFor, phaseOffline, phaseOnline, sameAction } from './action'
 import { colleaguesInTheWay } from './Colleagues'
 import Person, { type Motion } from './Person'
 import { useMe } from './me'
 import { avatar, useOfficeUi } from './state'
-import { getLastError, getSelfSnapshot, isOnline, netSend, syncLook } from '../net/connection'
+import { getLastError, getReserved, getSelfSnapshot, isOnline, netSend, syncLook } from '../net/connection'
 import { Predictor, followSnapshot } from '../net/predict'
 import { useNet } from '../net/store'
 
@@ -73,13 +75,40 @@ const online = {
   seenError: 0,
   selfId: null as string | null,
   wasOnline: false,
+  /** The chair or counter last asked for, and the ones the room refused (id -> until, ms). */
+  requested: null as string | null,
+  refused: new Map<string, number>(),
 }
-/** The server keeps the reservations when online; the client only names the target it wants. */
-const NO_RESERVATIONS: ReadonlySet<string> = new Set()
+
+const OCCUPIED = 0.4   // metres: someone this near a chair or counter spot is using it
+const SEAT_HALO = 0.5  // metres up: just above a desk chair's cushion
+
+/**
+ * Chairs and counter spots not to offer or walk to: offline your own reservations; online the
+ * room's (synced, colleagues' desks included), the ones someone near you is using right now, and
+ * any the room just refused, so E, a click and the chip agree.
+ */
+function takenNow(): ReadonlySet<string> {
+  if (!isOnline()) return TAKEN
+  const taken = new Set<string>(getReserved())
+  const now = performance.now()
+  for (const [id, until] of online.refused) {
+    if (until > now) taken.add(id)
+    else online.refused.delete(id)
+  }
+  const net = useNet.getState()
+  const people = [...Object.entries(net.players).filter(([id]) => id !== net.selfId).map(([, p]) => p), ...Object.values(net.npcs)]
+  for (const p of people) {
+    if (Math.hypot(p.x - avatar.x, p.z - avatar.z) > 4) continue
+    for (const s of DESK_SEATS) if (Math.hypot(s.x - p.x, s.z - p.z) < OCCUPIED) taken.add(s.id)
+    for (const c of COUNTERS) if (Math.hypot(c.x - p.x, c.z - p.z) < OCCUPIED) taken.add(c.id)
+  }
+  return taken
+}
 
 /** Online click: a chair or counter starts an activity there, anywhere else walks there. */
 function onlineWalkTo(point: Point) {
-  const target = targetNear(point, NO_RESERVATIONS)
+  const target = targetNear(point, takenNow())
   if (target) {
     online.pendingActivity = target.id
     online.pendingTarget = null
@@ -119,6 +148,7 @@ function onlineTick(sx: number, sy: number, run: boolean, others: readonly Point
     online.pendingActivity = null
     if (sx || sy) { /* held keys win, as offline: the trip is dropped */ } else {
       netSend.activityStart(p.nextSeq(), targetId)
+      online.requested = targetId
       online.mode = 'approach'
       online.queuedTarget = null
       online.followInit = false
@@ -222,6 +252,7 @@ function onlineFrame(dt: number, refs: FrameRefs, setZone: (zone: Zone | null) =
   const err = getLastError()
   if (err && err.n !== online.seenError) {
     online.seenError = err.n
+    if (err.code === 'target_taken' && online.requested) online.refused.set(online.requested, performance.now() + 30_000)
     if (online.mode === 'approach' && (err.code === 'target_taken' || err.code === 'unwalkable')) {
       online.mode = 'free' // the trip is refused: stand where the server says
       if (snap) p.reset(snap.x, snap.z, snap.facing)
@@ -310,11 +341,33 @@ export function walkTo(point: Point) {
   route.points = goal ? findPath({ x: avatar.x, z: avatar.z }, goal).slice(1) : []
 }
 
+/**
+ * Keep the chip under your feet (ActionChip) and the ring on the chair or counter it means in step
+ * with what E would do now (action.ts).
+ */
+function refreshAction(aim: THREE.Mesh | null, t: number) {
+  const snap = isOnline() ? getSelfSnapshot() : null
+  const phase = isOnline()
+    ? phaseOnline(online.mode, snap?.activity?.kind ?? null, avatar.pose)
+    : phaseOffline(doing.activity, doing.pending !== null)
+  const near = phase === 'free' ? targetNear({ x: avatar.x, z: avatar.z }, takenNow(), 2.2) : null
+  const action = actionFor({ phase, near })
+  const ui = useOfficeUi.getState()
+  if (!sameAction(ui.action, action)) ui.setAction(action)
+  if (!aim) return
+  const at = action && (action.kind === 'sit' || action.kind === 'drink') ? action.at : null
+  aim.visible = at !== null
+  if (at) {
+    aim.position.set(at.x, action?.kind === 'sit' ? SEAT_HALO : 0.014, at.z)
+    aim.scale.setScalar(1 + 0.08 * Math.sin(t * 4))   // a slow pulse
+  }
+}
+
 /** E: use the chair or counter beside you, or stand up / step away if you are using one. */
 function interact() {
   if (isOnline()) {
     if (online.mode === 'free') {
-      const target = targetNear({ x: avatar.x, z: avatar.z }, NO_RESERVATIONS, 2.2)
+      const target = targetNear({ x: avatar.x, z: avatar.z }, takenNow(), 2.2)
       if (target) onlineWalkTo(target.kind === 'seat' ? target.seat : target.spot)
     } else if (online.mode !== 'leaving') {
       online.pendingStop = true // stand up (or call off the trip); leaving already resolves
@@ -322,8 +375,15 @@ function interact() {
     return
   }
   if (doing.activity.kind !== 'free') { doing.standUp = true; return }
+  if (doing.pending) { letGo(); route.points = []; return }   // call off the walk there
   const target = targetNear({ x: avatar.x, z: avatar.z }, TAKEN, 2.2)
   if (target) walkTo(target.kind === 'seat' ? target.seat : target.spot)
+}
+
+/** The floor under the pointer: a hand over a free chair or the counter, which a click would use. */
+export function hoverAt(point: Point | null) {
+  const want = point && targetNear(point, takenNow()) ? 'pointer' : ''
+  if (document.body.style.cursor !== want) document.body.style.cursor = want
 }
 
 if (import.meta.env.DEV && typeof window !== 'undefined') {
@@ -372,6 +432,7 @@ function useKeys() {
 export default function Avatar() {
   const root = useRef<THREE.Group>(null)
   const marker = useRef<THREE.Mesh>(null)
+  const aim = useRef<THREE.Mesh>(null)
   const held = useKeys()
   const motion = useRef<Motion>({ pose: 'stand', speed: 0 })
   const setZone = useOfficeUi((s) => s.setZone)
@@ -418,6 +479,7 @@ export default function Avatar() {
     }
     if (nowOnline) {
       onlineFrame(dt, { held, motion, root, marker }, setZone)
+      refreshAction(aim.current, performance.now() / 1000)
       return
     }
     let [sx, sy] = [0, 0]
@@ -441,6 +503,7 @@ export default function Avatar() {
       root.current?.position.set(avatar.x, 0, avatar.z)
       if (root.current) root.current.rotation.y = avatar.facing
       if (marker.current) marker.current.visible = false
+      refreshAction(aim.current, performance.now() / 1000)
       return
     }
     let dir: Point = { x: 0, z: 0 }
@@ -492,6 +555,7 @@ export default function Avatar() {
     }
     const zone = zoneAt(avatar.x, avatar.z)
     if (zone?.id !== useOfficeUi.getState().zone?.id) setZone(zone)
+    refreshAction(aim.current, performance.now() / 1000)
   })
 
   return (
@@ -509,7 +573,15 @@ export default function Avatar() {
         <Html position={[0, look.height + 0.33, 0]} center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
           <div className="office-name">{name}</div>
         </Html>
+        <Html position={[0, 0, 0]} center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
+          <ActionChip onAct={interact} />
+        </Html>
       </group>
+      {/* the chair or counter E means: a halo round the seat, or a ring on the floor at the counter */}
+      <mesh ref={aim} rotation-x={-Math.PI / 2} visible={false}>
+        <ringGeometry args={[0.34, 0.42, 48]} />
+        <meshBasicMaterial color="#c9803f" transparent opacity={0.9} depthWrite={false} />
+      </mesh>
       <mesh ref={marker} rotation-x={-Math.PI / 2} visible={false}>
         <ringGeometry args={[0.18, 0.24, 32]} />
         <meshBasicMaterial color="#c9803f" transparent opacity={0.85} depthWrite={false} />

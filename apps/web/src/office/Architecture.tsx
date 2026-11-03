@@ -213,11 +213,14 @@ function TerrazzoPatches() {
   return <mesh geometry={geometry} material={material} receiveShadow />
 }
 
-function Floor({ onPick }: { onPick?: (p: THREE.Vector3) => void }) {
+type FloorEvents = { onPick?: (p: THREE.Vector3) => void; onHover?: (p: THREE.Vector3 | null) => void }
+
+function Floor({ onPick, onHover }: FloorEvents) {
   const map = useFloorTexture()
   return (
     <mesh rotation-x={-Math.PI / 2} position={[WORLD.width / 2, 0, WORLD.depth / 2]} receiveShadow
-      onPointerDown={(e) => { if (e.button === 0 && onPick) { e.stopPropagation(); onPick(e.point) } }}>
+      onPointerDown={(e) => { if (e.button === 0 && onPick) { e.stopPropagation(); onPick(e.point) } }}
+      onPointerMove={onHover && ((e) => onHover(e.point))} onPointerOut={onHover && (() => onHover(null))}>
       <planeGeometry args={[WORLD.width, WORLD.depth]} />
       <meshStandardMaterial map={map} roughness={0.82} />
     </mesh>
@@ -320,12 +323,12 @@ function SectionCaps() {
   return <mesh geometry={geometry}><meshStandardMaterial color={SECTION} roughness={0.8} /></mesh>
 }
 
-export default function Architecture({ onPick }: { onPick?: (p: THREE.Vector3) => void }) {
+export default function Architecture({ onPick, onHover }: FloorEvents) {
   const solid = WORLD.walls.filter((w) => w.kind !== 'glass')
   const glass = useGlass(WORLD.walls.filter((w) => w.kind === 'glass'))
   return (
     <group>
-      <Floor onPick={onPick} />
+      <Floor onPick={onPick} onHover={onHover} />
       <TerrazzoPatches />
       {solid.flatMap((wall) => wallPieces(wall).map((p) => <SolidPiece key={p.id} piece={p} height={wall.height} />))}
       <SectionCaps />

@@ -137,3 +137,34 @@
 }
 .office-asset-review:hover { background: #fff; color: #1e2126; }
 .office-asset-review:focus-visible { outline: 2px solid #c9803f; outline-offset: 2px; }
+
+/* What E does now (ActionChip): under the avatar's feet, oak key cap, like the name pill */
+.office-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 48px;
+  padding: 4px 11px 4px 4px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 14px rgba(30, 33, 38, 0.18);
+  color: #1e2126;
+  font: 600 12px/1.2 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  white-space: nowrap;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.office-action:hover { background: #fff; }
+.office-action:focus-visible { outline: 2px solid #c9803f; outline-offset: 2px; }
+.office-action kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: #8a5a2b;
+  color: #fff;
+  font: 700 11px/1 system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+.office-action.busy { padding: 5px 11px; color: #6b6e73; font-weight: 500; cursor: default; }
