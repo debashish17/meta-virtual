@@ -18,13 +18,14 @@ order, feature freeze and cut list in `IMPLEMENTATION_PLAN.md` 3.1). The rest of
 applies. **Nothing in Phase 6 has been started.**
 
 **State right now**
-- `main` at `5a02fe6`, **pushed**: GitHub `debashish17/meta-virtual` (private) matches it. Phases
-  1 to 5 are merged; the plan, the hosting setup, the deploy config and the first-visit name card
-  are on `main`. Before pushing again: `git fetch` and
+- `main` at `95e408f` plus this handoff update. GitHub `debashish17/meta-virtual` (private) was
+  last pushed at `27ff77a`; run `git log origin/main..main` to see what is not pushed yet. Phases
+  1 to 5 are merged; the plan, the hosting setup, the deploy config, the first-visit name card and
+  the refresh-ghost fix are on `main`. Before pushing: `git fetch` and
   `git rev-list --left-right --count main...origin/main` must show `N 0` (never force-push; the
   history was rewritten on 2026-11-03, so any older copy must be reset to `origin/main` first).
-- Checks on `5a02fe6` (2026-11-04, 00:00): `pnpm typecheck`, `pnpm lint` and `pnpm test` pass
-  (server 190, shared 123, web 188 tests); `pnpm test:e2e` 8 of 8, including `demo.spec` (2.1 min).
+- Checks on `95e408f` (2026-11-04): `pnpm typecheck`, `pnpm lint` and `pnpm test` pass (server
+  192, shared 123, web 192 tests); `pnpm test:e2e` 8 of 8, including `demo.spec` (2.0 min).
 - The owner keeps merging fixes from their own sessions (`fix/*` branches; the latest touched
   sitting, reservations, the E chip and "my day"). Fetch and rebase often, P6-A above all: it edits
   the same activity code.
@@ -32,9 +33,10 @@ applies. **Nothing in Phase 6 has been started.**
   runs now, as P6-R.
 
 **Live now (P4-A, fast mode, deployed with the owner's OK)**
-- Web: `https://meta-virtual-office.vercel.app`, built from `644d96f`. Server:
+- Web: `https://meta-virtual-office.vercel.app`, built from `95e408f`. Server:
   `https://meta-virtual-office.fly.dev`, one machine in Fly region `sin`, image built from
-  `13cd161` (`/health` reports that version; no server code has changed since).
+  `95e408f` (`/health` reports the version). Roll back with `fly deploy --image` and the previous
+  image tag (`fly releases -a meta-virtual-office` lists them).
 - Sign-in, fast mode: `AUTH_MODE=dev`, so the server trusts `dev:<name>`. A first visit to the
   deployed site shows a "Who are you?" card before the office loads: type your own name, or Join as
   Maya / Join as Arjun for the demo script. The choice is kept in that browser (`office.me` in
@@ -64,6 +66,26 @@ applies. **Nothing in Phase 6 has been started.**
   - P6-B: invitees are picked from the people in the office. Their names are what visitors typed.
   - P6-E: the story starts at this card (Maya and Arjun pick their names), then check-in.
   - Lanes must not change `AuthGate.tsx` or `me.ts` without a request to the lead.
+
+**Implemented since the plan was written (2026-11-04, `95e408f`): no ghost avatar on refresh**
+- The owner saw several copies of themselves after refreshing. Cause, from Phase 2: a refreshed
+  page drops its socket, and the room held the old player for the reconnect window
+  (`RECONNECT_SECONDS`, 20 s) beside the new one. Measured live before the fix: 1, 2, 3 avatars
+  after two quick refreshes, back to 1 after about 20 s.
+- `apps/server/src/room/office.room.ts`: `onDrop` keeps each pending reconnection in `dropped`.
+  `onJoin` calls `releaseDropped(userId)`, which rejects that person's pending reconnections
+  (with `false`, exactly as the window's own timeout does), so `onLeave` removes the old player at
+  once. Connected sessions are untouched: two tabs of one person, or two people who typed the
+  same name, both stay.
+- `apps/web/src/net/connection.ts`: `pagehide` makes a consented leave (`leaveOnPageHide`, which
+  calls `stopNet`); `pageshow` from the back-forward cache joins again (`rejoinOnPageShow`).
+- Tests: two room tests in `office.room.test.ts` (shown failing without the fix), four in
+  `apps/web/src/net/pageLifecycle.test.ts`. Gotcha for room tests: rejecting a reconnection
+  restarts Colyseus' 1 s auto-dispose timer. If a test ends before it fires, vitest's forks pool
+  fails the file with "Unexpected call to process.send()", so such a test sleeps 1.5 s at the end.
+- Verified live: three quick refreshes keep one avatar; closing a real browser tab removes it in
+  0.6 s. A connection that dies without any goodbye (a crash, a lost network) still lingers for
+  20 s, by design, so a blip can reconnect.
 
 **Hosting accounts**
 
@@ -501,6 +523,7 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 | Improvement loop (lead) | lead | main (fba1251 + demo/teleport fix) | done: dev-auth Postgres ids, Players memo, chat history pull, dev teleport (idle-reconcile fixed), test:scripts; gates green, contract 4/4, e2e spot-check green (demo 5.1m, calls + live-meeting 5/5). Demo fix: dismiss Calls-unavailable panel (covers drawer) + idle-sync decision clicks. Request to P5-B: call panel structurally overlaps the drawer column during live calls | |
 | FIX avatar-sync + office-glitches (owner) | owner session | fix/avatar-sync, fix/office-glitches | merged (--no-ff, owner request 2026-11-03): room at a true 20 Hz with an input queue, reconcile and draw-between-ticks, paced remote snapshots; name tags under panels, Ask close, typing above the desk, people keep apart, chairs swivel; open items closed; then sitting: walk off after standing up (WalkMap step-out), the E action chip and seat halo, synced reservations (OfficeState.taken) | FIX-avatar-sync.md, FIX-office-glitches.md, FIX-sitting.md |
 | FIX first-visit name card (owner request) | lead | main (`644d96f`) | merged and deployed 2026-11-04: deployed dev-auth build asks "Who are you?" before joining; checks green, e2e 8/8, verified live with a fresh browser | section 0 |
+| FIX refresh ghost avatars (owner report) | lead | main (`95e408f`) | merged and deployed 2026-11-04: the room replaces a person's dropped session on rejoin; the page leaves on `pagehide`; checks green, e2e 8/8, verified live | section 0 |
 | P6-0 contract and slots | lead | wp/P6-0-contract | not started | |
 | P6-A status, home desks, colleagues | | wp/P6-A-status-desks | not started (needs P6-0) | |
 | P6-R receipts (USP A Phase 0) | | wp/P6-R-receipts | not started (needs P6-0) | |
