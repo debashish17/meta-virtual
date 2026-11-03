@@ -9,47 +9,68 @@ the finished work against it.
 
 ---
 
-## 0. Start here: the deadline sprint (written 2026-11-03)
+## 0. Start here: the deadline sprint (updated 2026-11-03, evening)
 
-**Deadline: 2026-11-04, 21:00 (the owner's local time).** Two streams run at once: the deploy
-(P4-A, then the rehearsal P4-C) and Phase 6, office life (`WORK_PACKAGES.md` Phase 6, shared
-design in `ARCHITECTURE.md` 12.10). The order, the feature freeze and the cut list are in
-`IMPLEMENTATION_PLAN.md` 3.1. The rest of this file still applies.
+**Deadline: 2026-11-04, 21:00 (the owner's local time).** What gets judged is the public demo:
+the Acme script (`PROJECT_BRIEF.md` section 5) in two browsers on the deployed URL. The new work
+for the deadline is Phase 6 (`WORK_PACKAGES.md` Phase 6; shared design in `ARCHITECTURE.md` 12.10;
+order, feature freeze and cut list in `IMPLEMENTATION_PLAN.md` 3.1). The rest of this file still
+applies. **Nothing in Phase 6 has been started.**
 
-**State of the code**
-- `main` at `afb539a` or later: Phases 1 to 5 merged, except P4-A, P4-C and P5-D (the deploy and
-  the rehearsals). The owner keeps merging fixes from their own sessions (`fix/*` branches; the
-  latest touched sitting, reservations and the E chip). Fetch and rebase often, P6-A above all: it
-  edits the same activity code.
-- Set up on 2026-11-03 but **not committed** when this was written: `.gitignore` (the `.vercel`
-  and `.env*.local` lines), `fly.toml` (the real app name), `.mcp.json` (the Supabase MCP), and the
-  Phase 6 docs. If `git status` still shows them, the lead commits them first, on `main`, as
-  "Lead: hosting accounts and the Phase 6 plan".
+**State right now**
+- `main` at `097963e` (local only; nothing is pushed). Phases 1 to 5 are merged. The plan and the
+  hosting setup are committed (`13cd161`, `097963e`).
+- The owner keeps merging fixes from their own sessions (`fix/*` branches; the latest touched
+  sitting, reservations, the E chip and "my day"). Fetch and rebase often, P6-A above all: it edits
+  the same activity code.
+- `docs/USP_A_IMPLEMENTATION_PLAN.md` is the owner's plan for after the deadline. Only its Phase 0
+  runs now, as P6-R.
 
-**Deployed 2026-11-03 (P4-A, fast mode, owner approved):** web
-`https://meta-virtual-office.vercel.app`, server `https://meta-virtual-office.fly.dev` (Fly `sin`,
-one machine). Fast mode: `AUTH_MODE=dev` (name picker), in-memory repo (no `DATABASE_URL`),
-`FixtureLlm`; data resets when the machine stops. Verified live: `/health`, two players join over
-the internet and see each other, `/me/day`, `/ask` answers the Acme question with sources and
-abstains on the CEO question, CORS answers only the Vercel origins. How it was done (repeat it for
-redeploys): `fly deploy` from the repo root; for the web, `vercel pull --yes --environment=production`,
-`vercel build --prod --yes`, `vercel deploy --prebuilt --prod --yes`, all from the repo root.
+**Live now (P4-A, fast mode, deployed 2026-11-03 with the owner's OK)**
+- Web: `https://meta-virtual-office.vercel.app`. Server: `https://meta-virtual-office.fly.dev`
+  (one machine, Fly region `sin`). Both run `13cd161`.
+- Fast mode: `AUTH_MODE=dev` (the "Join as" name picker), the in-memory repo (no `DATABASE_URL`),
+  `FixtureLlm`. Data resets whenever the machine stops; it stops when idle and starts on the next
+  visit in a few seconds.
+- Verified live: `/health`; two players join over the internet in under 0.4 s and see each other;
+  `/me/day`; `/ask` answers the Acme question with six sources and abstains on the CEO question;
+  CORS answers only the two Vercel origins in `fly.toml`.
 
-**Region (measured, not guessed).** Connect times from the owner's machine: Mumbai 0.09 s,
-Singapore 0.10 s, Frankfurt 0.22 s, US East 0.28 s. Fly no longer provisions Mumbai (`bom`), so
-the server runs in Singapore (`sin`). The hosted Supabase project was auto-placed in **Frankfurt**
-(AWS eu-central-1, found from its address), and the two migrations are applied there. Before the
-full deploy, either create a new Supabase project in Singapore (ap-southeast-1), re-apply the
-migrations and point `.mcp.json` at it, or move the server to Frankfurt (`fra`). The server and
-the database must share a region.
-
-**Hosting accounts (set up 2026-11-03)**
+**Hosting accounts**
 
 | Service | What exists | How to reach it |
 |---|---|---|
-| Fly.io | App `meta-virtual-office` in the owner's personal org (shown as "Dibya Debashish Bhoi", slug `personal`). Status pending: no machines, no deploy. Its URL will be `https://meta-virtual-office.fly.dev`. `fly.toml` names it and `fly config validate` passes. | `flyctl` 0.5.2 in `%USERPROFILE%\.fly\bin` (on the user PATH for new shells; otherwise call `~/.fly/bin/flyctl.exe`). Logged in on this machine. |
-| Vercel | Project `meta-virtual-office` in team `debashish17s-projects`: Root Directory `apps/web`, Vite preset, Node 22.x. Linked at the **repo root** (`.vercel/`, ignored). No env vars, no deploys yet. | `vercel` CLI, logged in as `debashish17`. Deploy from the repo root (`vercel --prod`), not from `apps/web` as `DEPLOY.md` 2.1 says. |
-| Supabase | Hosted project `ubhkqklqkqaydjfyoten` (`https://ubhkqklqkqaydjfyoten.supabase.co`). Empty: no tables, no migrations. The anon and publishable keys are active. Auth signs user tokens with ES256 (its JWKS holds an ES256 key), which is what `SupabaseAuth` verifies. | The Supabase MCP in `.mcp.json`. It is project-scoped: approve it when a session starts in the repo root, then authenticate once through `/mcp`. The Supabase CLI is not logged in and is not needed. |
+| Fly.io | App `meta-virtual-office` in the owner's personal org ("Dibya Debashish Bhoi", slug `personal`). One machine in `sin`. `fly.toml` holds the name, region, `AUTH_MODE = "dev"` and `ALLOWED_ORIGINS`. | `flyctl` 0.5.2 in `%USERPROFILE%\.fly\bin` (on the user PATH for new shells; otherwise `~/.fly/bin/flyctl.exe`). Logged in on this machine. |
+| Vercel | Project `meta-virtual-office` in team `debashish17s-projects`: Root Directory `apps/web`, Vite, Node 22.x, linked at the **repo root** (`.vercel/`, ignored). Production env: `VITE_SERVER_URL`, `VITE_AUTH_MODE` (`dev`), `VITE_API` (`http`), all non-sensitive. | `vercel` CLI, logged in as `debashish17`. Always run it from the repo root, not from `apps/web` as `DEPLOY.md` 2.1 says. |
+| Supabase | Project `ubhkqklqkqaydjfyoten` (`https://ubhkqklqkqaydjfyoten.supabase.co`), auto-placed in **Frankfurt** (AWS eu-central-1). Both migrations applied; RLS on all 13 tables; no rows, no users. Auth signs with ES256, which `SupabaseAuth` verifies. **The live demo does not use it yet.** | The Supabase MCP in `.mcp.json` (project-scoped: approve it when a session starts in the repo root, authenticate once through `/mcp`). The Supabase CLI is not logged in and is not needed. |
+
+**Region (measured, not guessed: the owner asked for that).** Connect times from the owner's
+machine: Mumbai 0.09 s, Singapore 0.10 s, Frankfurt 0.22 s, US East 0.28 s. Fly no longer
+provisions Mumbai (`bom`), so the server is in Singapore. The Supabase project is in Frankfurt, so
+it does not match the server. That only matters for the full deploy; see decision 1 below.
+
+**How to redeploy (needs the owner's OK each time)**
+- Server, from the repo root:
+  `~/.fly/bin/flyctl.exe deploy --build-arg GIT_COMMIT=$(git rev-parse --short HEAD) --ha=false --yes`.
+  Then check `curl https://meta-virtual-office.fly.dev/health` for the new `version`.
+- Web, from the repo root:
+  1. `vercel pull --yes --environment=production`
+  2. `vercel build --prod --yes`
+  3. `vercel deploy --prebuilt --prod --yes`
+
+  The build runs on this machine with the pulled env (`VITE_*` are baked in at build time); only
+  `.vercel/output` is uploaded.
+- After either: the two-player join check (the Node snippet in `DEPLOY.md` 1.2, run from
+  `apps/web` with `new Client('https://meta-virtual-office.fly.dev')`), and the site opening in a
+  browser.
+
+**Lessons from the first deploy**
+- Chain dependent host commands with `&&`. A clone to `bom` failed, and the next command still
+  destroyed the only machine (about two minutes down).
+- `.dockerignore` now keeps `.worktrees/` (1.6 GB), web assets, docs, test output and local env
+  files out of the image's build context. Keep it that way.
+- `fly deploy --image registry.fly.io/meta-virtual-office:<tag>` redeploys a built image without
+  rebuilding (used for the region move and the CORS change).
 
 **Rules for the hosted services**
 - Every deploy, and every change to a hosted database or host setting, needs the owner's OK in
@@ -77,34 +98,79 @@ the database must share a region.
     never reach the other browser;
   - `VITE_SUPABASE_URL`;
   - `VITE_SUPABASE_ANON_KEY`, from the MCP's `get_publishable_keys`.
-- After the web deploy: set `ALLOWED_ORIGINS` on Fly to the Vercel URL (`DEPLOY.md` 1.3).
+- `ALLOWED_ORIGINS` in `fly.toml` already names both Vercel origins. A new web domain must be
+  added there, then redeploy the server.
 
-**Open owner questions** (ask before the step that needs them)
-- D14, deploy mode: the full deploy (default, now that Supabase exists) or the fast fallback
-  (`IMPLEMENTATION_PLAN.md` section 5).
-- The Supabase project's region (Dashboard, Project Settings, General). `fly.toml` says
-  `primary_region = "lhr"`; move it to the Fly region nearest the database before the first deploy.
-- Committing the uncommitted setup files above.
+**Open owner decisions** (ask the owner; do not decide them yourself)
+1. **D14, deploy mode.** Stay in fast mode for the deadline (recommended by the previous lead: it
+   already runs the whole demo, with the least risk), or switch to the full deploy (real email and
+   password sign-in, data kept in Postgres). If full: the owner creates a new Supabase project in
+   **Singapore** (Dashboard, New project, region "Southeast Asia (Singapore)") so the database sits
+   next to the server, and fills in `.env.hosted.local`. The steps are under "Full mode" below.
+2. **Keep one machine always on for judging day** (`min_machines_running = 1` in `fly.toml`,
+   roughly USD 2 a month): no cold start, and the in-memory demo data survives idle periods.
+3. **Pushing `main`** to the remote: only when the owner asks (see the memory note on the rewritten
+   history: reset stale copies to `origin/main` first).
 
-**Next, in order**
-1. Lead: commit the setup and the plan; build P6-0 on `wp/P6-0-contract` and merge it.
-2. Deploy agent, with the owner: P4-A.
-   1. Answer D14 and the region.
-   2. Apply the migrations through the MCP and run the seed.
-   3. Fly secrets and env, Vercel env.
-   4. Deploy, with the owner's OK.
-   5. Check `/health`, run a two-browser smoke test, set `ALLOWED_ORIGINS`.
+**What to do next, in order**
+1. **P6-0 contract and slots** (lead agent; `WORK_PACKAGES.md` P6-0). Branch
+   `wp/P6-0-contract` from the newest `main`. It includes the receipt contract for P6-R. Done
+   when: checks pass, `e2e/demo.spec.ts` passes unchanged, and the office looks the same
+   (screenshot). Merge it with `--no-ff`. Do this first and fast: every lane waits for it.
+2. **Lanes, in parallel, once P6-0 is merged** (one agent each, own worktree, the lane prompt in
+   section 6, ports from section 5):
+   - P6-A status, home desks, four colleagues (slot lane 1);
+   - P6-R receipts (USP A Phase 0) (slot lane 2);
+   - P6-B meetings in the rooms (slot lane 3);
+   - P6-C notes when an agent is free (slot lane 4).
 
-   Today's `main` goes out first, so a working demo is online whatever happens later.
-3. Once P6-0 is merged: P6-A, P6-R (receipts, USP A Phase 0) and P6-B, one lane agent each (the
-   lane prompt in section 6; ports from section 5); P6-C when an agent is free. P6-D only by the
-   rule in `IMPLEMENTATION_PLAN.md` 3.1.
-4. Feature freeze 2026-11-04 at 15:00 to 16:00, then:
-   1. merge;
-   2. checks and e2e;
+   With fewer agents, the priority is P6-A, P6-R, P6-B, P6-C. P6-D only if P6-A and P6-B are
+   merged and green by about 12:00 on 2026-11-04.
+3. **The lead merges each lane** as its report comes in: rebase, checks, `e2e/demo.spec.ts`,
+   merge `--no-ff`, mark the status board. After a merge that works, redeploy (with the owner's OK)
+   so the live site follows `main`. Keep the previous image tag, to roll back with
+   `fly deploy --image`.
+4. **Feature freeze, 2026-11-04 between 15:00 and 16:00.** Unfinished cut-first tasks are dropped
+   and reported (cut order in `IMPLEMENTATION_PLAN.md` 3.1). Then:
+   1. final merge;
+   2. `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm test:e2e`;
    3. redeploy;
-   4. P6-E and P4-C on the public URL;
-   5. the backup video.
+   4. P6-E (the office-life story, then the Acme demo) and P4-C (the rehearsal: two devices,
+      a reconnect, the LLM-unavailable case) on the public URL;
+   5. the owner records the backup video (`docs/DEMO_VIDEO.md`);
+   6. an hour of buffer before 21:00.
+5. **After the deadline:** the final review (Phase 7, section 8), then the USP A plan's Phases 1
+   to 4, each behind its gate and the owner's approval.
+
+**Full mode (only if the owner chooses it in decision 1)**
+1. The owner creates the Singapore Supabase project and gives the new project ref.
+2. Point `.mcp.json` at the new ref (`claude mcp add --scope project ...` as before). The owner
+   approves and authenticates the server in a new session in the repo root.
+3. Apply both migrations through the MCP (`apply_migration`, named after the files). Check
+   `pg_tables.rowsecurity` and `get_advisors`. Two low-risk warnings are already known, on the
+   helper functions in `20261101000001_office_rls.sql`: `request_user_id` has no fixed
+   `search_path`, and `is_workspace_member` can be called over RPC. Fix them in a new migration
+   file in the repo, and apply that too.
+4. The owner writes `.env.hosted.local` (names in "Rules for the hosted services" below). Seed:
+   `node --env-file=.env.hosted.local supabase/seed.mjs`.
+5. Fly: stage the secrets (`fly secrets import --stage`). In `fly.toml` set
+   `AUTH_MODE = "supabase"` and add `NODE_ENV = "production"`; then redeploy.
+6. Vercel: set `VITE_AUTH_MODE=supabase`, add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
+   (the MCP's `get_publishable_keys`); rebuild and redeploy the web.
+7. Verify: sign in as Maya and as Arjun in two browsers and run the Acme demo. Then delete or
+   pause the Frankfurt project (the free plan allows two active projects).
+
+**Prompt for the next lead agent** (copy as is)
+
+> You are the lead agent for the Virtual Office repository at
+> `C:\Users\devd9\muse-sandbox\meta-virtual`. Read `AGENTS.md`, then `docs/HANDOFF.md` section 0
+> (start here), then `docs/IMPLEMENTATION_PLAN.md` section 3.1 and the Phase 6 packages in
+> `docs/WORK_PACKAGES.md`, and `docs/ARCHITECTURE.md` 12.10. The deadline is 2026-11-04 at 21:00.
+> The demo is live in fast mode; do not redeploy, change a hosted service or push without the
+> owner's OK in this session. Ask the owner the open decisions in section 0 when a step needs them.
+> Build P6-0 yourself on `wp/P6-0-contract`, merge it, then hand P6-A, P6-R, P6-B (and P6-C) to
+> lane agents with the lane prompt in section 6. Keep the status board (section 7) current and
+> `e2e/demo.spec.ts` unchanged and green after every merge. Stop and report at the feature freeze.
 
 ---
 
@@ -166,7 +232,7 @@ The defaults and what each decision blocks are in `docs/IMPLEMENTATION_PLAN.md` 
 | D11 | Home desks | Each person sits at their own desk in their department; sofas and other seats are free for anyone (2026-11-03) |
 | D12 | Colleagues (NPCs) | Keep a few for life in the office: four (2026-11-03) |
 | D13 | Meetings | In the existing rooms; a virtual call-only meeting when all are busy (cut first) (2026-11-03) |
-| D14 | Deploy mode (full, or the fast fallback) | Not decided yet; default full |
+| D14 | Deploy mode (full, or the fast fallback) | Fast mode live since 2026-11-03; full mode not decided (needs a Supabase project in Singapore; section 0) |
 | D15 | USP A Phase 0 (receipts) before the deadline | Yes, as P6-R; USP A Phases 1 to 4 after the deadline (2026-11-03) |
 
 **What the owner prepares, and when**
