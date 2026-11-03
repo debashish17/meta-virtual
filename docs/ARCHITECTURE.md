@@ -64,7 +64,7 @@ PlayerView = {
   x: number; z: number; facing: number;   // metres, radians
   pose: Pose; speed: number;              // m/s
   activity: { kind: "seat" | "counter"; targetId: string } | null;
-  status: "available" | "in_meeting" | "away";
+  status: "available" | "working" | "on_break" | "in_meeting" | "away";
   zoneId: string | null;
   lastSeq: number;                        // seq of the last input the server applied
 }
@@ -83,8 +83,9 @@ NpcView = {
 | `activity_start` | `{ seq: number; targetId: string }` | A desk seat id (`seat:x,z`) or a counter spot id; must be known and free |
 | `activity_stop` | `{ seq: number }` | Ends the activity (standing up first, as in the office today) |
 | `chat_send` | `{ text: string }` | 1 to 500 chars, trimmed, rate-limited |
-| `status_set` | `{ status: PlayerView["status"] }` |  |
+| `status_set` | `{ status: PlayerView["status"] }` | Never moves anyone (12.10) |
 | `look_set` | `{ look: AvatarLook }` |  |
+| `go_to` | `{ seq: number; place: "desk" \| "break" }` | Sets the status (`working` / `on_break`) and walks there through the activity pipeline; no home desk gives `error no_home_desk` |
 
 `seq` counts the client's ticks (12.1).
 
@@ -95,8 +96,9 @@ NpcView = {
 | `chat` | `{ id, userId, name, text, ts }` |
 | `chat_history` | `{ messages: ChatMessage[] }` (the last 50, sent on join) |
 | `zone_event` | `{ userId, zoneId, kind: "enter" \| "leave" }` |
-| `records_changed` | `{ kinds: RecordKind[] }` |
-| `error` | `{ code: "invalid_message" \| "rate_limited" \| "unwalkable" \| "target_taken" \| "unauthorized" \| "protocol_mismatch"; message }` |
+| `records_changed` | `{ kinds: RecordKind[] }` (`tasks`, `milestones`, `commitments`, `proposed_changes`, `meetings`, `bookings`, `board`) |
+| `meeting_invite` | `{ bookingId, zoneId: string \| null, title, hostName }` |
+| `error` | `{ code: "invalid_message" \| "rate_limited" \| "unwalkable" \| "target_taken" \| "unauthorized" \| "protocol_mismatch" \| "no_home_desk"; message }` |
 
 **Movement rules**
 - Server tick fixed at `TICK_HZ` (20 Hz). The client never sends final positions.
@@ -106,6 +108,8 @@ NpcView = {
 - Proximity events use hysteresis (enter at 3 m, leave at 4 m).
 
 **Changed in P1-A1:** the token moved out of the join options into `client.auth.token` with `static onAuth`; `protocol` / `PROTOCOL_VERSION` added; `AuthClaims` added; `activity_start`, `activity_stop` and `look_set` added; the error codes enumerated; the state gained `look`, `pose`, `speed`, `activity` and `lastSeq` and split into `PlayerView` / `NpcView`; the constants (`TICK_HZ`, `INTERP_DELAY_MS`, `SNAP_DISTANCE`, rate limits, `RECONNECT_SECONDS`, proximity distances) named; movement runs the shared `stepPlayer` with `lastSeq` reconciliation.
+
+**Changed in P6-0:** `PROTOCOL_VERSION` 2; `Status` gains `working`, `on_break`; client message `go_to` added; server message `meeting_invite` added; `RecordKind` gains `bookings`, `board`; `ErrorCode` gains `no_home_desk`.
 
 ## 5. HTTP API contract
 
@@ -122,18 +126,32 @@ All endpoints require `Authorization: Bearer <Supabase JWT>`. Bodies and respons
 | `POST /proposed-changes/:id/approve` | Apply one change in a transaction, write audit row, notify room | `{ ok: true }` |
 | `POST /proposed-changes/:id/reject` | Mark rejected, write audit row | `{ ok: true }` |
 | `POST /ask` | Ask the office | `AskResult` |
+| `POST /bookings` | Book a room (or a virtual call-only meeting with `zoneId: null`) | `Booking` |
+| `GET /bookings?status=open` | The open bookings | `{ bookings: Booking[] }` |
+| `POST /bookings/:id/end` | End a booking, freeing the room (host only) | `{ ok: true }` |
+| `GET /notes` | The caller's private notes | `{ notes: Note[] }` |
+| `POST /notes` | Add a note | `Note` |
+| `PATCH /notes/:id` | Edit a note (author only) | `Note` |
+| `DELETE /notes/:id` | Delete a note (author only) | `{ ok: true }` |
+| `GET /board` | The company-board pins | `{ pins: BoardPin[] }` |
+| `POST /board` | Pin to the board | `BoardPin` |
+| `DELETE /board/:id` | Remove a pin (author only) | `{ ok: true }` |
+| `GET /receipts?accountId=&projectId=&limit=` | One decided change each, newest first | `{ receipts: Receipt[] }` |
 
 ```ts
 AskResult = {
   answer: string;
   abstained: boolean;
-  sources: { type: "task"|"milestone"|"commitment"|"meeting"|"account"|"project"; id: string; label: string }[];
+  sources: { type: "task"|"milestone"|"commitment"|"meeting"|"account"|"project"; id: string; label: string; meetingLabel?: string; approverName?: string }[];
 }
 ```
 
 Record, change, extraction, status and ask shapes are Zod schemas in `packages/shared/src/api`
 (P1-A2). **Changed in P1-A:** the `GET /proposed-changes` list added; the fixture meeting
-variant named.
+variant named. **Changed in P6-0:** `Booking`, `Note`, `BoardPin` and `Receipt` shapes
+with their create, update, query and list envelopes; `Meeting` gains optional `agenda`,
+`MeetingCreate` optional `bookingId`; `AskResult` sources gain optional `meetingLabel` and
+`approverName`.
 
 ## 6. Data model (Postgres)
 
@@ -152,8 +170,11 @@ Every row of workspace data carries `workspace_id`. RLS: a user may read and wri
 | `proposed_changes` | meeting_id, type, target_table, target_id, before (jsonb), after (jsonb), status (pending/approved/rejected), decided_by, decided_at |
 | `audit_log` | actor_id, action, table, row_id, before, after, ts |
 | `chat_messages` | room, user_id, text, ts |
+| `bookings` | zone (nullable), title, agenda, host, invitees, status, times |
+| `notes` | user (author-only), text, color, done |
+| `board_pins` | author, text, color |
 
-Every AI-created or AI-changed record keeps `source_meeting_id`.
+Every AI-created or AI-changed record keeps `source_meeting_id`. Meetings keep the booking's `agenda` and `booking_id` when processed from one (P6-B). Receipts add no table: `GET /receipts` composes them from audit rows, changes, meetings and people (P6-R).
 
 ## 7. Meeting intelligence pipeline
 

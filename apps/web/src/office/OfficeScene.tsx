@@ -15,6 +15,7 @@ import Pedestrians from './Pedestrians'
 import Sprites from './Sprites'
 import LiveShare from './displays/LiveShare'
 import WallDisplays from './displays/WallDisplays'
+import BoardTexture from '../board/BoardTexture'
 import Players from '../net/Players'
 import Panels from '../ui/Panels'
 import { PALETTE } from './palette'
@@ -67,6 +68,7 @@ export default function OfficeScene() {
           <Colleagues />
           <Players />
           <WallDisplays />
+          <BoardTexture />
           <LiveShare />
           <Pedestrians />
           <ReadySignal />

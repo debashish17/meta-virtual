@@ -1,4 +1,4 @@
-import type { Application, NextFunction, Request, Response } from "express";
+import { Router, type Application, type NextFunction, type Request, type Response } from "express";
 import {
   AccountStatus,
   AskRequest,
@@ -29,6 +29,10 @@ import {
   issueCallToken,
 } from "../calls/tokens.js";
 import type { Deps } from "../deps.js";
+import { mountBoardRoutes } from "../board/routes.js";
+import { mountBookingRoutes } from "../bookings/routes.js";
+import { mountNoteRoutes } from "../notes/routes.js";
+import { mountReceiptRoutes } from "../receipts/routes.js";
 import { NotFoundError, NotPendingError, type Repo } from "../db/repo.js";
 import type { MeetingContext } from "../llm/types.js";
 import { processMeeting } from "../meetings/pipeline.js";
@@ -148,6 +152,9 @@ function firstQuery(value: unknown): string | undefined {
   }
   return undefined;
 }
+
+/** Lane prefixes served by the P6 router; only these pay its auth+limit middleware. */
+const P6_PREFIXES = ["/bookings", "/notes", "/board", "/receipts"];
 
 /** Which queries refetch after one change of this type is approved. */
 function kindsForChange(type: ChangeType): RecordKind[] {
@@ -360,6 +367,27 @@ export function httpRoutes(app: Application, deps: Deps, options: HttpRoutesOpti
       return issueCallToken({ env: deps.env, claims: claimsOf(req), zoneId: parsed.data.zoneId });
     });
   });
+
+  // P6-0 slots (ARCHITECTURE.md 12.10): one authed router for the office-life features.
+  // Each mount adds its routes here; the lanes own the feature files, these lines stay.
+  // The router is mounted pathlessly, so its auth+limit middleware must only run for lane
+  // prefixes: otherwise /ask (registered after) would pay auth+limit twice, and unmatched
+  // paths would 401 instead of 404.
+  const p6 = Router();
+  p6.use((req, res, next) => {
+    const path = req.path;
+    const isLane = P6_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+    if (!isLane) {
+      next();
+      return;
+    }
+    void auth(req, res, () => limit(req, res, next));
+  });
+  if (deps.bookings) mountBookingRoutes(p6, deps);
+  if (deps.notes) mountNoteRoutes(p6, deps);
+  if (deps.board) mountBoardRoutes(p6, deps);
+  if (deps.receipts) mountReceiptRoutes(p6, deps);
+  app.use(p6);
 
   app.post("/ask", auth, limit, (req, res) => {
     void handle(req, res, async () => {

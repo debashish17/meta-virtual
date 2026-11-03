@@ -4,6 +4,7 @@ import {
   ChatHistory,
   ChatMessage,
   JoinOptions,
+  MeetingInvite,
   PROTOCOL_VERSION,
   RECONNECT_SECONDS,
   RecordsChanged,
@@ -13,6 +14,8 @@ import {
   ZoneEvent,
   type AvatarLook,
   type ChatMessage as ChatMessageView,
+  type GoToPlace,
+  type MeetingInvite as MeetingInviteView,
   type PlayerView,
   type Status,
 } from "@office/shared";
@@ -68,6 +71,8 @@ let leftOnHide = false;
 let latestSelf: PlayerView | null = null;
 let lastError: NetError | null = null;
 let errorCount = 0;
+/** Counts this module's `go_to` messages; see `netSend.goTo`. */
+let goToSeq = 0;
 
 export function serverUrl(): string {
   return import.meta.env.VITE_SERVER_URL ?? "http://localhost:2567";
@@ -100,6 +105,21 @@ export function getSelfSnapshot(): PlayerView | null {
 export function getReserved(): ReadonlySet<string> {
   const taken = (room?.state as { taken?: Iterable<string> } | undefined)?.taken;
   return new Set(taken ?? []);
+}
+
+export type MeetingInviteHandler = (invite: MeetingInviteView) => void;
+
+const inviteListeners = new Set<MeetingInviteHandler>();
+
+/**
+ * Phase 6 (P6-B): subscribe to `meeting_invite` (a booking that names you). Returns an
+ * unsubscribe function. Offline the set stays empty: the panel lists open bookings.
+ */
+export function onMeetingInvite(fn: MeetingInviteHandler): () => void {
+  inviteListeners.add(fn);
+  return () => {
+    inviteListeners.delete(fn);
+  };
 }
 
 export function getLastError(): NetError | null {
@@ -136,6 +156,16 @@ export const netSend = {
   },
   status(status: Status): void {
     room?.send(CLIENT_MESSAGE.statusSet, { status });
+  },
+  /**
+   * Phase 6 (P6-A): walk to the home desk (`desk`, status `working`) or take a break
+   * (`break`, status `on_break`). `seq` counts this module's own `go_to` messages: the
+   * avatar's predictor owns the movement seqs and a button has no tick, so the `go_to`
+   * handler must not treat it as a predictor seq.
+   */
+  goTo(place: GoToPlace): void {
+    goToSeq += 1;
+    room?.send(CLIENT_MESSAGE.goTo, { seq: goToSeq, place });
   },
   look(): void {
     const look = useMe.getState().look;
@@ -196,6 +226,12 @@ function attach(newRoom: OfficeRoom, gen: number): void {
   newRoom.onMessage(SERVER_MESSAGE.zoneEvent, (message: unknown) => {
     if (gen !== generation) return;
     ZoneEvent.safeParse(message); // validated; no UI consumes it yet
+  });
+  newRoom.onMessage(SERVER_MESSAGE.meetingInvite, (message: unknown) => {
+    if (gen !== generation) return;
+    const parsed = MeetingInvite.safeParse(message);
+    if (!parsed.success) return;
+    for (const fn of inviteListeners) fn(parsed.data);
   });
   newRoom.onMessage(SERVER_MESSAGE.error, (message: unknown) => {
     if (gen !== generation) return;

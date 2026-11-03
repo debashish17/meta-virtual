@@ -311,4 +311,30 @@ describe("http routes", () => {
       await (await fetch(`${base}/me/day`, { headers: { Authorization: "Bearer dev:Arjun" } })).status,
     ).toBe(200);
   });
+
+  it("runs the P6 lane middleware only for lane prefixes", async () => {
+    let checks = 0;
+    const limiter = new UserRateLimiter();
+    const check = limiter.check.bind(limiter);
+    limiter.check = (key: string) => {
+      checks += 1;
+      return check(key);
+    };
+    const { base } = await boot({ limiter });
+    // /ask is registered after the pathlessly mounted P6 router: it pays auth+limit once.
+    const asked = await fetch(`${base}/ask`, {
+      method: "POST",
+      headers: { ...MAYA, "Content-Type": "application/json" },
+      body: JSON.stringify({ question: STATUS_QUESTION }),
+    });
+    expect(asked.status).toBe(200);
+    expect(checks).toBe(1);
+    // Unmatched paths skip the lane middleware: 404, no limit token consumed.
+    const missing = await fetch(`${base}/no-such-path`);
+    expect(missing.status).toBe(404);
+    expect(checks).toBe(1);
+    // Unknown subpaths under lane prefixes are still guarded.
+    const laneMissing = await fetch(`${base}/bookings/nope`);
+    expect(laneMissing.status).toBe(401);
+  });
 });

@@ -24,8 +24,11 @@ import {
   HistoryRequest,
   TeleportAdmin,
   ErrorCode,
+  GoTo,
+  GoToPlace,
   JoinOptions,
   LookSet,
+  MeetingInvite,
   MoveIntent,
   MoveTarget,
   NpcView,
@@ -77,6 +80,10 @@ describe("socket contract", () => {
     expect(TeleportAdmin.parse({ x: 1, z: -2 })).toEqual({ x: 1, z: -2 });
     expect(CaptionSend.parse({ text: "  go live  ", final: false, ts: 1 }).text).toBe("go live");
     expect(StatusSet.parse({ status: "in_meeting" }).status).toBe("in_meeting");
+    expect(StatusSet.parse({ status: "working" }).status).toBe("working");
+    expect(StatusSet.parse({ status: "on_break" }).status).toBe("on_break");
+    expect(GoToPlace.parse("break")).toBe("break");
+    expect(GoTo.parse({ seq: 11, place: "desk" })).toEqual({ seq: 11, place: "desk" });
     expect(LookSet.parse({ look }).look).toEqual(look);
     expect(Seq.parse(0)).toBe(0);
     expect(Axis.parse(-1)).toBe(-1);
@@ -100,6 +107,10 @@ describe("socket contract", () => {
     expect(CaptionSend.safeParse({ text: "", final: true, ts: 1 }).success).toBe(false);
     expect(CaptionSend.safeParse({ text: "x", final: "yes", ts: 1 }).success).toBe(false);
     expect(StatusSet.safeParse({ status: "busy" }).success).toBe(false);
+    expect(GoTo.safeParse({ seq: 1, place: "sofa" }).success).toBe(false);
+    expect(GoTo.safeParse({ seq: -1, place: "desk" }).success).toBe(false);
+    expect(GoTo.safeParse({ place: "desk" }).success).toBe(false);
+    expect(GoTo.safeParse({ seq: 1, place: "desk", run: true }).success).toBe(false);
     expect(Status.safeParse("available").success).toBe(true);
     expect(LookSet.safeParse({ look: { ...look, height: 3 } }).success).toBe(false);
   });
@@ -114,6 +125,17 @@ describe("socket contract", () => {
     expect(RecordKind.parse("proposed_changes")).toBe("proposed_changes");
     expect(ServerError.parse({ code: "rate_limited", message: "slow down" }).code).toBe("rate_limited");
     expect(ErrorCode.parse("protocol_mismatch")).toBe("protocol_mismatch");
+    expect(ErrorCode.parse("no_home_desk")).toBe("no_home_desk");
+    expect(RecordKind.parse("bookings")).toBe("bookings");
+    expect(RecordKind.parse("board")).toBe("board");
+    const invite = {
+      bookingId: "00000000-0000-4000-8000-000000000001",
+      zoneId: "acme_room",
+      title: "  Standup  ",
+      hostName: "Maya",
+    };
+    expect(MeetingInvite.parse(invite).title).toBe("Standup");
+    expect(MeetingInvite.parse({ ...invite, zoneId: null }).zoneId).toBeNull();
   });
 
   it("rejects bad server messages", () => {
@@ -124,6 +146,18 @@ describe("socket contract", () => {
     expect(RecordsChanged.safeParse({ kinds: ["widgets"] }).success).toBe(false);
     expect(ServerError.safeParse({ code: "boom", message: "x" }).success).toBe(false);
     expect(ServerError.safeParse({ code: "unwalkable", message: "" }).success).toBe(false);
+    const badInvite = {
+      bookingId: "00000000-0000-4000-8000-000000000001",
+      zoneId: "acme_room",
+      title: "Standup",
+      hostName: "Maya",
+    };
+    expect(MeetingInvite.safeParse({ ...badInvite, bookingId: "nope" }).success).toBe(false);
+    expect(MeetingInvite.safeParse({ ...badInvite, title: "" }).success).toBe(false);
+    expect(MeetingInvite.safeParse({ ...badInvite, title: "x".repeat(121) }).success).toBe(false);
+    expect(MeetingInvite.safeParse({ ...badInvite, hostName: "  " }).success).toBe(false);
+    expect(MeetingInvite.safeParse({ ...badInvite, zoneId: "" }).success).toBe(false);
+    expect(MeetingInvite.safeParse({ ...badInvite, agenda: "x" }).success).toBe(false);
   });
 
   it("accepts the synced state views", () => {
@@ -131,6 +165,8 @@ describe("socket contract", () => {
     expect(PlayerView.parse({
       ...player, activity: { kind: "seat", targetId: "seat:1,2" }, zoneId: null,
     }).activity).toEqual({ kind: "seat", targetId: "seat:1,2" });
+    expect(PlayerView.parse({ ...player, status: "working" }).status).toBe("working");
+    expect(PlayerView.parse({ ...player, status: "on_break" }).status).toBe("on_break");
     const npc = {
       id: player.id, name: player.name, look: player.look, x: player.x,
       z: player.z, facing: player.facing, pose: player.pose, speed: player.speed,
@@ -163,10 +199,17 @@ describe("socket contract", () => {
       [ChatSend, { text: "hi" }],
       [StatusSet, { status: "away" }],
       [LookSet, { look }],
+      [GoTo, { seq: 1, place: "desk" }],
       [ChatMessage, chat],
       [ChatHistory, { messages: [] }],
       [ZoneEvent, { userId: "u", zoneId: "z", kind: "leave" }],
       [RecordsChanged, { kinds: [] }],
+      [MeetingInvite, {
+        bookingId: "00000000-0000-4000-8000-000000000001",
+        zoneId: null,
+        title: "t",
+        hostName: "h",
+      }],
       [ServerError, { code: "unwalkable", message: "no" }],
       [PlayerActivity, { kind: "seat", targetId: "s" }],
       [PlayerView, player],
@@ -184,7 +227,7 @@ describe("socket contract", () => {
       "PROXIMITY_ENTER_M", "PROXIMITY_LEAVE_M", "DISPLAY_NAME_MIN", "DISPLAY_NAME_MAX",
       "CHAT_TEXT_MAX", "CHAT_HISTORY_MAX", "Seq", "Axis", "JoinOptions", "AuthClaims", "MoveIntent",
       "MoveTarget", "ActivityStart", "ActivityStop", "ChatSend", "CaptionSend", "HistoryRequest",
-      "TeleportAdmin", "Status", "StatusSet", "LookSet",
+      "TeleportAdmin", "Status", "StatusSet", "LookSet", "GoTo", "GoToPlace", "MeetingInvite",
       "ChatMessage", "ChatHistory", "Caption", "ZoneEvent", "RecordKind", "RecordsChanged", "ErrorCode",
       "ServerError", "PlayerActivity", "PlayerView", "NpcView", "CLIENT_MESSAGE", "SERVER_MESSAGE",
       "screenToIntent", "WALK_SPEED", "spawnPlayer", "stepPlayer", "PoseSchema", "OFFICE_SPOTS",

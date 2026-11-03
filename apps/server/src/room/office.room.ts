@@ -36,6 +36,7 @@ import {
   type AuthClaims as AuthClaimsType,
   type AvatarLook,
   type ErrorCode,
+  type MeetingInvite,
   type Moves,
   type Point,
   type SimPlayer,
@@ -308,6 +309,22 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
 
   override onDispose(): void {
     unregisterRoom(this.workspaceId, this);
+  }
+
+  /**
+   * P6-0 slot for P6-B: deliver a `meeting_invite` to the connected sessions of these
+   * users (matched by user id, so every tab of an invitee hears it). Called through
+   * `bus.meetingInvite` after a booking is created; offline invitees see the open
+   * booking in the panel when they join.
+   */
+  sendMeetingInvite(userIds: readonly string[], payload: MeetingInvite): void {
+    const wanted = new Set(userIds);
+    for (const client of this.clients) {
+      const player = this.state.players.get(client.sessionId);
+      if (player && wanted.has(player.userId)) {
+        client.send(SERVER_MESSAGE.meetingInvite, payload);
+      }
+    }
   }
 
   // Messages. Every payload is parsed; anything invalid gets `invalid_message` and is

@@ -32,6 +32,43 @@ async function loadMeetingFor(pending: ProposedChange[]): Promise<Meeting | null
   }
 }
 
+export type RecordsChangedHandler = () => void;
+
+const changedListeners = new Map<RecordKind, Set<RecordsChangedHandler>>();
+
+/**
+ * Phase 6: subscribe to `records_changed` for one query kind (ARCHITECTURE.md 12.10). The
+ * feature stores (bookings, board, receipts) refetch through this; every kind's listeners
+ * run even when this store has nothing of its own to refetch for it. Returns an
+ * unsubscribe function. A throwing listener is reported and skipped, never breaking the
+ * others.
+ */
+export function onRecordsChanged(kind: RecordKind, fn: RecordsChangedHandler): () => void {
+  let set = changedListeners.get(kind);
+  if (!set) {
+    set = new Set();
+    changedListeners.set(kind, set);
+  }
+  set.add(fn);
+  return () => {
+    changedListeners.get(kind)?.delete(fn);
+  };
+}
+
+function notifyChanged(kinds: RecordKind[]): void {
+  for (const kind of kinds) {
+    for (const fn of changedListeners.get(kind) ?? []) {
+      try {
+        fn();
+      } catch (err) {
+        console.warn(
+          `[records] listener for ${kind} failed: ${err instanceof Error ? err.message : err}`,
+        );
+      }
+    }
+  }
+}
+
 /**
  * What the panels and wall displays show (ARCHITECTURE.md 12.6). The net store calls
  * `refetch` on `records_changed` (P2-B wires that); no query library, the client stack is
@@ -67,5 +104,6 @@ export const useRecords = create<RecordsState>()((set) => ({
       ]);
       set({ myDay, project, account });
     }
+    notifyChanged(kinds);
   },
 }));
