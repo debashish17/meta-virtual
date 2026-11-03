@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNet } from "../net/store.js";
 import { useMe } from "../office/me.js";
 
-const STATUS_LABEL: Record<string, string> = { available: "Available", in_meeting: "In a meeting", away: "Away" };
+const STATUS_LABEL: Record<string, string> = { available: "Available", working: "Working", on_break: "On a break", in_meeting: "In a meeting", away: "Away" };
 
 /** Participants and presence (DESIGN_SPEC 9): top-left, collapsible, from the net store. */
 export default function Participants() {
@@ -57,9 +57,11 @@ export default function Participants() {
           aria-label="Your status"
           value={mine}
           disabled={!online}
-          onChange={(e) => send.status(e.target.value as "available" | "in_meeting" | "away")}
+          onChange={(e) => send.status(e.target.value as "available" | "working" | "on_break" | "in_meeting" | "away")}
         >
           <option value="available">Available</option>
+          <option value="working">Working</option>
+          <option value="on_break">On a break</option>
           <option value="in_meeting">In a meeting</option>
           <option value="away">Away</option>
         </select>

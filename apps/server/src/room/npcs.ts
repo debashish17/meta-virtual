@@ -1,15 +1,15 @@
 import {
-  DESK_SEATS,
   LOOK_PRESETS,
+  NPC_PRESET_IDS,
   OFFICE_SPOTS,
   OFFICE_WALK,
   advance,
+  homeDeskTarget,
   inTheWay,
   riseOf,
   routineAtDesk,
   routineAway,
   secondsOf,
-  zoneAt,
   type Routine,
   type RoutineWorld,
   type Seat,
@@ -17,22 +17,22 @@ import {
 import { NpcState, type OfficeState } from "./schema.js";
 
 /**
- * The shared colleagues (P3-A, decision D6): the look presets that match no signed-in player,
- * run on the server tick with the shared routine code and synced as `NpcView`, the same for
- * everyone in the room.
+ * The shared colleagues (P3-A, decision D6; P6-A runs four at home desks): the kept
+ * presets (`NPC_PRESET_IDS`), each at their own home desk in their team (desks.ts), on
+ * the routines they have today, run on the server tick with the shared routine code and
+ * synced as `NpcView`, the same for everyone in the room. A preset whose person is
+ * signed in does not run, as before.
  *
- * The room owns the reservation set (`taken`: desk seat ids and outing spot ids, players and
- * colleagues alike); this director only borrows it. A colleague's desk is reserved at spawn,
- * outing spots while on the way or there (routine.ts), everything freed on remove — so the
- * room's `activity_start` answers `target_taken` for a colleague's seat, and `sync` never
- * spawns onto a seat a player holds.
+ * The room owns the reservation set (`taken`: desk seat ids and outing spot ids, players
+ * and colleagues alike); this director only borrows it. Home desks are held for their
+ * owners whether present or not, so spawning never checks them and releasing never frees
+ * them; outing spots are held while on the way or there and freed on remove. The room's
+ * `activity_start` answers `target_taken` for a colleague's seat.
  *
  * Wiring (office.room.ts, owned by P2-A — see the P3-A report's Requests): one `NpcDirector`
  * per room; `sync(state, taken, playerNames)` after each join and leave, `tick(state, taken,
  * TICK_DT)` on every server tick.
  */
-
-type Desk = Seat & { id: string };
 
 interface NpcEntry {
   seatId: string;
@@ -40,11 +40,9 @@ interface NpcEntry {
 }
 
 // Who starts the day away from their desk: (preset id, spot, seconds before heading back).
-// Same as the web's offline colleagues, so the office looks the same online.
 const STARTS_AWAY: Record<string, [string, number]> = {
   kenji: ["chat_1", 25],
   sofia: ["chat_2", 25],
-  ben: ["window_1", 18],
 };
 
 function clips(): RoutineWorld["clips"] {
@@ -55,38 +53,8 @@ function clips(): RoutineWorld["clips"] {
   };
 }
 
-/**
- * Desk chairs in the team areas, spread across the teams and rows in the same order as the
- * web's offline colleagues (Colleagues.tsx), then any chairs the spread rounds never reach.
- * Deterministic, so desks are stable across restarts for the same signed-in names.
- */
-function spreadDesks(): Desk[] {
-  const byTeam = new Map<string, Desk[]>();
-  for (const seat of DESK_SEATS) {
-    const team = zoneAt(seat.x, seat.z)?.id ?? "";
-    byTeam.set(team, [...(byTeam.get(team) ?? []), seat]);
-  }
-  const order: Desk[] = [];
-  const seen = new Set<string>();
-  const deal = (chair: Desk): void => {
-    if (!seen.has(chair.id)) {
-      seen.add(chair.id);
-      order.push(chair);
-    }
-  };
-  for (let round = 0; round < 6; round += 1) {
-    for (const list of byTeam.values()) {
-      const step = Math.floor(list.length / 3);
-      deal(list[(round * step + round * 5 + 3) % list.length]);
-    }
-  }
-  for (const seat of DESK_SEATS) deal(seat);
-  return order;
-}
-
 export class NpcDirector {
   private readonly npcs = new Map<string, NpcEntry>();
-  private readonly desks = spreadDesks();
   private seed = 20261101;
 
   private readonly rand = (): number => {
@@ -115,9 +83,9 @@ export class NpcDirector {
   }
 
   /**
-   * Reconcile the spawned colleagues with the signed-in player names: remove every preset
-   * whose name matches a player (freeing its desk and outing spots), spawn every other
-   * preset that is not spawned yet. Idempotent.
+   * Reconcile the spawned colleagues with the signed-in player names: remove every kept
+   * preset whose name matches a player (freeing its outing spots, never its home desk),
+   * spawn every other kept preset at its home desk. Idempotent.
    */
   sync(state: OfficeState, taken: Set<string>, playerNames: Iterable<string>): void {
     const excluded = new Set(
@@ -130,16 +98,14 @@ export class NpcDirector {
         this.release(state, taken, id);
       }
     }
-    let spawnIndex = this.npcs.size;
-    for (const preset of LOOK_PRESETS) {
-      if (excluded.has(preset.name.toLowerCase())) continue;
-      if (this.npcs.has(preset.id)) continue;
-      const held = new Set([...this.npcs.values()].map((entry) => entry.seatId));
-      const desk = this.desks.find((chair) => !taken.has(chair.id) && !held.has(chair.id));
-      if (!desk) continue; // No free desk: skip rather than share a seat.
-      this.spawn(state, taken, preset.id, desk, spawnIndex);
-      spawnIndex += 1;
-    }
+    const kept = LOOK_PRESETS.filter((preset) => NPC_PRESET_IDS.includes(preset.id));
+    kept.forEach((preset, index) => {
+      if (excluded.has(preset.name.toLowerCase())) return;
+      if (this.npcs.has(preset.id)) return;
+      const target = homeDeskTarget(preset.id);
+      if (!target || target.kind !== "seat") return;
+      this.spawn(state, taken, preset.id, target.seat, target.id, index);
+    });
   }
 
   /** Advance every colleague by `dt` and mirror the result into the synced `npcs`. */
@@ -171,14 +137,15 @@ export class NpcDirector {
     state: OfficeState,
     taken: Set<string>,
     presetId: string,
-    desk: Desk,
+    desk: Seat,
+    seatId: string,
     index: number,
   ): void {
     const preset = LOOK_PRESETS.find((candidate) => candidate.id === presetId);
     if (!preset) return;
-    // The third colleague chats at their desk instead of typing, as offline.
+    // The third colleague chats at their desk instead of typing, as before.
     const seat: Seat = { ...desk, pose: index === 2 ? "sit_talk" : "type" };
-    taken.add(desk.id);
+    taken.add(seatId);
     const rise = riseOf(preset.look);
     const world = this.world(taken);
     const away = STARTS_AWAY[preset.id];
@@ -197,19 +164,19 @@ export class NpcDirector {
     npc.pose = routine.pose;
     npc.speed = routine.speed;
     state.npcs.set(preset.id, npc);
-    this.npcs.set(preset.id, { seatId: desk.id, routine });
+    this.npcs.set(preset.id, { seatId, routine });
   }
 
   /**
-   * Remove a colleague, freeing its desk and every outing spot it holds. A tea outing holds
-   * two spots at once (the counter and the chat spot) while `routine.spot` names only the
-   * latest, so the current and queued steps are freed too; reservation ids are exclusive, so
-   * each of them can only be this colleague's.
+   * Remove a colleague, freeing every outing spot it holds but never its home desk (held
+   * for its owner whether present or not). A tea outing holds two spots at once (the
+   * counter and the chat spot) while `routine.spot` names only the latest, so the current
+   * and queued steps are freed too; reservation ids are exclusive, so each of them can
+   * only be this colleague's.
    */
   private release(state: OfficeState, taken: Set<string>, presetId: string): void {
     const entry = this.npcs.get(presetId);
     if (!entry) return;
-    taken.delete(entry.seatId);
     const routine = entry.routine;
     if (routine.spot) taken.delete(routine.spot);
     const steps = routine.current ? [routine.current, ...routine.steps] : [...routine.steps];

@@ -2,16 +2,19 @@ import { describe, expect, it } from "vitest";
 import {
   DESK_SEATS,
   LOOK_PRESETS,
+  NPC_COUNT,
+  NPC_PRESET_IDS,
   NpcView,
   OFFICE_SPOTS,
   TICK_DT,
+  homeDeskSeatId,
 } from "@office/shared";
 import { NpcDirector } from "./npcs.js";
 import { OfficeState } from "./schema.js";
 
 const SEAT_IDS = new Set(DESK_SEATS.map((s) => s.id));
 const SPOT_IDS = new Set(OFFICE_SPOTS.map((s) => s.id));
-const PRESET_NAMES = LOOK_PRESETS.map((p) => p.name);
+const NPC_NAMES = LOOK_PRESETS.filter((p) => NPC_PRESET_IDS.includes(p.id)).map((p) => p.name);
 
 function setup() {
   return { state: new OfficeState(), taken: new Set<string>(), npcs: new NpcDirector() };
@@ -41,85 +44,95 @@ function viewsOf(state: OfficeState) {
 }
 
 describe("NpcDirector", () => {
-  it("spawns every preset on an empty room, each on a known desk seat", () => {
+  it("spawns the four kept presets, each at its home desk", () => {
     const { state, taken, npcs } = setup();
     npcs.sync(state, taken, []);
-    expect(state.npcs.size).toBe(LOOK_PRESETS.length);
-    expect(npcs.size).toBe(LOOK_PRESETS.length);
-    const names = viewsOf(state).map((v) => v.name).sort();
-    expect(names).toEqual([...PRESET_NAMES].sort());
-    // Every colleague holds a desk seat in the room's reservation set, all different.
+    expect(NPC_COUNT).toBe(4);
+    expect(state.npcs.size).toBe(NPC_COUNT);
+    expect(npcs.size).toBe(NPC_COUNT);
+    const names = viewsOf(state)
+      .map((v) => v.name)
+      .sort();
+    expect(names).toEqual([...NPC_NAMES].sort());
+    // Every colleague holds its home desk seat in the room's reservation set.
+    for (const id of NPC_PRESET_IDS) {
+      expect(npcs.deskOf(id)).toBe(homeDeskSeatId(id));
+      expect(taken.has(homeDeskSeatId(id) as string)).toBe(true);
+    }
     const desks = npcs.debug().map((d) => d.seatId);
     expect(new Set(desks).size).toBe(desks.length);
-    for (const id of desks) {
-      expect(SEAT_IDS.has(id)).toBe(true);
-      expect(taken.has(id)).toBe(true);
-    }
+    for (const id of desks) expect(SEAT_IDS.has(id)).toBe(true);
   });
 
-  it("does not spawn a preset matching a signed-in player", () => {
+  it("does not spawn a kept preset matching a signed-in player", () => {
     const { state, taken, npcs } = setup();
-    npcs.sync(state, taken, ["Maya", "arjun"]);
-    expect(state.npcs.size).toBe(LOOK_PRESETS.length - 2);
+    npcs.sync(state, taken, ["Lena", "kenji"]);
+    expect(state.npcs.size).toBe(NPC_COUNT - 2);
     const names = viewsOf(state).map((v) => v.name.toLowerCase());
-    expect(names).not.toContain("maya");
-    expect(names).not.toContain("arjun");
-    expect(npcs.debug().map((d) => d.seatId)).toHaveLength(LOOK_PRESETS.length - 2);
-    expect(taken.size).toBeGreaterThanOrEqual(LOOK_PRESETS.length - 2);
+    expect(names).not.toContain("lena");
+    expect(names).not.toContain("kenji");
+    // Maya and Arjun are not colleagues: signing in never changes the four.
+    npcs.sync(state, taken, ["Lena", "kenji", "Maya", "Arjun"]);
+    expect(state.npcs.size).toBe(NPC_COUNT - 2);
+    expect(taken.size).toBeGreaterThanOrEqual(NPC_COUNT - 2);
   });
 
   it("is idempotent: syncing twice changes nothing", () => {
     const { state, taken, npcs } = setup();
-    npcs.sync(state, taken, ["Maya"]);
+    npcs.sync(state, taken, ["Lena"]);
     const desks = new Map(npcs.debug().map((d) => [d.id, d.seatId] as const));
     const takenBefore = new Set(taken);
-    npcs.sync(state, taken, ["Maya"]);
-    expect(state.npcs.size).toBe(LOOK_PRESETS.length - 1);
+    npcs.sync(state, taken, ["Lena"]);
+    expect(state.npcs.size).toBe(NPC_COUNT - 1);
     expect(new Map(npcs.debug().map((d) => [d.id, d.seatId] as const))).toEqual(desks);
     expect(taken).toEqual(takenBefore);
   });
 
-  it("removes the matching colleague when a player joins, freeing its desk", () => {
+  it("removes the matching colleague when a player joins, keeping its home desk held", () => {
     const { state, taken, npcs } = setup();
     npcs.sync(state, taken, []);
-    const mayaDesk = npcs.deskOf("maya");
-    expect(mayaDesk).toBeDefined();
-    expect(taken.has(mayaDesk as string)).toBe(true);
-    npcs.sync(state, taken, ["Maya"]);
-    expect(state.npcs.has("maya")).toBe(false);
-    expect(npcs.deskOf("maya")).toBeUndefined();
-    expect(taken.has(mayaDesk as string)).toBe(false);
+    const lenaDesk = npcs.deskOf("lena");
+    expect(lenaDesk).toBe(homeDeskSeatId("lena"));
+    expect(taken.has(lenaDesk as string)).toBe(true);
+    npcs.sync(state, taken, ["Lena"]);
+    expect(state.npcs.has("lena")).toBe(false);
+    expect(npcs.deskOf("lena")).toBeUndefined();
+    // Home desks are held for their owners whether present or not.
+    expect(taken.has(lenaDesk as string)).toBe(true);
   });
 
-  it("respawns the preset when the player leaves, on a free desk", () => {
+  it("respawns the preset when the player leaves, on the same home desk", () => {
     const { state, taken, npcs } = setup();
-    npcs.sync(state, taken, ["Maya"]);
-    expect(state.npcs.has("maya")).toBe(false);
+    npcs.sync(state, taken, ["Lena"]);
+    expect(state.npcs.has("lena")).toBe(false);
     npcs.sync(state, taken, []);
-    expect(state.npcs.has("maya")).toBe(true);
-    const desk = npcs.deskOf("maya") as string;
-    expect(SEAT_IDS.has(desk)).toBe(true);
-    expect(taken.has(desk)).toBe(true);
-    // Still one colleague per desk.
+    expect(state.npcs.has("lena")).toBe(true);
+    expect(npcs.deskOf("lena")).toBe(homeDeskSeatId("lena"));
+    expect(taken.has(homeDeskSeatId("lena") as string)).toBe(true);
     const desks = npcs.debug().map((d) => d.seatId);
     expect(new Set(desks).size).toBe(desks.length);
   });
 
-  it("never takes a seat a player holds", () => {
+  it("spawns at home desks no matter which other seats players hold", () => {
     const { state, taken, npcs } = setup();
-    // A player holds every desk seat: nobody can spawn.
-    for (const id of SEAT_IDS) taken.add(id);
+    // A player holds every seat that is not a home desk: the colleagues still spawn,
+    // because the room never lets a player hold a home desk but the owner's.
+    for (const id of SEAT_IDS) {
+      if (!NPC_PRESET_IDS.some((preset) => homeDeskSeatId(preset) === id)) taken.add(id);
+    }
     npcs.sync(state, taken, []);
-    expect(state.npcs.size).toBe(0);
-    expect(npcs.size).toBe(0);
+    expect(state.npcs.size).toBe(NPC_COUNT);
+    expect(npcs.size).toBe(NPC_COUNT);
   });
 
-  it("skips only the seats players hold", () => {
+  it("ignores a held seat that is no one's home", () => {
     const { state, taken, npcs } = setup();
-    const held = DESK_SEATS[0].id;
+    const held = DESK_SEATS.map((s) => s.id).find(
+      (id) => !NPC_PRESET_IDS.some((preset) => homeDeskSeatId(preset) === id),
+    )!;
     taken.add(held);
     npcs.sync(state, taken, []);
-    expect(state.npcs.size).toBe(LOOK_PRESETS.length);
+    expect(state.npcs.size).toBe(NPC_COUNT);
     const desks = npcs.debug().map((d) => d.seatId);
     expect(desks).not.toContain(held);
     expect(new Set(desks).size).toBe(desks.length);
@@ -127,7 +140,7 @@ describe("NpcDirector", () => {
 
   it("ticks the shared routines and mirrors NpcView into state", () => {
     const { state, taken, npcs } = setup();
-    npcs.sync(state, taken, ["Maya", "Arjun"]);
+    npcs.sync(state, taken, ["Lena"]);
     const atSpawn = new Map(npcs.debug().map((d) => [d.id, { x: d.x, z: d.z }]));
     for (let i = 0; i < 100 * 20; i += 1) {
       npcs.tick(state, taken, TICK_DT);
@@ -139,7 +152,7 @@ describe("NpcDirector", () => {
     });
     expect(moved.length).toBeGreaterThan(0);
     const views = viewsOf(state);
-    expect(views).toHaveLength(LOOK_PRESETS.length - 2);
+    expect(views).toHaveLength(NPC_COUNT - 1);
     // The reservation set holds only known seats and spots.
     for (const id of taken) {
       expect(SEAT_IDS.has(id) || SPOT_IDS.has(id)).toBe(true);
@@ -152,10 +165,10 @@ describe("NpcDirector", () => {
     }
   });
 
-  it("frees outing spots when the colleague is removed mid-outing", () => {
+  it("frees outing spots but keeps the home desk when the colleague is removed", () => {
     const { state, taken, npcs } = setup();
     // Only Kenji: whatever is reserved past his desk belongs to his outing.
-    const others = PRESET_NAMES.filter((n) => n.toLowerCase() !== "kenji");
+    const others = NPC_NAMES.filter((n) => n.toLowerCase() !== "kenji");
     npcs.sync(state, taken, others);
     expect(npcs.size).toBe(1);
     const desk = npcs.deskOf("kenji") as string;
@@ -169,6 +182,6 @@ describe("NpcDirector", () => {
     npcs.sync(state, taken, [...others, "Kenji"]);
     expect(npcs.size).toBe(0);
     expect(state.npcs.size).toBe(0);
-    expect(taken.size).toBe(0);
+    expect(taken).toEqual(new Set([desk]));
   });
 });
