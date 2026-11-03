@@ -149,6 +149,8 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
   private captions = new TranscriptBuffer();
   private readonly npcs = new NpcDirector();
   private readonly recs = new Map<string, SessionRecord>();
+  /** Sessions that dropped and are waiting in their reconnection window, by session id. */
+  private readonly dropped = new Map<string, ReturnType<Room["allowReconnection"]>>();
   /** Seat and counter-spot ids held in this room, players (and later colleagues) alike. */
   private readonly taken = new Set<string>();
   private workspaceId: string | null = null;
@@ -232,6 +234,7 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
     } else if (this.workspaceId !== parsed.data.workspaceId) {
       throw new Error("unauthorized: workspace mismatch");
     }
+    this.releaseDropped(claims.data.userId);
     const at = this.freeSpawn();
     const player = new PlayerState();
     player.id = client.sessionId;
@@ -269,10 +272,32 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
   }
 
   override async onDrop(client: Client): Promise<void> {
+    const reconnection = this.allowReconnection(client, RECONNECT_SECONDS);
+    this.dropped.set(client.sessionId, reconnection);
     try {
-      await this.allowReconnection(client, RECONNECT_SECONDS);
+      await reconnection;
     } catch {
-      // The window expired; `onLeave` removes the player.
+      // The window expired, or the person joined again (`releaseDropped`); `onLeave`
+      // removes the player.
+    } finally {
+      this.dropped.delete(client.sessionId);
+    }
+  }
+
+  /**
+   * A new join by someone whose earlier session is waiting in its reconnection window
+   * replaces that session at once. A refreshed page cannot reconnect (its socket just closed),
+   * so without this the old avatar stays for `RECONNECT_SECONDS` beside the new one.
+   * Connected sessions are untouched, so two tabs of one person (or two people who picked the
+   * same dev name) both stay.
+   */
+  private releaseDropped(userId: string): void {
+    for (const [sessionId, reconnection] of this.dropped) {
+      if (this.recs.get(sessionId)?.userId === userId) {
+        this.dropped.delete(sessionId);
+        // `false`, exactly as Colyseus' own window timeout rejects, so the same leave path runs.
+        reconnection.reject(false);
+      }
     }
   }
 

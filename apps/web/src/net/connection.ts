@@ -63,6 +63,8 @@ let generation = 0;
 let client: Client | null = null;
 let room: OfficeRoom | null = null;
 let reconnectionToken: string | null = null;
+/** Set when the page was hidden for good and left the room; a back-forward restore rejoins. */
+let leftOnHide = false;
 let latestSelf: PlayerView | null = null;
 let lastError: NetError | null = null;
 let errorCount = 0;
@@ -306,6 +308,7 @@ export function startNet(): void {
 }
 
 export function stopNet(): void {
+  leftOnHide = false;
   generation += 1;
   const leaving = room;
   setRoom(null);
@@ -398,6 +401,27 @@ export interface OfficeNetHook {
   serverUrl(): string;
   /** Drop the socket without consent, as if the network failed (reconnect drill). */
   drop(): void;
+}
+
+/**
+ * A refresh, a closed tab or a navigation away says goodbye (a consented leave), so the room
+ * removes the avatar at once instead of holding it for the reconnect window. The server also
+ * replaces a person's dropped session when they join again, for the cases where this message
+ * does not get out. A page restored from the back-forward cache joins again.
+ */
+export function leaveOnPageHide(): void {
+  if (!room && useNet.getState().status === "offline") return;
+  stopNet();
+  leftOnHide = true;
+}
+export function rejoinOnPageShow(event: { persisted: boolean }): void {
+  if (!event.persisted || !leftOnHide) return;
+  leftOnHide = false;
+  startNet();
+}
+if (typeof window !== "undefined") {
+  window.addEventListener("pagehide", leaveOnPageHide);
+  window.addEventListener("pageshow", rejoinOnPageShow);
 }
 
 if (import.meta.env.DEV && typeof window !== "undefined") {

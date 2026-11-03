@@ -448,6 +448,36 @@ describe("OfficeRoom", () => {
     expect((await waiting).code).toBe("target_taken");
   });
 
+  it("replaces a person's dropped session when they join again (a page refresh)", { timeout: 15000 }, async () => {
+    const { testServer } = await setup();
+    const first = await join(testServer, "Maya");
+    const arjun = await join(testServer, "Arjun");
+    const mayaId = serverPlayer(first.sessionId)!.userId;
+    // A refreshed page cannot reconnect: its socket just closes, and the session waits in its
+    // reconnection window. The SDK does not retry a room younger than its `minUptime` (5 s),
+    // so this drop of a fresh join is the same thing.
+    await first.leave(false);
+    await sleep(300);
+    expect(serverPlayer(first.sessionId)).toBeDefined();
+    const second = await join(testServer, "Maya");
+    await waitFor(() => serverPlayer(first.sessionId) === undefined, 3000, "the dropped session to go");
+    const mayas = [...getRoom(WORKSPACE_ID)!.state.players.values()].filter((p) => p.userId === mayaId);
+    expect(mayas.map((p) => p.id)).toEqual([second.sessionId]);
+    expect(serverPlayer(arjun.sessionId)).toBeDefined();
+    // Releasing a reconnection restarts Colyseus' 1 s auto-dispose timer; let it run out inside
+    // the test, not after the worker has finished (vitest's forks pool refuses late IPC).
+    await sleep(1500);
+  });
+
+  it("keeps every connected session of the same person (two tabs)", { timeout: 15000 }, async () => {
+    const { testServer } = await setup();
+    const tabA = await join(testServer, "Maya");
+    const tabB = await join(testServer, "Maya");
+    await sleep(300);
+    expect(serverPlayer(tabA.sessionId)).toBeDefined();
+    expect(serverPlayer(tabB.sessionId)).toBeDefined();
+  });
+
   it("refuses a seat one player holds to another", { timeout: 15000 }, async () => {
     const { testServer } = await setup();
     const maya = await join(testServer, "Maya");
