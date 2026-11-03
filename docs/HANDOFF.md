@@ -526,7 +526,7 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 | FIX first-visit name card (owner request) | lead | main (`644d96f`) | merged and deployed 2026-11-04: deployed dev-auth build asks "Who are you?" before joining; checks green, e2e 8/8, verified live with a fresh browser | section 0 |
 | FIX refresh ghost avatars (owner report) | lead | main (`95e408f`) | merged and deployed 2026-11-04: the room replaces a person's dropped session on rejoin; the page leaves on `pagehide`; checks green, e2e 8/8, verified live | section 0 |
 | P6-0 contract and slots | lead + builder/reviewer/e2e | wp/P6-0-contract | merged (--no-ff aed9532; 1 review must-fix fixed by lead with regression test) | P6-0.md |
-| P6-A status, home desks, colleagues | | wp/P6-A-status-desks | not started (needs P6-0) | |
+| P6-A status, home desks, colleagues | builder/reviewer/e2e | wp/P6-A-status-desks | merged (--no-ff 0868819; reviewer PASS no must-fix; lead aligned offline Colleagues to 4 fefa8fc) | P6-A.md |
 | P6-R receipts (USP A Phase 0) | | wp/P6-R-receipts | not started (needs P6-0) | |
 | P6-B meetings in the rooms | | wp/P6-B-meetings | not started (needs P6-0) | |
 | P6-C personal notes | | wp/P6-C-notes | not started (needs P6-0) | |
