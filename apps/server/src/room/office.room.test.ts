@@ -401,6 +401,24 @@ describe("OfficeRoom", () => {
     expect(p.pose).toBe("stand");
   });
 
+  it("syncs the reservations, so clients offer only free seats", { timeout: 15000 }, async () => {
+    // A colleague's desk stays theirs while they are away; without this, a client offered it
+    // to sit at and the room refused (`target_taken`).
+    const { testServer } = await setup();
+    const room = await join(testServer, "Maya");
+    const clientTaken = () =>
+      [...((room as unknown as { state: { taken?: Iterable<string> } }).state.taken ?? [])].sort();
+    const serverTaken = () => [...(getRoom(WORKSPACE_ID)?.reservations ?? [])].sort();
+    await waitFor(
+      () => serverTaken().length > 0 && JSON.stringify(clientTaken()) === JSON.stringify(serverTaken()),
+      5000,
+      "the client to hold the room's reservations",
+    );
+    const seat = DESK_SEATS.find((s) => !serverTaken().includes(s.id))!;
+    room.send(CLIENT_MESSAGE.activityStart, { seq: 1, targetId: seat.id });
+    await waitFor(() => clientTaken().includes(seat.id), 5000, "the new reservation on the client");
+  });
+
   it("restores the player and their seat on reconnect", { timeout: 30000 }, async () => {
     const { testServer } = await setup();
     const room = await join(testServer, "Maya");

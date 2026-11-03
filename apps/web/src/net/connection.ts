@@ -94,6 +94,12 @@ export function getSelfSnapshot(): PlayerView | null {
   return latestSelf;
 }
 
+/** The seats and counter spots the room holds for someone (OfficeState.taken), empty offline. */
+export function getReserved(): ReadonlySet<string> {
+  const taken = (room?.state as { taken?: Iterable<string> } | undefined)?.taken;
+  return new Set(taken ?? []);
+}
+
 export function getLastError(): NetError | null {
   return lastError;
 }

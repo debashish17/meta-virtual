@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-declaration-merging -- each interface
  * declares exactly the fields the @type setter below provides; schema.test.ts pins the names. */
-import { MapSchema, Schema, type } from "@colyseus/schema";
+import { ArraySchema, MapSchema, Schema, type } from "@colyseus/schema";
 import type { Pose, Status } from "@office/shared";
 
 /**
@@ -145,13 +145,18 @@ type("number")(NpcState.prototype, "speed");
 export interface OfficeState {
   players: MapSchema<PlayerState>;
   npcs: MapSchema<NpcState>;
+  /** Seat and counter-spot ids held in the room (players' and colleagues'), sorted: clients
+   * offer only free ones to sit at (a colleague's desk stays theirs while they are away). */
+  taken: ArraySchema<string>;
 }
 export class OfficeState extends Schema {
   constructor() {
     super();
     this.players = new MapSchema<PlayerState>();
     this.npcs = new MapSchema<NpcState>();
+    this.taken = new ArraySchema<string>();
   }
 }
 type({ map: PlayerState })(OfficeState.prototype, "players");
 type({ map: NpcState })(OfficeState.prototype, "npcs");
+type(["string"])(OfficeState.prototype, "taken");
