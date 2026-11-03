@@ -18,10 +18,11 @@ order, feature freeze and cut list in `IMPLEMENTATION_PLAN.md` 3.1). The rest of
 applies. **Nothing in Phase 6 has been started.**
 
 **State right now**
-- `main` at `95e408f` plus this handoff update. GitHub `debashish17/meta-virtual` (private) was
-  last pushed at `27ff77a`; run `git log origin/main..main` to see what is not pushed yet. Phases
-  1 to 5 are merged; the plan, the hosting setup, the deploy config, the first-visit name card and
-  the refresh-ghost fix are on `main`. Before pushing: `git fetch` and
+- `main` is **pushed**: GitHub `debashish17/meta-virtual` (private) holds everything through this
+  handoff update (code last changed in `95e408f`). `git log origin/main..main` lists anything
+  newer that is local only. Phases 1 to 5 are merged; the plan, the hosting setup, the deploy
+  config, the first-visit name card and the refresh-ghost fix are on `main`. Before pushing:
+  `git fetch` and
   `git rev-list --left-right --count main...origin/main` must show `N 0` (never force-push; the
   history was rewritten on 2026-11-03, so any older copy must be reset to `origin/main` first).
 - Checks on `95e408f` (2026-11-04): `pnpm typecheck`, `pnpm lint` and `pnpm test` pass (server
@@ -160,9 +161,9 @@ it does not match the server. That only matters for the full deploy; see decisio
    next to the server, and fills in `.env.hosted.local`. The steps are under "Full mode" below.
 2. **Keep one machine always on for judging day** (`min_machines_running = 1` in `fly.toml`,
    roughly USD 2 a month): no cold start, and the in-memory demo data survives idle periods.
-3. **Pushing `main`** to the remote: only when the owner asks. The owner asked once, on
-   2026-11-04 (`5a02fe6` pushed as a fast-forward); each later push needs its own OK. Check
-   `main...origin/main` first (state above).
+3. **Pushing `main`** to the remote: only when the owner asks. The owner asked on 2026-11-04 for
+   `5a02fe6` and again for `9b0ae0d` and this update, each pushed as a fast-forward; each later
+   push needs its own OK. Check `main...origin/main` first (state above).
 4. **The live AI model: wired 2026-11-03 at the owner's request.** Fly holds `LLM_API_KEY` (from
    the root `.env`); `/health` says `llm: "meta"`: Muse Spark `muse-spark-1.3` through
    `https://api.meta.ai/v1`, reasoning effort `low` (defaults; `LLM_MODEL` is set nowhere). Checked
