@@ -4,9 +4,12 @@ import type { StepInput } from "@office/shared";
 export type QueuedInput = { input: StepInput; seq: number };
 
 /** What one tick does with a player's movement (see `InputQueue.next`). */
-export type TickMove =
-  /** Step this input; `lastSeq` becomes its seq. */
-  | { kind: "apply"; input: StepInput; seq: number }
+export type TickMove<S = unknown> =
+  /**
+   * Step this input; `lastSeq` becomes its seq. With `restore`, first put the player back to
+   * that state: the held-key steps taken since were never taken by the client.
+   */
+  | { kind: "apply"; input: StepInput; seq: number; restore?: S }
   /** This input's step was already taken while it was late: no step; `lastSeq` becomes its seq. */
   | { kind: "ack"; seq: number }
   /** Nothing queued: walk on with the held keys. */
@@ -42,13 +45,17 @@ function sameKeys(held: Intent, input: StepInput): boolean {
  * While nothing is queued (an input is late, or the client stopped sending) the held keys are
  * re-applied, as before. Those steps are counted as borrowed: when the late input arrives with
  * the same keys it is acknowledged without a second step, so the position at `lastSeq` stays
- * exactly where the client predicted it. Never more than one step a tick, so a client sending
- * faster than the tick gains no speed; past `MAX_QUEUED_INPUTS` the oldest inputs are dropped.
+ * exactly where the client predicted it. When it arrives with other keys (a release, Shift, a
+ * click) the client never took the borrowed steps, so they are undone first (`restore`, the
+ * state passed to `next` before the first of them). Never more than one step a tick, so a
+ * client sending faster than the tick gains no speed; past `MAX_QUEUED_INPUTS` the oldest
+ * inputs are dropped.
  */
-export class InputQueue {
+export class InputQueue<S = unknown> {
   private items: QueuedInput[] = [];
   private held: Intent | null = null;
-  private borrowed = 0;
+  /** The state before each borrowed step not yet paid for by its late input, oldest first. */
+  private borrowed: (S | undefined)[] = [];
 
   get length(): number {
     return this.items.length;
@@ -63,7 +70,7 @@ export class InputQueue {
   clear(): void {
     this.items = [];
     this.held = null;
-    this.borrowed = 0;
+    this.borrowed = [];
   }
 
   /** Hand over the newest queued input and empty the queue (movement during an activity). */
@@ -73,20 +80,23 @@ export class InputQueue {
     return latest;
   }
 
-  /** Decide this tick's movement. */
-  next(): TickMove {
+  /** Decide this tick's movement; `now` is the player's state before it (kept for `restore`). */
+  next(now?: S): TickMove<S> {
     const item = this.items.shift();
     if (item) {
-      if (this.borrowed > 0 && this.held && sameKeys(this.held, item.input)) {
-        this.borrowed -= 1;
+      if (this.borrowed.length > 0 && this.held && sameKeys(this.held, item.input)) {
+        this.borrowed.shift();
         return { kind: "ack", seq: item.seq };
       }
-      this.borrowed = 0;
+      const restore = this.borrowed[0];
+      this.borrowed = [];
       this.held = movingIntent(item.input);
-      return { kind: "apply", input: item.input, seq: item.seq };
+      return restore === undefined
+        ? { kind: "apply", input: item.input, seq: item.seq }
+        : { kind: "apply", input: item.input, seq: item.seq, restore };
     }
     if (this.held) {
-      if (this.borrowed < MAX_BORROWED_STEPS) this.borrowed += 1;
+      if (this.borrowed.length < MAX_BORROWED_STEPS) this.borrowed.push(now);
       return { kind: "hold", input: this.held };
     }
     return { kind: "idle" };

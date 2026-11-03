@@ -37,6 +37,7 @@ import {
   type ErrorCode,
   type Moves,
   type Point,
+  type SimPlayer,
   type Target,
 } from "@office/shared";
 import { DevAuth, UnauthorizedError, type AuthVerifier } from "../auth/verify.js";
@@ -81,13 +82,16 @@ import { OfficeState, PlayerState } from "./schema.js";
 /** How often the room checks whether a tick is due (the ticks themselves stay `TICK_DT`). */
 const TICK_POLL_MS = 5;
 
+/** A player's plain-movement state, as the shared sim steps it. */
+type MoveState = SimPlayer;
+
 type SessionRecord = {
   userId: string;
   name: string;
   /** Remaining waypoints of a `move_target` or an activity approach; the sim owns it. */
   route: Point[];
   /** Movement received and not yet applied, plus the held keys; a queued `activity_stop` is `stopRequested`. */
-  inputs: InputQueue;
+  inputs: InputQueue<MoveState>;
   /** Movement received mid-activity, applied once the player is free again. */
   queued: QueuedInput | null;
   stopRequested: boolean;
@@ -247,7 +251,7 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
       userId: claims.data.userId,
       name: claims.data.name,
       route: [],
-      inputs: new InputQueue(),
+      inputs: new InputQueue<MoveState>(),
       queued: null,
       stopRequested: false,
       pendingTarget: null,
@@ -509,13 +513,7 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
   }
 
   private tickMovement(player: PlayerState, rec: SessionRecord): void {
-    const move = rec.inputs.next();
-    if (move.kind === "ack") {
-      // This input's step was taken while it was late (InputQueue): count it, do not repeat it.
-      player.lastSeq = move.seq;
-      return;
-    }
-    const sim = {
+    const sim: MoveState = {
       x: player.x,
       z: player.z,
       facing: player.facing,
@@ -523,7 +521,15 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
       speed: player.speed,
       route: rec.route,
     };
+    const move = rec.inputs.next({ ...sim, route: [...sim.route] });
+    if (move.kind === "ack") {
+      // This input's step was taken while it was late (InputQueue): count it, do not repeat it.
+      player.lastSeq = move.seq;
+      return;
+    }
     if (move.kind === "apply") {
+      // Held-key steps the client never took (its next input was not those keys) are undone.
+      if (move.restore) Object.assign(sim, move.restore, { route: [...move.restore.route] });
       stepPlayer(sim, move.input, TICK_DT);
       player.lastSeq = move.seq;
     } else {

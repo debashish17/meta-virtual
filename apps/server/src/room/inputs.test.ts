@@ -143,3 +143,74 @@ describe("InputQueue", () => {
     }
   });
 });
+
+describe("InputQueue undoing borrowed steps", () => {
+  it("undoes held steps the client never took when a changed input arrives late", () => {
+    const q = new InputQueue<string>();
+    q.push({ input: WALK, seq: 1 });
+    expect(q.next("s0").kind).toBe("apply");
+    expect(q.next("s1")).toEqual({ kind: "hold", input: WALK }); // the release is late
+    expect(q.next("s2")).toEqual({ kind: "hold", input: WALK });
+    q.push({ input: STOP, seq: 2 });
+    // The client stopped where it stood before the first held step: go back there first.
+    expect(q.next("s3")).toEqual({ kind: "apply", input: STOP, seq: 2, restore: "s1" });
+  });
+
+  it("does not undo a held step once its late input has acknowledged it", () => {
+    const q = new InputQueue<string>();
+    q.push({ input: WALK, seq: 1 });
+    q.next("s0");
+    q.next("s1"); // hold
+    q.next("s2"); // hold
+    q.push({ input: WALK, seq: 2 });
+    expect(q.next("s3")).toEqual({ kind: "ack", seq: 2 }); // pays for the hold from s1
+    q.push({ input: STOP, seq: 3 });
+    expect(q.next("s3")).toEqual({ kind: "apply", input: STOP, seq: 3, restore: "s2" });
+  });
+
+  it("keeps the server on the client's prediction with random network delay, releases included", () => {
+    // As the Windows-grid test above, plus a seeded 0..30 ms delay per input (in order, as
+    // on one socket), and the keys pressed and released several times.
+    let seed = 7;
+    const rand = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+    const keysAt = (t: number) => t < 5600 && Math.floor(t / 700) % 2 === 0; // ends released
+    for (let phase = 0; phase < 50; phase += 1) {
+      const spawn = { x: WORLD.spawn.x, z: WORLD.spawn.z };
+      const client = spawnPlayer(spawn);
+      const server = spawnPlayer(spawn);
+      const predicted = new Map<number, { x: number; z: number }>();
+      const arrivals: { at: number; held: QueuedInput }[] = [];
+      let seq = 0;
+      let held = false;
+      let lastArrival = 0;
+      for (let t = phase; t < 6000; t += 50) {
+        const down = keysAt(t);
+        if (!down && !held) continue; // nothing to send while standing
+        seq += 1;
+        const input = down ? WALK : STOP;
+        held = down;
+        stepPlayer(client, input, TICK_DT);
+        predicted.set(seq, { x: client.x, z: client.z });
+        lastArrival = Math.max(lastArrival, t + 1 + rand() * 30);
+        arrivals.push({ at: lastArrival, held: { input, seq } });
+      }
+      const q = new InputQueue<{ x: number; z: number; facing: number }>();
+      let next = 0;
+      let worst = 0;
+      for (let n = 1; n * 50 < 6500; n += 1) {
+        const at = Math.ceil((n * 50) / 15.625) * 15.625;
+        while (next < arrivals.length && arrivals[next].at <= at) q.push(arrivals[next++].held);
+        const d = q.next({ x: server.x, z: server.z, facing: server.facing });
+        if (d.kind === "apply" && d.restore) Object.assign(server, d.restore);
+        if (d.kind === "apply" || d.kind === "hold") stepPlayer(server, d.input, TICK_DT);
+        else if (d.kind === "idle") stepPlayer(server, null, TICK_DT);
+        if (d.kind === "apply" || d.kind === "ack") {
+          const p = predicted.get(d.seq)!;
+          worst = Math.max(worst, Math.hypot(server.x - p.x, server.z - p.z));
+        }
+      }
+      expect(worst, `phase ${phase}`).toBe(0);
+      expect(Math.hypot(server.x - client.x, server.z - client.z), `phase ${phase} end`).toBe(0);
+    }
+  });
+});

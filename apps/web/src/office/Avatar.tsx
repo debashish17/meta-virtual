@@ -131,6 +131,8 @@ function onlineTick(sx: number, sy: number, run: boolean) {
       const seq = p.nextSeq()
       netSend.moveTarget(seq, t.x, t.z)
       p.tick({ kind: 'target', x: t.x, z: t.z }, seq)
+      // The click replaces held keys on both sides: a release sent after it would clear the route.
+      online.heldSent = false
     } else {
       // The server stands up first and walks there after; predicted on arrival back at free.
       netSend.moveTarget(p.nextSeq(), t.x, t.z)
