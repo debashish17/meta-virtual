@@ -3,6 +3,8 @@ import type { ProposedChange } from "@office/shared";
 import { api } from "../api/index.js";
 import { useRecords } from "../api/records.js";
 import MeetingAgenda from "../bookings/MeetingAgenda.js";
+import { useReceipts } from "../receipts/store.js";
+import { formatDecisionLine, formatReceiptLine } from "../receipts/format.js";
 import { refetchAfterDecision } from "./actions.js";
 import { changeRows, changeTitle } from "./format.js";
 
@@ -59,11 +61,14 @@ function ChangeCard({
 /**
  * The approval drawer (DESIGN_SPEC 9): it replaces My day while changes are pending.
  * Each card shows before and after, approve and reject; a decision that conflicts (the
- * change is no longer pending) refreshes the list instead of failing silently.
+ * change is no longer pending) refreshes the list instead of failing silently. Below the
+ * pending cards, the decided history (P6-R) keeps every decision's receipt line —
+ * including rejections, which never show as receipts anywhere else.
  */
 export default function ApprovalsPanel() {
   const pending = useRecords((s) => s.pending);
   const meeting = useRecords((s) => s.meeting);
+  const receipts = useReceipts({});
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -113,6 +118,19 @@ export default function ApprovalsPanel() {
           <ChangeCard key={change.id} change={change} busy={busy !== null} onDecide={(id, d) => void decide(id, d)} />
         ))}
       </ul>
+      {receipts.length > 0 && (
+        <section className="pan-decided" aria-label="Decided changes">
+          <h3 className="pan-item-title">Decided</h3>
+          <ul className="pan-list">
+            {receipts.map((receipt) => (
+              <li key={receipt.changeId} className="pan-item" data-testid="receipt-history">
+                <p className="pan-item-title">{formatReceiptLine(receipt)}</p>
+                <p className="pan-item-reason">{formatDecisionLine(receipt)}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

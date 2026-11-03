@@ -135,6 +135,48 @@ describe("tone", () => {
   });
 });
 
+describe("receipts", () => {
+  const approved = {
+    changeId: "ac0e0031-0031-4031-8031-000000000031",
+    kind: "milestone_date",
+    recordType: "milestone",
+    recordId: DEMO_MILESTONE.id,
+    recordLabel: "Go-live",
+    before: { targetDate: "2026-11-15" },
+    after: { targetDate: "2026-11-22" },
+    meetingId: "ac0e0099-0099-4099-8099-000000000099",
+    meetingLabel: "Acme sync",
+    decision: "approved",
+    deciderId: "dev-maya",
+    deciderName: "Maya",
+    decidedAt: 1,
+  } as const;
+  const rejected = { ...approved, decision: "rejected" as const };
+
+  it("appends the latest approved receipts to the Acme wall", () => {
+    const screen = buildAcmeScreen(accountStatus(), projectStatus(), [approved, rejected]);
+    expect(screen.sections.map((s) => s.heading)).toEqual([
+      "Deal stage",
+      "Commitment",
+      "Next milestone",
+      "Latest receipts",
+    ]);
+    expect(screen.sections[3].lines).toEqual(["Go-live 15 Nov → 22 Nov · Acme sync · Maya"]);
+  });
+
+  it("appends the latest approved receipts to the project wall", () => {
+    const screen = buildProjectScreen(projectStatus(), [approved]);
+    expect(screen.sections.map((s) => s.heading)).toContain("Latest receipts");
+    expect(screen.sections[3].lines).toEqual(["Go-live 15 Nov → 22 Nov · Acme sync · Maya"]);
+  });
+
+  it("adds no section without an approved receipt", () => {
+    expect(buildAcmeScreen(accountStatus(), projectStatus(), []).sections).toHaveLength(3);
+    expect(buildAcmeScreen(accountStatus(), projectStatus(), [rejected]).sections).toHaveLength(3);
+    expect(buildProjectScreen(projectStatus(), [rejected]).sections).toHaveLength(3);
+  });
+});
+
 describe("screenHash", () => {
   it("is stable for equal data and changes when any line changes", () => {
     const a = buildProjectScreen(projectStatus());

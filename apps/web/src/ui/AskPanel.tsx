@@ -1,12 +1,17 @@
 import { useState } from "react";
-import { AskRequest, AskResult, type AskResult as AskResultData } from "@office/shared";
+import { AskRequest, AskResult, type AskResult as AskResultData, type AskSource } from "@office/shared";
 import { api } from "../api/index.js";
+import { formatReceiptLine } from "../receipts/format.js";
+import { useReceipts } from "../receipts/store.js";
 
 /**
  * Ask-the-office (DESIGN_SPEC 9): a single-line input at the bottom centre; the answer
  * renders above it so the panel expands upwards. Answers show their sources; an
  * abstention shows the no-record state. Reads through `api` (the mock until P3-C).
  * The close button collapses it to a small button, like the chat; reopening starts afresh.
+ *
+ * Sources with a receipt (P6-R) render as chips — record, source meeting and approver —
+ * that open the receipt or the meeting on click. The cite-or-abstain rules are unchanged.
  */
 export default function AskPanel() {
   const [open, setOpen] = useState(true);
@@ -14,11 +19,31 @@ export default function AskPanel() {
   const [result, setResult] = useState<AskResultData | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [openSource, setOpenSource] = useState<string | null>(null);
+  const [meetingText, setMeetingText] = useState<Record<string, string>>({});
+  const receipts = useReceipts({});
+
+  function sourceKey(source: AskSource): string {
+    return `${source.type}:${source.id}`;
+  }
+
+  /** The latest approved receipt behind a source: the record's own, or the meeting's. */
+  function receiptFor(source: AskSource) {
+    if (source.type === "meeting") {
+      return receipts.find(
+        (receipt) => receipt.meetingId === source.id && receipt.decision === "approved",
+      );
+    }
+    return receipts.find(
+      (receipt) => receipt.recordId === source.id && receipt.decision === "approved",
+    );
+  }
 
   function close() {
     setOpen(false);
     setResult(null);
     setError(null);
+    setOpenSource(null);
   }
 
   async function submit(event: React.FormEvent) {
@@ -27,6 +52,7 @@ export default function AskPanel() {
     if (!parsed.success || pending) return;
     setPending(true);
     setError(null);
+    setOpenSource(null);
     try {
       setResult(AskResult.parse(await api.ask(parsed.data.question)));
     } catch (err) {
@@ -34,6 +60,23 @@ export default function AskPanel() {
       setError(err instanceof Error ? err.message : "asking failed");
     } finally {
       setPending(false);
+    }
+  }
+
+  async function toggle(source: AskSource) {
+    const key = sourceKey(source);
+    if (openSource === key) {
+      setOpenSource(null);
+      return;
+    }
+    setOpenSource(key);
+    if (source.type === "meeting" && meetingText[source.id] === undefined) {
+      try {
+        const meeting = await api.meeting(source.id);
+        setMeetingText((texts) => ({ ...texts, [source.id]: meeting.summary }));
+      } catch {
+        setMeetingText((texts) => ({ ...texts, [source.id]: "Could not load the meeting." }));
+      }
     }
   }
 
@@ -53,11 +96,44 @@ export default function AskPanel() {
             <p className="pan-muted">No record found — try the Acme integration status.</p>
           ) : (
             <ul className="pan-sources">
-              {result.sources.map((s) => (
-                <li key={`${s.type}:${s.id}`}>
-                  <span className="pan-source-type">{s.type}</span> {s.label}
-                </li>
-              ))}
+              {result.sources.map((s) => {
+                const receipt = receiptFor(s);
+                const meeting = s.meetingLabel ?? receipt?.meetingLabel;
+                const approver = s.approverName ?? receipt?.deciderName;
+                const chip = receipt !== undefined || meeting !== undefined || s.type === "meeting";
+                const key = sourceKey(s);
+                return (
+                  <li key={key}>
+                    {chip ? (
+                      <button
+                        type="button"
+                        className="pan-btn"
+                        aria-label="Show receipt details"
+                        aria-expanded={openSource === key}
+                        onClick={() => void toggle(s)}
+                      >
+                        <span className="pan-source-type">{s.type}</span> {s.label}
+                        {s.type !== "meeting" && meeting !== undefined && approver !== undefined
+                          ? ` · ${meeting} · ${approver}`
+                          : ""}
+                      </button>
+                    ) : (
+                      <>
+                        <span className="pan-source-type">{s.type}</span> {s.label}
+                      </>
+                    )}
+                    {openSource === key && (
+                      <p className="pan-item-reason">
+                        {s.type === "meeting"
+                          ? (meetingText[s.id] ?? "Loading…")
+                          : receipt
+                            ? formatReceiptLine(receipt)
+                            : ""}
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

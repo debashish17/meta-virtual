@@ -67,9 +67,13 @@ export function drawScreen(canvas: HTMLCanvasElement, data: ScreenData): void {
   g.lineTo(SCREEN_W - pad, pad + 128);
   g.stroke();
 
+  // When extra sections exist (today: the latest receipts), the glance rows shrink to two
+  // so the extras fit below; otherwise the layout is exactly as before.
+  const glance = data.sections.slice(0, data.sections.length > 3 ? 2 : 3);
+
   // One glance row per section: heading plus the first line, on one line.
   let y = pad + 128 + 84;
-  for (const section of data.sections.slice(0, 3)) {
+  for (const section of glance) {
     const label = `${section.heading.toUpperCase()}  `;
     g.font = `600 34px ${FONT}`;
     g.fillStyle = ACCENT;
@@ -87,6 +91,26 @@ export function drawScreen(canvas: HTMLCanvasElement, data: ScreenData): void {
       g.fillText(`+${section.lines.length - 1}`, valueX + g.measureText(shown).width + 12, y);
     }
     y += 108;
+  }
+
+  // Sections past the glance rows draw as compact lines, so the canvas matches the
+  // overlay without new 3D.
+  const rest = data.sections
+    .slice(glance.length)
+    .flatMap((section) => section.lines)
+    .slice(0, 2);
+  if (rest.length > 0) {
+    y += 8;
+    g.font = `600 26px ${FONT}`;
+    g.fillStyle = MUTED;
+    g.fillText("LATEST RECEIPTS", pad, y);
+    y += 40;
+    g.font = `400 30px ${FONT}`;
+    g.fillStyle = INK;
+    for (const line of rest) {
+      g.fillText(ellipsis(g, line, inner), pad, y);
+      y += 38;
+    }
   }
 
   g.font = `400 28px ${FONT}`;

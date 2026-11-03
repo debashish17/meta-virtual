@@ -3,8 +3,10 @@ import {
   ProjectStatus,
   type Milestone,
   type PersonRef,
+  type Receipt,
   type Task,
 } from "@office/shared";
+import { formatReceiptLine } from "../../receipts/format.js";
 
 /**
  * What the wall displays show: the Acme room's deal stage, commitment and next milestone,
@@ -49,7 +51,28 @@ function nextMilestone(milestones: Milestone[]): Milestone | null {
   return upcoming[0] ?? null;
 }
 
-export function buildAcmeScreen(accountData: unknown, projectData: unknown): ScreenData {
+/**
+ * The wall's receipt list (P6-R): the latest approved receipts only, newest first. Rejected
+ * changes never show as receipts anywhere; the drawer history keeps those.
+ */
+function receiptSection(receipts: Receipt[], people: PersonRef[]): ScreenSection[] {
+  const approved = receipts.filter((receipt) => receipt.decision === "approved").slice(0, 3);
+  if (approved.length === 0) {
+    return [];
+  }
+  return [
+    {
+      heading: "Latest receipts",
+      lines: approved.map((receipt) => formatReceiptLine(receipt, people)),
+    },
+  ];
+}
+
+export function buildAcmeScreen(
+  accountData: unknown,
+  projectData: unknown,
+  receipts: Receipt[] = [],
+): ScreenData {
   const account = AccountStatus.parse(accountData);
   const project = ProjectStatus.parse(projectData);
   const next = nextMilestone(project.milestones);
@@ -70,6 +93,7 @@ export function buildAcmeScreen(accountData: unknown, projectData: unknown): Scr
         heading: "Next milestone",
         lines: next ? [`${next.name} · ${shortDate(next.targetDate)}`] : ["No upcoming milestones"],
       },
+      ...receiptSection(receipts, [...account.people, ...project.people]),
     ],
   };
 }
@@ -92,7 +116,7 @@ function ownerLines(tasks: Task[], people: PersonRef[]): string[] {
     .map(([name, n]) => `${name} · ${n} open task${n === 1 ? "" : "s"}`);
 }
 
-export function buildProjectScreen(projectData: unknown): ScreenData {
+export function buildProjectScreen(projectData: unknown, receipts: Receipt[] = []): ScreenData {
   const project = ProjectStatus.parse(projectData);
   const blocked = project.tasks.filter((t) => t.status === "blocked");
   return {
@@ -112,6 +136,7 @@ export function buildProjectScreen(projectData: unknown): ScreenData {
         lines: blocked.length === 0 ? ["Nothing blocked"] : blocked.map((t) => blockedLine(t, project.people)),
       },
       { heading: "Owners", lines: ownerLines(project.tasks, project.people) },
+      ...receiptSection(receipts, project.people),
     ],
   };
 }
