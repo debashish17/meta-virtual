@@ -9,7 +9,7 @@ the finished work against it.
 
 ---
 
-## 0. Start here: the deadline sprint (updated 2026-11-03, evening)
+## 0. Start here: the deadline sprint (updated 2026-11-04, just after midnight)
 
 **Deadline: 2026-11-04, 21:00 (the owner's local time).** What gets judged is the public demo:
 the Acme script (`PROJECT_BRIEF.md` section 5) in two browsers on the deployed URL. The new work
@@ -18,26 +18,52 @@ order, feature freeze and cut list in `IMPLEMENTATION_PLAN.md` 3.1). The rest of
 applies. **Nothing in Phase 6 has been started.**
 
 **State right now**
-- `main` at `097963e` (local only; nothing is pushed). Phases 1 to 5 are merged. The plan and the
-  hosting setup are committed (`13cd161`, `097963e`).
+- `main` at `5a02fe6`, **pushed**: GitHub `debashish17/meta-virtual` (private) matches it. Phases
+  1 to 5 are merged; the plan, the hosting setup, the deploy config and the first-visit name card
+  are on `main`. Before pushing again: `git fetch` and
+  `git rev-list --left-right --count main...origin/main` must show `N 0` (never force-push; the
+  history was rewritten on 2026-11-03, so any older copy must be reset to `origin/main` first).
+- Checks on `5a02fe6` (2026-11-04, 00:00): `pnpm typecheck`, `pnpm lint` and `pnpm test` pass
+  (server 190, shared 123, web 188 tests); `pnpm test:e2e` 8 of 8, including `demo.spec` (2.1 min).
 - The owner keeps merging fixes from their own sessions (`fix/*` branches; the latest touched
   sitting, reservations, the E chip and "my day"). Fetch and rebase often, P6-A above all: it edits
   the same activity code.
 - `docs/USP_A_IMPLEMENTATION_PLAN.md` is the owner's plan for after the deadline. Only its Phase 0
   runs now, as P6-R.
 
-**Live now (P4-A, fast mode, deployed 2026-11-03 with the owner's OK)**
-- Web: `https://meta-virtual-office.vercel.app`. Server: `https://meta-virtual-office.fly.dev`
-  (one machine, Fly region `sin`). Both run `13cd161`.
-- First visit to the deployed site: a "Who are you?" card (type your own name, or Join as Maya /
-  Arjun for the demo script), remembered per browser; development builds skip it (`644d96f`).
-  Two people who pick the same name still share one identity, as dev auth has always done.
-- Fast mode: `AUTH_MODE=dev` (the "Join as" name picker), the in-memory repo (no `DATABASE_URL`),
-  and the live model, Muse Spark (since 2026-11-03; decision 4 below). Data resets whenever the machine stops; it stops when idle and starts on the next
-  visit in a few seconds.
+**Live now (P4-A, fast mode, deployed with the owner's OK)**
+- Web: `https://meta-virtual-office.vercel.app`, built from `644d96f`. Server:
+  `https://meta-virtual-office.fly.dev`, one machine in Fly region `sin`, image built from
+  `13cd161` (`/health` reports that version; no server code has changed since).
+- Sign-in, fast mode: `AUTH_MODE=dev`, so the server trusts `dev:<name>`. A first visit to the
+  deployed site shows a "Who are you?" card before the office loads: type your own name, or Join as
+  Maya / Join as Arjun for the demo script. The choice is kept in that browser (`office.me` in
+  local storage) and the "Name — switch" chip changes it. Development builds (local dev, e2e,
+  screenshots) skip the card and join as before; `?name=` links skip it too. Two people who pick
+  the same name still share one identity; only the full deploy (real accounts) fixes that.
+- Data: the in-memory repo (no `DATABASE_URL`). It resets whenever the machine stops; the machine
+  stops when idle and starts on the next visit in a few seconds.
+- AI: the live model, Muse Spark `muse-spark-1.3` (decision 4 below, with its known risk on the
+  meeting step).
 - Verified live: `/health`; two players join over the internet in under 0.4 s and see each other;
+  a fresh browser gets the name card, joins as its own player, and skips the card after a reload;
   `/me/day`; `/ask` answers the Acme question with six sources and abstains on the CEO question;
   CORS answers only the two Vercel origins in `fly.toml`.
+
+**Implemented since the plan was written (2026-11-04, `644d96f`)**
+- `apps/web/src/office/me.ts`: `useMe` gains `chosen` (true when the name came from `?name=`, this
+  browser's storage, or a pick; false for the 'Maya' fallback). `setName` sets it.
+- `apps/web/src/auth/AuthGate.tsx`: in dev auth, `DevGate` shows `DevNameScreen` when
+  `import.meta.env.PROD && !OVERVIEW && !chosen`, and renders the office only after a choice
+  (`signInDev(name)`), so `startNet` never joins as the fallback. `DevNamePicker` (the switch chip)
+  is unchanged. Three new tests in `AuthGate.test.tsx` (`vi.stubEnv("PROD", true)`).
+- What this means for Phase 6:
+  - P6-A: check-in starts after this card, and home desks match people by display name
+    (`ARCHITECTURE.md` 12.10). Anyone who types "Maya" gets Maya's desk. That is fine for the demo;
+    say so in the report.
+  - P6-B: invitees are picked from the people in the office. Their names are what visitors typed.
+  - P6-E: the story starts at this card (Maya and Arjun pick their names), then check-in.
+  - Lanes must not change `AuthGate.tsx` or `me.ts` without a request to the lead.
 
 **Hosting accounts**
 
@@ -112,8 +138,9 @@ it does not match the server. That only matters for the full deploy; see decisio
    next to the server, and fills in `.env.hosted.local`. The steps are under "Full mode" below.
 2. **Keep one machine always on for judging day** (`min_machines_running = 1` in `fly.toml`,
    roughly USD 2 a month): no cold start, and the in-memory demo data survives idle periods.
-3. **Pushing `main`** to the remote: only when the owner asks (see the memory note on the rewritten
-   history: reset stale copies to `origin/main` first).
+3. **Pushing `main`** to the remote: only when the owner asks. The owner asked once, on
+   2026-11-04 (`5a02fe6` pushed as a fast-forward); each later push needs its own OK. Check
+   `main...origin/main` first (state above).
 4. **The live AI model: wired 2026-11-03 at the owner's request.** Fly holds `LLM_API_KEY` (from
    the root `.env`); `/health` says `llm: "meta"`: Muse Spark `muse-spark-1.3` through
    `https://api.meta.ai/v1`, reasoning effort `low` (defaults; `LLM_MODEL` is set nowhere). Checked
@@ -473,6 +500,7 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 | P4-C rehearsal | | | blocked (needs P4-A deploy first) | |
 | Improvement loop (lead) | lead | main (fba1251 + demo/teleport fix) | done: dev-auth Postgres ids, Players memo, chat history pull, dev teleport (idle-reconcile fixed), test:scripts; gates green, contract 4/4, e2e spot-check green (demo 5.1m, calls + live-meeting 5/5). Demo fix: dismiss Calls-unavailable panel (covers drawer) + idle-sync decision clicks. Request to P5-B: call panel structurally overlaps the drawer column during live calls | |
 | FIX avatar-sync + office-glitches (owner) | owner session | fix/avatar-sync, fix/office-glitches | merged (--no-ff, owner request 2026-11-03): room at a true 20 Hz with an input queue, reconcile and draw-between-ticks, paced remote snapshots; name tags under panels, Ask close, typing above the desk, people keep apart, chairs swivel; open items closed; then sitting: walk off after standing up (WalkMap step-out), the E action chip and seat halo, synced reservations (OfficeState.taken) | FIX-avatar-sync.md, FIX-office-glitches.md, FIX-sitting.md |
+| FIX first-visit name card (owner request) | lead | main (`644d96f`) | merged and deployed 2026-11-04: deployed dev-auth build asks "Who are you?" before joining; checks green, e2e 8/8, verified live with a fresh browser | section 0 |
 | P6-0 contract and slots | lead | wp/P6-0-contract | not started | |
 | P6-A status, home desks, colleagues | | wp/P6-A-status-desks | not started (needs P6-0) | |
 | P6-R receipts (USP A Phase 0) | | wp/P6-R-receipts | not started (needs P6-0) | |
@@ -593,3 +621,10 @@ P6-E, Gate G8) in `WORK_PACKAGES.md`; its shared design in `ARCHITECTURE.md` 12.
 the deadline order and cut list in `IMPLEMENTATION_PLAN.md` 3.1; the final review renumbered to
 Phase 7; the hosting accounts and the start-here notes in section 0 of this file; the scope note
 in `PROJECT_BRIEF.md` section 6. D14 (deploy mode) is open.
+
+**2026-11-03 to 04, deploy, live AI, name card.** Fast-mode deploy (Vercel, Fly `sin` after a
+measured region choice; the Supabase project sits in Frankfurt with both migrations applied),
+the live model wired on Fly at the owner's request with the meeting-step risk recorded, and the
+first-visit "Who are you?" card so visitors stop sharing the 'Maya' fallback. `main` pushed to
+GitHub as a fast-forward (`5a02fe6`). Section 0 rewritten as the start-here notes for the next
+lead, with its prompt.
