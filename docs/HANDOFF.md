@@ -268,7 +268,7 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 | P5-D live rehearsal | | | blocked (owner LiveKit project + participation) | |
 | P4-C rehearsal | | | blocked (needs P4-A deploy first) | |
 | Improvement loop (lead) | lead | main (fba1251 + demo/teleport fix) | done: dev-auth Postgres ids, Players memo, chat history pull, dev teleport (idle-reconcile fixed), test:scripts; gates green, contract 4/4, e2e spot-check green (demo 5.1m, calls + live-meeting 5/5). Demo fix: dismiss Calls-unavailable panel (covers drawer) + idle-sync decision clicks. Request to P5-B: call panel structurally overlaps the drawer column during live calls | |
-| FIX avatar-sync + office-glitches (owner) | owner session | fix/avatar-sync, fix/office-glitches | merged (--no-ff, owner request 2026-11-03): room at a true 20 Hz with an input queue, reconcile and draw-between-ticks, paced remote snapshots; name tags under panels, Ask close, typing above the desk, people keep apart, chairs swivel; open items closed | FIX-avatar-sync.md, FIX-office-glitches.md |
+| FIX avatar-sync + office-glitches (owner) | owner session | fix/avatar-sync, fix/office-glitches | merged (--no-ff, owner request 2026-11-03): room at a true 20 Hz with an input queue, reconcile and draw-between-ticks, paced remote snapshots; name tags under panels, Ask close, typing above the desk, people keep apart, chairs swivel; open items closed; then sitting: walk off after standing up (WalkMap step-out), the E action chip and seat halo, synced reservations (OfficeState.taken) | FIX-avatar-sync.md, FIX-office-glitches.md, FIX-sitting.md |
 
 States: not started, in progress, blocked (say why), in review, merged.
 

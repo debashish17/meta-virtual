@@ -3,7 +3,7 @@ import { BrightnessContrast, EffectComposer, HueSaturation, N8AO, TiltShift2, To
 import { ToneMappingMode } from 'postprocessing'
 import { Suspense, useRef } from 'react'
 import Architecture from './Architecture'
-import Avatar, { walkTo } from './Avatar'
+import Avatar, { hoverAt, walkTo } from './Avatar'
 import CameraRig from './CameraRig'
 import Furniture from './Furniture'
 import Hud from './Hud'
@@ -57,7 +57,8 @@ export default function OfficeScene() {
         <CameraRig />
         <Lighting />
         <Suspense fallback={null}>
-          <Architecture onPick={OVERVIEW ? undefined : (p) => walkTo({ x: p.x, z: p.z })} />
+          <Architecture onPick={OVERVIEW ? undefined : (p) => walkTo({ x: p.x, z: p.z })}
+            onHover={OVERVIEW ? undefined : (p) => hoverAt(p && { x: p.x, z: p.z })} />
           <Furniture />
           <Desktops />
           <Sprites />

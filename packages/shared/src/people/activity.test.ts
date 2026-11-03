@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { OFFICE_WALK } from '../world/index.js'
 import { COUNTERS, DESK_SEATS, advanceActivity, approachOf, startActivity, targetNear, type Activity, type Body } from './activity.js'
 import { besideOf } from './routine.js'
+import { spawnPlayer, stepPlayer } from '../sim/index.js'
 
 const MOVES = { sit_down: 2.2, stand_up: 2.3, interact: 3.2, rise: 0.5 }   // seconds, and seat to standing spot (m)
 const body = (x: number, z: number): Body => ({ x, z, facing: 0 })
@@ -90,5 +91,26 @@ describe('your interactions', () => {
     expect(d(seen['stand_up>stand'], seat)).toBeLessThan(0.01)            // up out of it...
     expect(d(seen.stand, beside)).toBeLessThan(0.01)                      // ...and standing beside it
     expect(a.kind).toBe('free')
+  })
+})
+
+describe('standing up from a desk', () => {
+  it('lets you walk off with the keys from where you stand up, at every desk seat', () => {
+    for (const seat of DESK_SEATS) {
+      const beside = besideOf(seat, 0.47)
+      // straight back from the desk, as someone leaving it would
+      const back = { kind: 'intent' as const, dx: Math.round(-Math.sin(seat.facing)), dz: Math.round(-Math.cos(seat.facing)), run: false }
+      const p = spawnPlayer(beside)
+      for (let i = 0; i < 30; i += 1) stepPlayer(p, back)
+      expect(Math.hypot(p.x - beside.x, p.z - beside.z), seat.id).toBeGreaterThan(0.3)
+      expect(OFFICE_WALK.isWalkable(p.x, p.z), seat.id).toBe(true)
+      // and no key takes you further into the desk or the chair
+      const here = OFFICE_WALK.depth(beside.x, beside.z)
+      for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]] as const) {
+        const q = spawnPlayer(beside)
+        stepPlayer(q, { kind: 'intent', dx, dz, run: false })
+        expect(OFFICE_WALK.depth(q.x, q.z), `${seat.id} ${dx},${dz}`).toBeLessThanOrEqual(here + 1e-9)
+      }
+    }
   })
 })

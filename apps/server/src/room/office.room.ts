@@ -155,6 +155,7 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
   private chatSeq = 0;
   private readonly steps = new FixedStep(TICK_DT * 1000);
   private lastPoll = 0;
+  private takenKey = "";
 
   /** Reservation ids held in this room. Test seam. */
   get reservations(): ReadonlySet<string> {
@@ -485,7 +486,20 @@ export class OfficeRoom extends Room<{ state: OfficeState }> {
     const due = this.steps.advance(now - this.lastPoll);
     this.lastPoll = now;
     for (let i = 0; i < due; i += 1) this.tick();
-    if (due > 0) this.broadcastPatch();
+    if (due > 0) {
+      this.syncTaken();
+      this.broadcastPatch();
+    }
+  }
+
+  /** Mirror the reservations into the synced state when they changed (OfficeState.taken). */
+  private syncTaken(): void {
+    const ids = [...this.taken].sort();
+    const key = ids.join("|");
+    if (key === this.takenKey) return;
+    this.takenKey = key;
+    this.state.taken.clear();
+    this.state.taken.push(...ids);
   }
 
   private tick(): void {

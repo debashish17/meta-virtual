@@ -1,3 +1,4 @@
+import type { Action } from './action'
 import { create } from 'zustand'
 import { WORLD, type Zone } from '@office/shared'
 
@@ -17,11 +18,16 @@ export const view = { x: WORLD.spawn.x, z: WORLD.spawn.z, zoom: 62 }
 type OfficeUi = {
   zone: Zone | null
   setZone: (zone: Zone | null) => void
+  /** What E does right now (action.ts); Avatar keeps it current, the chip under your feet shows it. */
+  action: Action | null
+  setAction: (action: Action | null) => void
 }
 
 export const useOfficeUi = create<OfficeUi>((set) => ({
   zone: null,
   setZone: (zone) => set({ zone }),
+  action: null,
+  setAction: (action) => set({ action }),
 }))
 
 /** `?view=overview` frames the whole floor with no avatar (used for review screenshots). */

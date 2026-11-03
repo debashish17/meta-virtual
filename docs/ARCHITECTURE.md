@@ -245,7 +245,12 @@ Checked against the installed libraries: Colyseus 0.18 (`@colyseus/core` 0.18.24
   snapshot. A position jump above `SNAP_DISTANCE` between two snapshots (sitting down, standing up)
   snaps instead of sliding, so the cut in `Person` lines up with the move.
 - Activities (desk seat, counter) run on the server with the shared `advanceActivity`. While one
-  runs, the local avatar is drawn from snapshots, not predicted.
+  runs, the local avatar is drawn from snapshots, not predicted. The room syncs its reservation set
+  (`OfficeState.taken`: players' and colleagues' seats and spots), so a client offers to sit only
+  where it may (a colleague's desk stays theirs while they are away).
+- Standing up leaves people beside the chair, inside the desk's and chair's no-go margins.
+  `WalkMap.step` lets a disc that stands inside a margin move out of it, or along it, never further
+  in (`canStep`), so the keys walk you off from there.
 - Colleagues run on the server tick with the shared routine code and the room's reservation set,
   synced as `NpcView` (decision D6).
 - One patch right after each batch of ticks (`patchRate = null`, `broadcastPatch()`), so every

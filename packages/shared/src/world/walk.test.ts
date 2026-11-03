@@ -150,3 +150,32 @@ describe("office walkability", () => {
     }
   });
 });
+
+describe("step out of an obstacle's margin", () => {
+  // the table spans x 6..8, z 7..8; its margin reaches AVATAR_RADIUS beyond that
+  const inMargin = { x: 6 - AVATAR_RADIUS / 2, z: 7.5 };   // touching the table's west side
+
+  it("walks out of a margin it stands in, never further in", () => {
+    expect(FLOOR.isWalkable(inMargin.x, inMargin.z)).toBe(false);
+    const inward = FLOOR.step(inMargin, { x: 1, z: 0 }, 0.05, 2);
+    expect(inward).toEqual(inMargin);                      // towards the table: refused
+    let p = inMargin;
+    for (let i = 0; i < 4; i += 1) p = FLOOR.step(p, { x: -1, z: 0 }, 0.05, 2);
+    expect(p.x).toBeLessThan(inMargin.x);                  // away from it: allowed
+    expect(FLOOR.isWalkable(p.x, p.z)).toBe(true);         // and back on the floor
+  });
+
+  it("may move along the margin at the same depth, never deeper", () => {
+    const along = FLOOR.step(inMargin, { x: 0, z: 1 }, 0.05, 2);
+    expect(along.z).toBeGreaterThan(inMargin.z);           // along the table's side
+    expect(FLOOR.depth(along.x, along.z)).toBeLessThanOrEqual(FLOOR.depth(inMargin.x, inMargin.z) + 1e-9);
+  });
+
+  it("still never ends inside an obstacle when starting on the floor", () => {
+    const start = { x: 5.5, z: 7.5 };
+    for (let i = 0; i < 20; i += 1) {
+      const next = FLOOR.step(start, { x: 1, z: 0 }, 0.05 * i, 2);
+      expect(FLOOR.isWalkable(next.x, next.z)).toBe(true);
+    }
+  });
+});
