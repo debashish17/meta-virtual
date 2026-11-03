@@ -107,6 +107,56 @@ describe("AuthGate dev mode", () => {
   });
 });
 
+describe("AuthGate dev mode, deployed build (first visit)", () => {
+  beforeEach(() => {
+    vi.stubEnv("PROD", true);
+  });
+
+  it("asks who you are before the office loads, and joins with a typed name", async () => {
+    useMe.setState({ name: "Maya", chosen: false });
+    render(
+      <AuthGate>
+        <p>office here</p>
+      </AuthGate>,
+    );
+    expect(screen.getByRole("dialog", { name: "Who are you?" })).toBeTruthy();
+    expect(screen.queryByText("office here")).toBeNull();
+    const join = screen.getByRole("button", { name: "Join" }) as HTMLButtonElement;
+    expect(join.disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "  Priya " } });
+    fireEvent.click(join);
+    await waitFor(() => expect(screen.getByText("office here")).toBeTruthy());
+    expect(useMe.getState().name).toBe("Priya");
+    expect(useMe.getState().chosen).toBe(true);
+    expect(useAuth.getState().token).toBe("dev:Priya");
+    expect(screen.getByRole("button", { name: "Priya — switch" })).toBeTruthy();
+  });
+
+  it("offers the demo people as one-click choices", async () => {
+    useMe.setState({ name: "Maya", chosen: false });
+    render(
+      <AuthGate>
+        <p>office here</p>
+      </AuthGate>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Join as Arjun" }));
+    await waitFor(() => expect(screen.getByText("office here")).toBeTruthy());
+    expect(useMe.getState().name).toBe("Arjun");
+    expect(useAuth.getState().token).toBe("dev:Arjun");
+  });
+
+  it("skips the card when this browser already chose a name", () => {
+    useMe.setState({ name: "Arjun", chosen: true });
+    render(
+      <AuthGate>
+        <p>office here</p>
+      </AuthGate>,
+    );
+    expect(screen.getByText("office here")).toBeTruthy();
+    expect(screen.queryByRole("dialog", { name: "Who are you?" })).toBeNull();
+  });
+});
+
 describe("AuthGate supabase mode", () => {
   it("shows the Join-as buttons locally and signs in through Supabase Auth", async () => {
     supabaseEnv();

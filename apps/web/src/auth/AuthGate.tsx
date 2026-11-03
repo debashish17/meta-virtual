@@ -16,20 +16,87 @@ import "./auth.css";
  * The sign-in gate, wrapping the app in `App`.
  *
  * Dev mode (`VITE_AUTH_MODE` unset or `dev`) has no authentication to gate on — the server
- * trusts `dev:<name>` — so it joins straight in with the stored name and offers a name
- * picker that rejoins with the new name. Supabase mode blocks on a sign-in screen instead:
- * Join-as-Maya/Arjun buttons against a local Supabase, an email and password form otherwise.
+ * trusts `dev:<name>` — so it joins with the stored name and offers a name picker that
+ * rejoins with the new name. In a deployed build (`import.meta.env.PROD`) a first visit with
+ * no name chosen yet (none stored, no `?name=`) asks "Who are you?" before the office loads,
+ * so visitors do not all arrive as the 'Maya' fallback and share one identity. Development
+ * builds (local dev, e2e, screenshots) keep joining straight in. Supabase mode blocks on a
+ * sign-in screen instead: Join-as-Maya/Arjun buttons against a local Supabase, an email and
+ * password form otherwise.
  */
 export default function AuthGate({ children }: { children: ReactNode }) {
   if (authMode() !== "supabase") {
-    return (
-      <>
-        {children}
-        <DevNamePicker />
-      </>
-    );
+    return <DevGate>{children}</DevGate>;
   }
   return <SupabaseGate>{children}</SupabaseGate>;
+}
+
+function DevGate({ children }: { children: ReactNode }) {
+  const [asking, setAsking] = useState(
+    () => import.meta.env.PROD && !OVERVIEW && !useMe.getState().chosen,
+  );
+  if (asking) {
+    return (
+      <DevNameScreen
+        onJoin={(name) => {
+          useAuth.getState().signInDev(name);
+          setAsking(false);
+        }}
+      />
+    );
+  }
+  return (
+    <>
+      {children}
+      <DevNamePicker />
+    </>
+  );
+}
+
+/** First visit to the deployed office: a name of your own, or one of the demo's two people. */
+function DevNameScreen({ onJoin }: { onJoin: (name: string) => void }) {
+  const [draft, setDraft] = useState("");
+  const clean = draft.trim();
+  return (
+    <div className="auth-screen">
+      <div className="auth-card" role="dialog" aria-label="Who are you?">
+        <h1>Virtual Office</h1>
+        <p>Who are you?</p>
+        <form
+          className="auth-form"
+          onSubmit={(e: FormEvent) => {
+            e.preventDefault();
+            if (clean) onJoin(clean);
+          }}
+        >
+          <label>
+            Your name
+            <input
+              value={draft}
+              maxLength={40}
+              autoComplete="name"
+              autoFocus
+              onChange={(e) => setDraft(e.target.value)}
+            />
+          </label>
+          <button type="submit" disabled={!clean}>
+            Join
+          </button>
+        </form>
+        <div className="auth-seed">
+          {SEED_USERS.map((user) => (
+            <button key={user.key} type="button" onClick={() => onJoin(user.name)}>
+              Join as {user.name}
+            </button>
+          ))}
+          <p className="auth-hint">
+            Maya and Arjun are the demo's two people: pick one to run the demo script. Everyone
+            else, type your own name.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function rejoinWith(name: string): void {
