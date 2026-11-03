@@ -399,3 +399,90 @@ Checked against the installed libraries: Colyseus 0.18 (`@colyseus/core` 0.18.24
   not good enough.
 - Failure behaviour: no keys, or LiveKit unreachable, gives "Calls unavailable"; the office, the
   fixture demo and the pasted-transcript route are unaffected. `/health` reports `calls`.
+
+### 12.10 Office life (Phase 6; owner request 2026-11-03)
+
+The owner's aim: the office should be used, not decorative. **Status decides where a person is.**
+These designs are shared by P6-0 to P6-E (`docs/WORK_PACKAGES.md`); lanes do not re-decide them.
+
+**Statuses and movement**
+- `Status` gains `working` and `on_break`: `available | working | on_break | in_meeting | away`.
+  `PROTOCOL_VERSION` goes to 2. A player joins `available` at the spawn by reception.
+- New client message `go_to { seq, place: "desk" | "break" }`. The server sets the status
+  (`desk` gives `working`, `break` gives `on_break`) and moves the player through the activity
+  pipeline that already walks to a seat or counter spot and plays the moves:
+  - `desk`: stand up from any activity, walk to the player's home desk, sit, type. A player with no
+    home desk (a custom dev name) gets the status only, and `error no_home_desk`.
+  - `break`: stand up, walk to the nearest free counter spot (tea point, then café), make a drink,
+    then stand there until the next action.
+- `status_set` never moves anyone. This matters: the call store (P5-B) sets `in_meeting` on entering
+  a meeting room and restores the previous status on leaving; restoring `working` must not yank the
+  player back to the desk. Walking off with the keys or a click does not change the status either.
+
+**Home desks**
+- `packages/shared/src/people/desks.ts`. A desk is named by its team and its index in that team's
+  layout order (`team_success#3`), never by coordinates, so assignments survive a new floor plan
+  (the Atrium and Village studies). It resolves at load time to today's `seat:x,z` id, so
+  `activity_start` and the reservation set keep their wire format.
+- `HOME_DESKS` maps person keys (`maya`, `arjun`) and the kept colleague presets to desks in their
+  team (Maya: Customer success, Arjun: Integrations); `teamOf(key)`. A signed-in player is matched
+  to a person by display name (case-insensitive, against `DEMO_PEOPLE` and the presets), the way
+  the colleagues already skip a signed-in person; `profiles` has no key column and needs none.
+  `ErrorCode` gains `no_home_desk`.
+- The room's reservation set (`OfficeState.taken`) holds every home desk for its owner, present or
+  not: anyone else gets `target_taken`, and the web's sit offer (E chip, halo) never offers it.
+  Every other seat is free seating, first come.
+
+**Colleagues**
+- `NPC_COUNT = 4` presets run (shared constant), each at their own home desk, on the routines they
+  have today. A preset whose person is signed in does not run, as today.
+
+**Free seating (P6-D)**
+- Lounge armchairs, sofas, café chairs and meeting-room chairs become seats with the `sit_talk`
+  pose, open to anyone, through `activity_start` with their own `seat:x,z` ids. A seat type whose
+  sit-down looks wrong in a screenshot is left out rather than hacked.
+
+**Meetings (bookings)**
+- `Booking = { id, workspaceId, zoneId | null, title, agenda, hostId, inviteeIds, status: "open" |
+  "ended", createdAt, endedAt | null }`. Only `meeting_room`, `customer_room` and `project_room`
+  zones can be booked, one open booking per zone (409 `room_busy`). `zoneId: null` is a virtual
+  meeting: a call only, which needs LiveKit (cut unless the LiveKit project exists).
+- HTTP: `POST /bookings`, `GET /bookings?status=open`, `POST /bookings/:id/end` (host only).
+- After a create, the API sends `meeting_invite { bookingId, zoneId, title, hostName }` to each
+  invitee connected to the office room (through the room registry, `bus.meetingInvite`) and
+  `records_changed { kinds: ["bookings"] }` to everyone. An invitee who is offline sees the open
+  booking in the panel when they join.
+- Joining is client-driven with what exists: "Join" sends `move_target` to `ROOM_ENTRY[zoneId]`
+  (shared, `packages/shared/src/world/rooms.ts`: a walkable point inside each bookable room) and
+  `status_set in_meeting`. The host walks there the same way on create.
+- `POST /meetings` accepts an optional `bookingId`. The meeting stores the booking's agenda, the
+  extraction context includes it, and the drawer shows it above the summary. `FixtureLlm` output
+  for the demo transcript is unchanged. Ending the booking frees the room.
+
+**Notes and the board**
+- Notes `{ id, workspaceId, userId, text, color, done, createdAt }` are private to their author: the
+  RLS select policy is `user_id = auth.uid()`, not workspace-wide. `GET /notes`, `POST /notes`,
+  `PATCH /notes/:id`, `DELETE /notes/:id` (author only). No broadcast.
+- Board pins `{ id, workspaceId, authorId, authorName, text, color, createdAt }` are
+  workspace-visible. `GET /board`, `POST /board`, `DELETE /board/:id` (author only);
+  `records_changed { kinds: ["board"] }`. Drawn on the cork board as a canvas texture, the way the
+  wall displays are (`office/displays`); clicking the board opens the panel.
+
+**Receipts (P6-R, USP A Phase 0)**
+- A receipt is one decided change: record, before and after, source meeting, decision, decider and
+  time. `GET /receipts?accountId=&projectId=&limit=` composes them from the existing `Repo` reads
+  (audit rows, changes, meetings, people), so it adds no table and no write path. The approval
+  drawer, the customer and project wall displays and the Ask sources show them; `records_changed`
+  refetches them, so the second user sees a receipt live.
+
+**Storage and web wiring**
+- Each feature has its own store with an in-memory and a Postgres implementation
+  (`apps/server/src/{bookings,notes,board}/store.ts`), built in `deps.ts` beside the `Repo`. Postgres
+  stores read through `PostgresRepo.withUser` (RLS applies) and write through `withService` after a
+  membership check (12.4). Each has its own migration file; every table carries `workspace_id` and
+  has RLS. Routes live in the feature's folder and are mounted from `http/routes.ts`.
+- On the web, each feature has its own api module (`apps/web/src/api/{bookings,notes,board}.ts`,
+  mock and http, chosen like `api/index.ts`) and its own Zustand store, refetched through
+  `onRecordsChanged(kind, fn)` in `api/records.ts`.
+- Offline mode keeps working: `go_to` runs locally through the offline activity path; bookings,
+  notes and the board use the mock api.

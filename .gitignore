@@ -19,3 +19,5 @@ blender-asset-pipeline/generated/*
 blender-asset-pipeline/generated/catalog/*
 !blender-asset-pipeline/generated/catalog/ocr/
 !blender-asset-pipeline/generated/catalog/review_baseline.json
+.vercel
+.env*.local

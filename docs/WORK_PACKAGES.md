@@ -677,7 +677,8 @@ after P3-B. P3-E comes last.
 
 Two devices or networks, a reconnect, and the LLM-unavailable case (key unset). Results go in the report.
 
-**Gate G6** closes Phase 4. Then Phase 5 if time permits, and Phase 6, the final review.
+**Gate G6** closes Phase 4. Then Phase 5 if time permits, Phase 6 (office life, owner request
+2026-11-03), and Phase 7, the final review.
 
 ---
 
@@ -786,6 +787,239 @@ choice of which version to show, go in the report.
 
 ---
 
-## Phase 6: Final review
+## Phase 6: Office life (owner request 2026-11-03; deadline 2026-11-04, 21:00)
+
+The owner's brief: the office feels like a gimmick, people moving about without purpose. Make it
+the place the team actually uses: you check in and walk to your own desk, a break takes you to the
+tea point, a meeting you are invited to takes you to its room, and your notes and the company board
+live there too. **Status decides where you are.** The shared design is `ARCHITECTURE.md` 12.10;
+read it first.
+
+Order: P6-0 (lead) first; then P6-A ‖ P6-R ‖ P6-B, then P6-C when an agent is free; then P6-D
+only if A and B are merged and green; P6-E closes. P4-A (the deploy) runs beside all of them. The
+deadline order and cut list are in `IMPLEMENTATION_PLAN.md` section 3.1. P6-R is Phase 0 of
+`docs/USP_A_IMPLEMENTATION_PLAN.md` ("Receipts Core"), pulled forward by the owner on 2026-11-03
+because it makes the demo's hero moment visible.
+
+Rules for this phase, on top of the ones above:
+- `e2e/demo.spec.ts` (the Acme demo) stays green and **unchanged** after every merge.
+- Offline mode keeps working (`ARCHITECTURE.md` 12.10, last point).
+- Each package lists **must** tasks and **cut first** tasks. At the feature freeze, unfinished
+  cut-first tasks are dropped and reported, not rushed.
+- The visual freeze (D2) still holds: no new assets or lighting. Drawing pins on the existing cork
+  board (P6-D) is wall-display-style work, allowed by the owner's request.
+
+### P6-0 Contract and slots [S] (lead)
+
+**Depends on:** nothing; start from the newest `main` (the owner merged sitting fixes on
+2026-11-03: `afb539a`).
+
+**Owns:** `packages/shared/src/net/**`, `packages/shared/src/api/**`, `apps/server/src/deps.ts`,
+`apps/server/src/room/bus.ts`, the invite-delivery method in `apps/server/src/room/office.room.ts`,
+the mount lines in `apps/server/src/http/routes.ts`, `apps/web/src/api/records.ts`,
+`apps/web/src/net/connection.ts`, the slot lines in `apps/web/src/ui/Panels.tsx`,
+`apps/web/src/ui/RightDrawer.tsx`, `apps/web/src/ui/ApprovalsPanel.tsx` and
+`apps/web/src/office/OfficeScene.tsx`, the stub files named below, and `ARCHITECTURE.md`
+sections 4, 5 and 6.
+
+**Tasks**
+1. `net`: `Status` gains `working`, `on_break`; `GoTo { seq, place: "desk" | "break" }` and
+   `CLIENT_MESSAGE.goTo = "go_to"`; `MeetingInvite { bookingId, zoneId | null, title, hostName }` and
+   `SERVER_MESSAGE.meetingInvite = "meeting_invite"`; `RecordKind` gains `bookings`, `board`;
+   `ErrorCode` gains `no_home_desk`; `PROTOCOL_VERSION = 2`. Valid and invalid cases tested.
+2. `api`: `Booking`, `BookingCreate` (`zoneId` nullable, `title` 1 to 120, `agenda` 0 to 2000,
+   `inviteeIds` 1 to 20), `Note`, `NoteCreate`, `NoteUpdate`, `BoardPin`, `BoardPinCreate`;
+   `MeetingInput` gains optional `bookingId`, `Meeting` optional `agenda`. Tested.
+   For P6-R: `Receipt { changeId, kind, recordType, recordId, recordLabel, before, after,
+   meetingId, meetingLabel, decision: "approved" | "rejected", deciderId, deciderName, decidedAt }`
+   and `ReceiptQuery { accountId?, projectId?, limit? }`; `AskResult` sources gain optional
+   `meetingLabel` and `approverName`. Tested (a valid receipt, a missing decider, extra fields
+   refused).
+3. Server slots: `apps/server/src/{bookings,notes,board,receipts}/{store,routes}.ts` as stubs (in-memory
+   store interface, routes that mount nothing), built in `deps.ts` and mounted from `routes.ts`;
+   `bus.meetingInvite(workspaceId, userIds, payload)` delivered by the office room to the matching
+   connected clients.
+4. Web slots: `send.goTo(place)` in `connection.ts`; `onMeetingInvite(fn)` and
+   `onRecordsChanged(kind, fn)` registries; stub components mounted: `<OfficeLifeBar />`
+   (`apps/web/src/officeLife/`), `<BookingPanel />` (`apps/web/src/bookings/`), `<BoardOverlay />`
+   (`apps/web/src/board/`) in `Panels.tsx`; a "Notes" tab in `RightDrawer.tsx` rendering
+   `<NotesPanel />` (`apps/web/src/notes/`); `<BoardTexture />` in `OfficeScene.tsx`;
+   `<MeetingAgenda meetingId />` (`apps/web/src/bookings/`) above the summary in
+   `ApprovalsPanel.tsx`, so P6-B never edits that file.
+5. `ARCHITECTURE.md` sections 4, 5 and 6 list the new messages, endpoints and tables.
+
+**Acceptance:** P6-A to P6-D can each start without editing a file another one owns. Checks pass;
+`e2e/demo.spec.ts` passes unchanged; the office looks and behaves the same (screenshot).
+
+### P6-A Status moves you, home desks, fewer colleagues [M]
+
+**Depends on:** P6-0.
+
+**Owns:** `packages/shared/src/people/desks.ts` (new), the reservation and colleague changes in
+`packages/shared/src/people/{activity,routine}.ts`, `apps/server/src/room/office.room.ts` (the
+`go_to` handler and reservations; not the invite method), `apps/server/src/room/npcs.ts`,
+`apps/web/src/officeLife/**`, the status options in `apps/web/src/ui/Participants.tsx`, the sit
+offer in `apps/web/src/office/{Avatar,Hud}.tsx`, `e2e/status.spec.ts`.
+
+**Must**
+1. `desks.ts` (`ARCHITECTURE.md` 12.10): desks named by team and index, `HOME_DESKS`, `teamOf`.
+   Tests: every home desk resolves to a real desk seat inside its team's zone; no two people share
+   one; a desk keeps its name when the layout's coordinates change (resolve by index).
+2. Reservations: home desks held for their owners in `OfficeState.taken`, present or not.
+   `activity_start` on another's home desk gives `target_taken`; the E chip and the halo never offer
+   it. Room tests.
+3. `go_to` on the server: `desk` ends seated and typing at the home desk; `break` ends at a free
+   counter spot; no home desk gives `no_home_desk` and the status only. Room tests with
+   `@colyseus/testing` (seated within a bounded number of ticks). `status_set` still never moves
+   anyone (test).
+4. `<OfficeLifeBar />` (top centre beside the zone pill, compact, never over the centre of the
+   floor): after joining, "Check in" (`go_to desk`); while working, "Take a break" (`go_to break`);
+   on a break, "Back to work". Participants show the new statuses (Working, On a break).
+5. Colleagues: `NPC_COUNT = 4`, each at their home desk in their team, never at a signed-in
+   person's desk.
+
+**Cut first:** offline-mode buttons beyond Check in; returning to the previous status after a break.
+
+**Acceptance:** in two browsers, Maya checks in, walks to her Customer success desk and types, and
+Arjun sees it; "Take a break" takes her to the tea point, "Back to work" returns her; four
+colleagues; nobody else can sit at Maya's desk. Screenshots. Checks pass; `e2e/status.spec.ts` and
+`e2e/demo.spec.ts` pass.
+
+### P6-B Meetings in the rooms [L]
+
+**Depends on:** P6-0.
+
+**Owns:** `apps/server/src/bookings/**`, `supabase/migrations/20261103000100_bookings.sql` (it
+also adds `meetings.agenda` and `meetings.booking_id`), the agenda lines in
+`apps/server/src/meetings/pipeline.ts` and in the meeting methods of
+`apps/server/src/db/{repo,postgres}.ts`, `apps/web/src/bookings/MeetingAgenda.tsx` (mounted in the
+drawer by P6-0), `packages/shared/src/world/rooms.ts` (new), `apps/web/src/api/bookings.ts`,
+`apps/web/src/bookings/**`, `e2e/meetings.spec.ts`.
+
+**Must**
+1. Store and routes (12.10): create (bookable zone; one open booking per zone, else 409
+   `room_busy`), list open, end (host only, else 403). After a create: `bus.meetingInvite` to the
+   invitees and `records_changed bookings`. In-memory and Postgres stores; the migration with RLS
+   (members read; writes only through the server). Tests: busy room 409, a zone that cannot be
+   booked 400, an invitee outside the workspace 400, end by a non-host 403, RLS isolation.
+2. `rooms.ts`: `BOOKABLE_ZONES` and `ROOM_ENTRY` (a walkable point inside each bookable room).
+   Tests: each point is walkable, inside its zone, and reachable from the spawn with `findPath`.
+3. `<BookingPanel />`: "Book a room": the free rooms (busy ones greyed with their title), a title,
+   an agenda, invitees picked from the people in the office. The host walks to the room on create.
+4. Invites: the invitee sees "Maya invited you to <title> in <room>" with "Join" and "Not now".
+   Join sends `move_target ROOM_ENTRY[zoneId]` and `status_set in_meeting`. Open bookings are also
+   listed in the panel for anyone who joined late.
+5. Agenda: `POST /meetings` with `bookingId` stores the agenda with the meeting; the drawer shows it
+   above the summary; the extraction context includes it; the fixture output for the demo
+   transcript is unchanged (test). "End meeting" ends the booking and frees the room.
+
+**Cut first:** virtual meetings (`zoneId: null`; they need the LiveKit project and a change to
+`/calls/token`, which is a request to the lead); sitting on the meeting-room chairs (that is P6-D).
+
+**Acceptance:** Maya books the Acme room with Arjun and an agenda; in his browser Arjun gets the
+invite, clicks Join and walks into the Acme room; "Process meeting" stores the agenda with the
+meeting; the room shows as busy to others until it is ended. Checks pass;
+`e2e/meetings.spec.ts` and `e2e/demo.spec.ts` pass.
+
+### P6-R Receipts core (USP A Phase 0) [M]
+
+**Depends on:** P6-0 (the receipt contract).
+
+The USP: "the office that remembers, with receipts". Every approved change shows before and after,
+its source meeting and who approved it, on the floor and not only in a drawer. Hero moment: walk to
+the Acme wall and read "Go-live 15 Nov → 22 Nov · from Acme sync · approved by Maya". Full rationale
+in `docs/USP_A_IMPLEMENTATION_PLAN.md` sections 2 and 7.
+
+**Owns:** `apps/server/src/receipts/**`, `apps/web/src/api/receipts.ts`, `apps/web/src/receipts/**`,
+the receipt lines in `apps/web/src/ui/ApprovalsPanel.tsx` (P6-0's agenda slot excepted) and
+`apps/web/src/ui/AskPanel.tsx`, the receipt list in `apps/web/src/office/displays/{draw,screens}.ts`,
+`e2e/receipts.spec.ts`. Does **not** edit `apps/server/src/db/{repo,postgres}.ts`: receipts are
+composed from the existing `Repo` reads (`audit`, `changes`, `meetings`, `people`, the records).
+
+**Must**
+1. `receipts` store and `GET /receipts?accountId=&projectId=&limit=` (12.10 storage pattern): one
+   receipt per decided change, newest first, built from the audit rows, the change's before and
+   after, its meeting and the decider's name. Workspace-scoped through the `Repo`; rejected changes
+   come back as `decision: "rejected"`. Tests: approve then read gives the receipt with the
+   approver's name; reject gives a rejected receipt and the record unchanged; another workspace
+   sees nothing.
+2. Approval drawer: under each decided change, its receipt line ("approved by Maya · 21:04", or
+   "rejected by Maya"); history keeps rejected ones; they never show as receipts elsewhere.
+3. Wall displays (customer and project rooms): the current status plus the latest approved
+   receipts for that account or project, drawn into the existing canvas texture (no new 3D),
+   refetched on `records_changed`, so the second user sees it live.
+4. Ask: each source renders as a receipt chip (record, meeting, approver) that opens the record or
+   the meeting. The cite-or-abstain rules are unchanged; the CEO question still abstains.
+5. `e2e/receipts.spec.ts`: after Maya approves, Arjun's Acme wall and drawer show
+   "Go-live 15 Nov → 22 Nov · Acme sync · Maya" without a refresh. `e2e/demo.spec.ts` is not edited.
+
+**Cut first:** receipt chips in Ask (task 4); the project-room wall (keep the Acme wall).
+
+**Acceptance:** USP A Gate U0 (`docs/USP_A_IMPLEMENTATION_PLAN.md` section 7) with one change: the
+demo assertions live in the new `e2e/receipts.spec.ts`. A screenshot of the Acme wall with the
+receipt. Checks pass; `e2e/demo.spec.ts` passes unchanged.
+
+### P6-C Personal notes [S]
+
+**Depends on:** P6-0.
+
+**Owns:** `apps/server/src/notes/**`, `supabase/migrations/20261103000200_notes.sql`,
+`apps/web/src/api/notes.ts`, `apps/web/src/notes/**`.
+
+**Must**
+1. Store and routes (12.10) with author-only access; the migration's select policy is
+   `user_id = auth.uid()`. Tests: Arjun cannot read, change or delete Maya's notes in the same
+   workspace (HTTP and RLS); bodies are validated with the shared schemas.
+2. `<NotesPanel />` in the drawer's Notes tab: add, edit, tick done, delete, a colour per note
+   (sticky-note colours from the existing palette); kept across reloads with the http api.
+
+**Cut first:** colours; reordering.
+
+**Acceptance:** notes survive a reload and are invisible to the other user. Checks pass.
+
+### P6-D Free seating and the company board [M] (only if time)
+
+**Depends on:** P6-A (free seating edits the same activity code), P6-0 (the board).
+
+**Owns:** `packages/shared/src/people/seats.ts` (new) and the seat lookup in
+`packages/shared/src/people/activity.ts` after P6-A is merged, `apps/server/src/board/**`,
+`supabase/migrations/20261103000300_board.sql`, `apps/web/src/api/board.ts`, `apps/web/src/board/**`.
+
+**Tasks**
+1. Free seating: lounge armchairs, sofas, café chairs and meeting-room chairs as `sit_talk` seats,
+   open to anyone (12.10). Screenshot each type seated; leave out any type that looks wrong.
+2. Board: store, routes and migration (workspace read, author-only delete); `<BoardOverlay />`
+   opens from a click on the cork board or the ideas wall and shows pins as sticky notes; pinning
+   one sends `records_changed board`; `<BoardTexture />` draws the newest pins on the cork board.
+
+**Acceptance:** anyone can sit on the lounge seats; a pin added in one browser shows in the other
+and on the cork board. Checks pass; `e2e/demo.spec.ts` passes.
+
+### P6-E Office-life demo [S]
+
+**Depends on:** P6-A, P6-B (and P6-R, P6-C, P6-D if merged).
+
+**Owns:** `e2e/office-life.spec.ts`, `docs/DEMO_VIDEO.md`.
+
+**Tasks**
+1. The story before the Acme demo, as an e2e and as steps in `DEMO_VIDEO.md`: Maya and Arjun check
+   in and walk to their desks; Maya books the Acme room with Arjun and an agenda; Arjun joins and
+   walks in; then the existing demo script runs unchanged from "Process meeting".
+2. Run it on the deployed URL with P4-A, and in two real browsers by hand.
+
+**Gate G8** closes Phase 6:
+- [ ] Check in walks you to your own desk to type; a break takes you to the tea point; back to work
+      returns you. (P6-A)
+- [ ] Nobody else can sit at someone's home desk; four colleagues. (P6-A)
+- [ ] A booking invites people, who walk to its room on Join; the agenda is stored with the meeting;
+      a booked room shows busy. (P6-B)
+- [ ] After an approval, the second user's Acme wall shows the receipt (before and after, meeting,
+      approver) live; a rejected change shows no receipt and changes nothing. (P6-R, USP A Gate U0)
+- [ ] Personal notes are private (RLS test). (P6-C)
+- [ ] The Acme demo e2e passes unchanged, locally and on the deployed URL. (all, P6-E)
+
+---
+
+## Phase 7: Final review
 
 The reviewer's checklist is `docs/HANDOFF.md` section 8.

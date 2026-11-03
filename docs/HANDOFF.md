@@ -9,6 +9,88 @@ the finished work against it.
 
 ---
 
+## 0. Start here: the deadline sprint (written 2026-11-03)
+
+**Deadline: 2026-11-04, 21:00 (the owner's local time).** Two streams run at once: the deploy
+(P4-A, then the rehearsal P4-C) and Phase 6, office life (`WORK_PACKAGES.md` Phase 6, shared
+design in `ARCHITECTURE.md` 12.10). The order, the feature freeze and the cut list are in
+`IMPLEMENTATION_PLAN.md` 3.1. The rest of this file still applies.
+
+**State of the code**
+- `main` at `afb539a` or later: Phases 1 to 5 merged, except P4-A, P4-C and P5-D (the deploy and
+  the rehearsals). The owner keeps merging fixes from their own sessions (`fix/*` branches; the
+  latest touched sitting, reservations and the E chip). Fetch and rebase often, P6-A above all: it
+  edits the same activity code.
+- Set up on 2026-11-03 but **not committed** when this was written: `.gitignore` (the `.vercel`
+  and `.env*.local` lines), `fly.toml` (the real app name), `.mcp.json` (the Supabase MCP), and the
+  Phase 6 docs. If `git status` still shows them, the lead commits them first, on `main`, as
+  "Lead: hosting accounts and the Phase 6 plan".
+
+**Hosting accounts (all set up 2026-11-03; nothing is deployed)**
+
+| Service | What exists | How to reach it |
+|---|---|---|
+| Fly.io | App `meta-virtual-office` in the owner's personal org (shown as "Dibya Debashish Bhoi", slug `personal`). Status pending: no machines, no deploy. Its URL will be `https://meta-virtual-office.fly.dev`. `fly.toml` names it and `fly config validate` passes. | `flyctl` 0.5.2 in `%USERPROFILE%\.fly\bin` (on the user PATH for new shells; otherwise call `~/.fly/bin/flyctl.exe`). Logged in on this machine. |
+| Vercel | Project `meta-virtual-office` in team `debashish17s-projects`: Root Directory `apps/web`, Vite preset, Node 22.x. Linked at the **repo root** (`.vercel/`, ignored). No env vars, no deploys yet. | `vercel` CLI, logged in as `debashish17`. Deploy from the repo root (`vercel --prod`), not from `apps/web` as `DEPLOY.md` 2.1 says. |
+| Supabase | Hosted project `ubhkqklqkqaydjfyoten` (`https://ubhkqklqkqaydjfyoten.supabase.co`). Empty: no tables, no migrations. The anon and publishable keys are active. Auth signs user tokens with ES256 (its JWKS holds an ES256 key), which is what `SupabaseAuth` verifies. | The Supabase MCP in `.mcp.json`. It is project-scoped: approve it when a session starts in the repo root, then authenticate once through `/mcp`. The Supabase CLI is not logged in and is not needed. |
+
+**Rules for the hosted services**
+- Every deploy, and every change to a hosted database or host setting, needs the owner's OK in
+  your session (`AGENTS.md` section 2). Reading is always fine.
+- Hosted schema: apply each file in `supabase/migrations`, in order, with the MCP's
+  `apply_migration`, named after the file. Use only the MCP for the hosted schema. It records its
+  own migration versions, so a later `supabase db push` would first need `supabase migration repair`.
+- Secrets never go through chat or logs. The owner puts them in `.env.hosted.local` at the repo
+  root (ignored through `.env*.local`). It holds:
+  - `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY`;
+  - `DATABASE_URL`: the Supavisor pooler string (`postgres.ts` turns prepared statements off for it);
+  - `SEED_PASSWORD`: the demo users' password on the hosted project;
+  - optionally `LLM_API_KEY`.
+
+  Never print the file. Read its names only (`cut -d= -f1 .env.hosted.local`).
+- Seed the hosted project: `node --env-file=.env.hosted.local supabase/seed.mjs`.
+- Fly secrets: pipe only the server's names (`SUPABASE_*`, `DATABASE_URL`, `LLM_API_KEY`) into
+  `fly secrets import --stage -a meta-virtual-office`, so nothing restarts. `fly.toml` `[env]`
+  still says `AUTH_MODE = "dev"`. The full deploy changes it to `supabase` and adds
+  `NODE_ENV = "production"`, because the server refuses dev auth in production.
+- Vercel env (build-time, none secret), added with `vercel env add <NAME> production`:
+  - `VITE_SERVER_URL=https://meta-virtual-office.fly.dev`;
+  - `VITE_AUTH_MODE`;
+  - `VITE_API=http`, **not** `mock`: with `mock` each browser keeps its own data, and approvals
+    never reach the other browser;
+  - `VITE_SUPABASE_URL`;
+  - `VITE_SUPABASE_ANON_KEY`, from the MCP's `get_publishable_keys`.
+- After the web deploy: set `ALLOWED_ORIGINS` on Fly to the Vercel URL (`DEPLOY.md` 1.3).
+
+**Open owner questions** (ask before the step that needs them)
+- D14, deploy mode: the full deploy (default, now that Supabase exists) or the fast fallback
+  (`IMPLEMENTATION_PLAN.md` section 5).
+- The Supabase project's region (Dashboard, Project Settings, General). `fly.toml` says
+  `primary_region = "lhr"`; move it to the Fly region nearest the database before the first deploy.
+- Committing the uncommitted setup files above.
+
+**Next, in order**
+1. Lead: commit the setup and the plan; build P6-0 on `wp/P6-0-contract` and merge it.
+2. Deploy agent, with the owner: P4-A.
+   1. Answer D14 and the region.
+   2. Apply the migrations through the MCP and run the seed.
+   3. Fly secrets and env, Vercel env.
+   4. Deploy, with the owner's OK.
+   5. Check `/health`, run a two-browser smoke test, set `ALLOWED_ORIGINS`.
+
+   Today's `main` goes out first, so a working demo is online whatever happens later.
+3. Once P6-0 is merged: P6-A, P6-R (receipts, USP A Phase 0) and P6-B, one lane agent each (the
+   lane prompt in section 6; ports from section 5); P6-C when an agent is free. P6-D only by the
+   rule in `IMPLEMENTATION_PLAN.md` 3.1.
+4. Feature freeze 2026-11-04 at 15:00 to 16:00, then:
+   1. merge;
+   2. checks and e2e;
+   3. redeploy;
+   4. P6-E and P4-C on the public URL;
+   5. the backup video.
+
+---
+
 ## 1. The project in one minute
 
 A real-time isometric 3D office (React Three Fiber client, Colyseus server, Supabase Postgres)
@@ -57,12 +139,18 @@ The defaults and what each decision blocks are in `docs/IMPLEMENTATION_PLAN.md` 
 | D1 | G2 approved (movement smooth at 60 fps in your browser) | Approved (2026-11-01) |
 | D2 | Visual freeze for M3 to M6 | Yes (2026-11-01) |
 | D3 | Web host and WebSocket host (accounts created by the owner) | Default accepted (2026-11-02): web on Vercel, server on Fly.io/Render; deploy access for the lead pending |
-| D4 | Local Supabase now; hosted project before Phase 4 | |
+| D4 | Local Supabase now; hosted project before Phase 4 | Hosted project created by the owner (2026-11-03): `ubhkqklqkqaydjfyoten`, empty (section 0) |
 | D5 | LLM provider for the real adapter | Muse Spark (`muse-spark-1.3`) through the Meta Model API (2026-11-01) |
 | D6 | Colleagues run on the server (or are removed when online) | Keep them, run on the server, same for everyone (2026-11-02) |
 | D7 | Player contract additions (look, pose, speed, activity) | Accept (2026-11-01) |
 | D8 | Demo sign-in (seeded test users locally, email and password deployed) | Default accepted (2026-11-02): seeded Maya/Arjun picker locally, email and password deployed |
 | D9 | Live meetings with LiveKit after G6, if time permits; the fixture transcript stays the fallback | Yes, if time permits (2026-11-01) |
+| D10 | Office life (Phase 6) before the deadline | Yes (2026-11-03) |
+| D11 | Home desks | Each person sits at their own desk in their department; sofas and other seats are free for anyone (2026-11-03) |
+| D12 | Colleagues (NPCs) | Keep a few for life in the office: four (2026-11-03) |
+| D13 | Meetings | In the existing rooms; a virtual call-only meeting when all are busy (cut first) (2026-11-03) |
+| D14 | Deploy mode (full, or the fast fallback) | Not decided yet; default full |
+| D15 | USP A Phase 0 (receipts) before the deadline | Yes, as P6-R; USP A Phases 1 to 4 after the deadline (2026-11-03) |
 
 **What the owner prepares, and when**
 
@@ -199,7 +287,8 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 | 5 | P3-B, P3-C merged | P3-E; G3, G4 and G5 are reported to the owner |
 | 6 | G5 approved, D4 hosted project ready | P4-A, P4-B, then P4-C; G6 |
 | 7 | G6 approved, time permits, D9 | P5-A ‖ P5-B, then P5-C, then P5-D; Gate G7 |
-| 8 | G6 approved (and G7 if Phase 5 ran) | Final review (section 8) |
+| 8 | D10 (2026-11-03), beside P4-A | P6-0 (lead); then P6-A ‖ P6-B ‖ P6-C; then P6-D if time; then P6-E; Gate G8 |
+| 9 | G6 and G8 (and G7 if Phase 5 ran) | Final review (section 8) |
 
 **With fewer agents**, run these chains instead of one package per agent:
 
@@ -261,7 +350,7 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 | P3-E demo end to end | builder/reviewer | wp/P3-E-demo-e2e | merged (--no-ff 080dfcf; demo.spec green in-suite 5.1m, suite red on box contention) | P3-E.md |
 | P3-D deploy smoke test | builder/reviewer | wp/P3-D-deploy-smoke | merged config (--no-ff ba1d5b6; deploy execution blocked on owner Fly/Vercel tokens) | P3-D.md |
 | P4-B hardening | builder/reviewer | wp/P4-B-hardening | merged (--no-ff f27c3fc) | P4-B.md |
-| P4-A production deploy | | | blocked (owner hosted Supabase D4 + deploy tokens) | |
+| P4-A production deploy | | | ready: Fly app, Vercel project and hosted Supabase set up 2026-11-03 (section 0); waits for D14, the region, and the owner's OK per deploy | |
 | P5-A call service | builder/reviewer | wp/P5-A-call-service | merged (--no-ff cf174c1) | P5-A.md |
 | P5-B call UI | builder/reviewer | wp/P5-B-call-ui | merged (--no-ff 3daff7c + lead share mount; live media open on LiveKit creds) | P5-B.md |
 | P5-C call transcript | builder/reviewer | wp/P5-C-transcript | merged (--no-ff 0da0c43 + lead wiring 606c57f; arrival asserts live, mic open) | P5-C.md |
@@ -269,6 +358,13 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 | P4-C rehearsal | | | blocked (needs P4-A deploy first) | |
 | Improvement loop (lead) | lead | main (fba1251 + demo/teleport fix) | done: dev-auth Postgres ids, Players memo, chat history pull, dev teleport (idle-reconcile fixed), test:scripts; gates green, contract 4/4, e2e spot-check green (demo 5.1m, calls + live-meeting 5/5). Demo fix: dismiss Calls-unavailable panel (covers drawer) + idle-sync decision clicks. Request to P5-B: call panel structurally overlaps the drawer column during live calls | |
 | FIX avatar-sync + office-glitches (owner) | owner session | fix/avatar-sync, fix/office-glitches | merged (--no-ff, owner request 2026-11-03): room at a true 20 Hz with an input queue, reconcile and draw-between-ticks, paced remote snapshots; name tags under panels, Ask close, typing above the desk, people keep apart, chairs swivel; open items closed; then sitting: walk off after standing up (WalkMap step-out), the E action chip and seat halo, synced reservations (OfficeState.taken) | FIX-avatar-sync.md, FIX-office-glitches.md, FIX-sitting.md |
+| P6-0 contract and slots | lead | wp/P6-0-contract | not started | |
+| P6-A status, home desks, colleagues | | wp/P6-A-status-desks | not started (needs P6-0) | |
+| P6-R receipts (USP A Phase 0) | | wp/P6-R-receipts | not started (needs P6-0) | |
+| P6-B meetings in the rooms | | wp/P6-B-meetings | not started (needs P6-0) | |
+| P6-C personal notes | | wp/P6-C-notes | not started (needs P6-0) | |
+| P6-D free seating and board | | wp/P6-D-seating-board | not started (only if time; needs P6-A) | |
+| P6-E office-life demo | | wp/P6-E-demo | not started (needs P6-A, P6-B) | |
 
 States: not started, in progress, blocked (say why), in review, merged.
 
@@ -374,3 +470,11 @@ Model API, called with OpenAI's SDK (`openai`), replacing the Anthropic adapter 
 `@anthropic-ai/sdk`. JSON-schema output, the reasoning-effort parameter and the latency at `low` are
 not yet verified against the API; P2-D checks them. `ARCHITECTURE.md` 12.5, P1-B, P2-D, the D5 rows
 and `PROJECT_BRIEF.md` section 10 updated.
+
+**2026-11-03, office life and the deadline sprint.** The owner asked for the office to be used, not
+decorative (decisions D10 to D13), with the deadline 2026-11-04 at 21:00. Added: Phase 6 (P6-0 to
+P6-E, Gate G8) in `WORK_PACKAGES.md`; its shared design in `ARCHITECTURE.md` 12.10, including
+`go_to` as the only message that moves people, so the call store's status restore never does;
+the deadline order and cut list in `IMPLEMENTATION_PLAN.md` 3.1; the final review renumbered to
+Phase 7; the hosting accounts and the start-here notes in section 0 of this file; the scope note
+in `PROJECT_BRIEF.md` section 6. D14 (deploy mode) is open.

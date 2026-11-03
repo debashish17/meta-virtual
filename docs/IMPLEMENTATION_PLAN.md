@@ -56,7 +56,8 @@ The original M0 to M2 task lists are in git history: this file as of the reposit
 | 3 Integration | P3-A shared colleagues ‖ P3-B HTTP API and auth ‖ P3-D deploy smoke test; then P3-C web wiring; then P3-E demo e2e | G3 (public URL), G4, G5 |
 | 4 Deploy and harden | P4-A production deploy ‖ P4-B hardening; then P4-C rehearsal | G6 |
 | 5 Live meetings (optional, if time permits; decision D9) | P5-A call service ‖ P5-B call UI; then P5-C transcript from the call; then P5-D rehearsal | G7 |
-| 6 Final review | Reviewer (owner hands over) | Sign-off |
+| 6 Office life and receipts (owner request 2026-11-03; decisions D10, D15) | P6-0 contract and slots (lead); then P6-A status and desks ‖ P6-R receipts (USP A Phase 0) ‖ P6-B meetings, then P6-C notes; then P6-D free seating and board (if time); then P6-E demo | G8 |
+| 7 Final review | Reviewer (owner hands over) | Sign-off |
 
 **Team size and time.** The packages add up to roughly 20 agent-days. With one agent that is
 three to four weeks; with four agents, about eight working days; with seven lanes in Phase 2, about
@@ -89,9 +90,34 @@ A package starts when everything in its row is merged into `main` (and its phase
 | P5-B call UI | Phase 4 to start; P5-A to finish |
 | P5-C transcript from the call | P5-A, P5-B |
 | P5-D live-meeting rehearsal | P5-C |
+| P6-0 contract and slots | decision D10 |
+| P6-A status and desks, P6-R receipts, P6-B meetings, P6-C notes | P6-0 |
+| P6-D free seating and board | P6-A (seating), P6-0 (board) |
+| P6-E office-life demo | P6-A, P6-B |
 
 **Critical path:** P1-A, P1-C, P2-C, P3-B, P3-C, P3-E, P4-A, P4-C. Start P2-C as early as
 possible: it is the longest Phase 2 lane on that path.
+
+### 3.1 Deadline order (set 2026-11-03; deadline 2026-11-04, 21:00)
+
+The deployed demo is what gets judged, so the deploy runs first and beside everything else.
+
+| When | Work |
+|---|---|
+| Now | P4-A: apply the migrations and the seed to the hosted Supabase, set the Fly and Vercel env, deploy today's `main` (owner approves the deploy). In parallel, P6-0 (lead). |
+| After P6-0 | P6-A ‖ P6-R ‖ P6-B, one agent each; P6-C when an agent is free. With fewer agents, keep this priority: P6-A, P6-R, P6-B, P6-C. |
+| 2026-11-04, about 12:00 | P6-D only if P6-A and P6-B are merged and green. |
+| 2026-11-04, 15:00 to 16:00 | **Feature freeze.** Unfinished cut-first tasks are dropped and reported. |
+| Freeze to 21:00 | Merge, full checks and e2e, redeploy (P4-A), two-browser rehearsal on the public URL (P4-C, P6-E), the backup video (`DEMO_VIDEO.md`), an hour of buffer. |
+
+Cut in this order if the day runs short: virtual meetings; P6-D board; P6-D free seating; P6-C
+notes; receipt chips in Ask; the invite notice (keep booking and walking from the panel). Never
+the Acme demo, the deploy, P6-A, or the receipt on the Acme wall.
+
+**After the deadline:** the final review (Phase 7), then `docs/USP_A_IMPLEMENTATION_PLAN.md`
+Phases 1 to 4 in its order (capture and guests, access and trust, ecosystem, depth), each behind
+its gate and the owner's approval, then the leftover Phase 6 pieces and the Atrium and Village
+layout studies.
 
 ## 4. Gates
 
@@ -135,6 +161,8 @@ possible: it is the longest Phase 2 lane on that path.
 - [ ] Microphone denied gives listen-only with a notice; with no LiveKit keys the office is unchanged. (P5-A, P5-B)
 - [ ] A transcript captured from a live call produces proposed changes through the same pipeline, and the fixture demo still passes unchanged. (P5-C, P5-D)
 
+**Gate G8: office life** (Phase 6). The items are in `WORK_PACKAGES.md` at the end of Phase 6.
+
 ## 5. Owner decisions
 
 The lead must have these answered, or the default accepted, before the phase that needs them.
@@ -151,6 +179,12 @@ Record the answers in `docs/HANDOFF.md` section 3.
 | D7 | Player contract adds look, pose, speed, activity and the seat reservations | Accept (P1-A) | Phase 1 |
 | D8 | Demo sign-in | Supabase Auth with two seeded test users and a "Join as Maya / Arjun" picker locally; email and password when deployed | P3-C |
 | D9 | Live meetings: voice, video, screen share and the transcript of a real meeting, with LiveKit | Yes, as the optional Phase 5 after G6, if time permits; the fixture transcript stays the demo's fallback and must keep working. The owner creates a LiveKit Cloud project before Phase 5 | Phase 5 |
+| D10 | Office life (Phase 6) before the deadline, alongside the deploy | Approved by the owner, 2026-11-03 | Phase 6 |
+| D11 | Home desks | Every person has a home desk in their department's team area; only they sit there. Sofas, café, lounge and other seats are free for anyone (owner, 2026-11-03) | P6-A |
+| D12 | Colleagues (NPCs) | Keep a few for life in the office: four, at their own desks on their routines (owner, 2026-11-03) | P6-A |
+| D13 | Meetings | In one of the existing rooms, never new geometry; when every room is busy, a virtual call-only meeting (needs LiveKit, so cut first) (owner, 2026-11-03) | P6-B |
+| D15 | USP A Phase 0 (receipts) before the deadline | Yes, as P6-R (owner, 2026-11-03); USP A Phases 1 to 4 after the deadline | P6-R |
+| D14 | Deploy mode | Open. Default: the full deploy (Supabase Auth and Postgres) now that the hosted project exists; fallback: `AUTH_MODE=dev` with the in-memory repo (no `DATABASE_URL`, `NODE_ENV` not `production`), name picker, data lost on restart | P4-A |
 
 ## 6. If time runs short
 

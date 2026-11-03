@@ -1,9 +1,9 @@
 # Virtual Office server on Fly.io (P3-D smoke test; see docs/DEPLOY.md).
 # Deploy from the REPO ROOT: fly deploy (uses apps/server/Dockerfile).
-# Placeholder name: replace with the real app name from `fly apps create`
-# (or pass -a <name>); keep this file in sync afterwards.
+# Created 2026-11-03 with `fly apps create meta-virtual-office --org personal`
+# (the "Dibya Debashish Bhoi" org). Keep this file in sync if it changes.
 
-app = "virtual-office-smoke"
+app = "meta-virtual-office"
 primary_region = "lhr"
 
 [build]

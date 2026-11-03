@@ -60,6 +60,13 @@ Demo script:
 | Deployment | Public web app and reachable multiplayer server |
 | Fallbacks | Demo works with no LLM key (fixture mode) and with no microphone |
 
+**Added by the owner on 2026-11-03 (office life, Phase 6, decision D10):** status decides where a
+person is. Check in and walk to your own desk in your department; a break walks you to the tea
+point; book one of the existing rooms with an agenda, and invitees walk there; personal notes; a
+company board. A few colleagues stay for life in the office. Status is presence, like a chat
+status: no attendance log and no time tracking (section 8). The demo script above is unchanged;
+the office-life story runs before it (`WORK_PACKAGES.md` P6-E).
+
 ## 7. Out of scope until the MVP passes
 
 Voice (LiveKit), live transcription, semantic search with embeddings, GitHub integration, screen share, shared snippet pad, calendar and email sync, CSV import, performance or sentiment analysis of people, full CRM feature parity, mobile layout.
