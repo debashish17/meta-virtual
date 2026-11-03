@@ -48,9 +48,14 @@ function abstain(): AskResultType {
   return AskResult.parse({ answer: ABSTAIN_MESSAGE, abstained: true, sources: [] });
 }
 
-async function answerOnce(llm: LlmClient, question: string, records: RetrievedRecord[]): Promise<unknown> {
+async function answerOnce(
+  llm: LlmClient,
+  question: string,
+  records: RetrievedRecord[],
+  context?: string,
+): Promise<unknown> {
   try {
-    return await llm.answer(question, records);
+    return await llm.answer(question, records, context);
   } catch {
     return null;
   }
@@ -84,9 +89,17 @@ export async function askQuestion(input: AskInput): Promise<AskResultType> {
   }
 
   const byId = new Map(retrieved.map((entry) => [entry.id, entry]));
-  let raw = parseRawAnswer(await answerOnce(input.llm, question, retrieved));
+  // "My day" records are the asker's own, which the records themselves do not say: a live model
+  // given Maya's tasks without this answered that it had no record of her day.
+  const context =
+    classified.class === "my_day"
+      ? `Asked by ${input.claims.name}, about their own day. The records are ${input.claims.name}'s ` +
+        "own open tasks, the commitments with due dates on the accounts, and recent meetings. " +
+        "Summarise what is on their plate, soonest due first, addressed to them."
+      : undefined;
+  let raw = parseRawAnswer(await answerOnce(input.llm, question, retrieved, context));
   if (!raw) {
-    raw = parseRawAnswer(await answerOnce(input.llm, question, retrieved));
+    raw = parseRawAnswer(await answerOnce(input.llm, question, retrieved, context));
   }
   if (!raw || raw.answer.trim().length === 0 || raw.sourceIds.length === 0) {
     return abstain();

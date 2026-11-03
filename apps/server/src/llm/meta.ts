@@ -137,15 +137,15 @@ export class MetaLlm implements FeedbackLlm {
     return parseContent(content);
   }
 
-  async answer(question: string, records: unknown[]): Promise<unknown> {
+  async answer(question: string, records: unknown[], context?: string): Promise<unknown> {
     const started = Date.now();
     const content = await this.complete(
       "You answer questions about the office using ONLY the records given. " +
         'Reply with JSON only: {"answer": string, "sourceIds": string[]}. ' +
         "Every sourceId must be one of the record ids given. If no record answers the " +
         'question, reply {"answer": "I don\'t have a record of that.", "sourceIds": []}. ' +
-        "Never invent facts.",
-      `Question: ${question}\n\nRecords:\n${JSON.stringify(records)}`,
+        "Never invent facts. A Context line, when given, says who is asking and what the records are.",
+      `Question: ${question}\n${context ? `Context: ${context}\n` : ""}\nRecords:\n${JSON.stringify(records)}`,
       ANSWER_SCHEMA as unknown as Record<string, unknown>,
     );
     this.onDebug?.(

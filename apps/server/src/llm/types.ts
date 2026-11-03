@@ -12,7 +12,8 @@ export interface MeetingContext {
 
 export interface LlmClient {
   extractMeeting(transcript: string, context: MeetingContext): Promise<unknown>;
-  answer(question: string, records: unknown[]): Promise<unknown>;
+  /** `context`: who is asking and what the records are, when the question needs it (my day). */
+  answer(question: string, records: unknown[], context?: string): Promise<unknown>;
 }
 
 /** The simplest working implementation: a summary-only extraction and an empty answer. */
