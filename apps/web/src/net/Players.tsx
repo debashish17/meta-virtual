@@ -5,7 +5,7 @@ import * as THREE from "three";
 import type { AvatarLook, Pose } from "@office/shared";
 import Person, { type Motion } from "../office/Person.js";
 import { startNet, stopNet } from "./connection.js";
-import { SnapshotBuffer } from "./interp.js";
+import { ArrivalPacer, SnapshotBuffer } from "./interp.js";
 import { sameRemoteAppearance } from "./remoteAppearance.js";
 import { useNet } from "./store.js";
 
@@ -40,6 +40,7 @@ function RemotePerson({ id, kind, name, look, x, z, facing, pose, speed }: Remot
   const label = useRef<THREE.Group>(null);
   const motion = useRef<Motion>({ pose, speed });
   const buffer = useMemo(() => new SnapshotBuffer(), []);
+  const pacer = useMemo(() => new ArrivalPacer(), []);
   const seed = useMemo(() => seedOf(id), [id]);
 
   // Snapshots flow through a store subscription, not through rendering: the memo
@@ -53,7 +54,7 @@ function RemotePerson({ id, kind, name, look, x, z, facing, pose, speed }: Remot
       if (key === last) return;
       last = key;
       buffer.push({
-        t: performance.now(),
+        t: pacer.stamp(performance.now()), // one tick apart, as the room sent them
         x: view.x,
         z: view.z,
         facing: view.facing,
@@ -61,7 +62,7 @@ function RemotePerson({ id, kind, name, look, x, z, facing, pose, speed }: Remot
         speed: view.speed,
       });
     });
-  }, [buffer, id, kind]);
+  }, [buffer, pacer, id, kind]);
 
   useFrame(() => {
     const s = buffer.sample(performance.now());

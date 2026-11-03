@@ -1,6 +1,7 @@
 import {
   INTERP_DELAY_MS,
   SNAP_DISTANCE,
+  TICK_HZ,
   type AvatarLook,
   type NpcView,
   type PlayerView,
@@ -179,5 +180,37 @@ export class SnapshotBuffer {
       speed: to.speed,
       snapped: false,
     };
+  }
+}
+
+/**
+ * Times remote snapshots for the buffer (ARCHITECTURE.md 12.1). The room sends one patch
+ * per tick, but where its timer is coarse they arrive unevenly: on Windows after 62.5 or
+ * 46.875 ms, 50 on average. Interpolating on raw arrival times then pulses the walking
+ * speed, so each snapshot is stamped one tick after the previous stamp, drifting slowly
+ * towards the real arrival times. After a gap (the person stood still) it starts again
+ * from the arrival; a stamp is never earlier than the previous one, nor more than one tick
+ * after its arrival.
+ */
+export class ArrivalPacer {
+  private last: number | null = null;
+
+  constructor(
+    private readonly periodMs: number = 1000 / TICK_HZ,
+    private readonly follow = 0.1,
+  ) {}
+
+  stamp(arrival: number): number {
+    const last = this.last;
+    let t: number;
+    if (last === null || arrival - (last + this.periodMs) > this.periodMs) {
+      t = arrival;
+    } else {
+      const expected = last + this.periodMs;
+      t = Math.min(expected + (arrival - expected) * this.follow, arrival + this.periodMs);
+      if (t < last) t = last;
+    }
+    this.last = t;
+    return t;
   }
 }
