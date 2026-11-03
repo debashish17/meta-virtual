@@ -30,7 +30,7 @@ applies. **Nothing in Phase 6 has been started.**
 - Web: `https://meta-virtual-office.vercel.app`. Server: `https://meta-virtual-office.fly.dev`
   (one machine, Fly region `sin`). Both run `13cd161`.
 - Fast mode: `AUTH_MODE=dev` (the "Join as" name picker), the in-memory repo (no `DATABASE_URL`),
-  `FixtureLlm`. Data resets whenever the machine stops; it stops when idle and starts on the next
+  and the live model, Muse Spark (since 2026-11-03; decision 4 below). Data resets whenever the machine stops; it stops when idle and starts on the next
   visit in a few seconds.
 - Verified live: `/health`; two players join over the internet in under 0.4 s and see each other;
   `/me/day`; `/ask` answers the Acme question with six sources and abstains on the CEO question;
@@ -111,11 +111,16 @@ it does not match the server. That only matters for the full deploy; see decisio
    roughly USD 2 a month): no cold start, and the in-memory demo data survives idle periods.
 3. **Pushing `main`** to the remote: only when the owner asks (see the memory note on the rewritten
    history: reset stale copies to `origin/main` first).
-4. **The live AI model on the deployed server.** Not wired: `/health` says `llm: "fixture"`, and
-   Fly has no secrets. The owner's Meta Model API key is set locally as `LLM_API_KEY` in the root
-   `.env`, so `pnpm dev` already uses Muse Spark. Setting that one secret on Fly switches the server
-   to it (`createLlm`: a key selects `MetaLlm`, defaults `https://api.meta.ai/v1` and
-   `muse-spark-1.3`). Steps under "Live model" below.
+4. **The live AI model: wired 2026-11-03 at the owner's request.** Fly holds `LLM_API_KEY` (from
+   the root `.env`); `/health` says `llm: "meta"`: Muse Spark `muse-spark-1.3` through
+   `https://api.meta.ai/v1`, reasoning effort `low` (defaults; `LLM_MODEL` is set nowhere). Checked
+   on the live site: the Acme status question is answered with six sources (5 s), the CEO question
+   abstains (3 s). **Known risk, accepted by the owner:** in two local runs, "Process meeting" on the
+   Acme transcript (about 10 to 14 s) proposed the milestone change and the reassignment, but never
+   the commitment update ("Go-live by 15 Nov" to 22 Nov); once it added the notice as a commitment
+   instead of a task, once as both. Rehearse the meeting step on the live model. The fallback is
+   one command (step 4 of "Live model" below). A fix worth a small package: keep the scripted
+   `acme-sync` fixture meeting on `FixtureLlm` while questions and real transcripts use the model.
 5. **LiveKit (calls, live captions):** no LiveKit project exists (the `LIVEKIT_*` names are empty
    locally and unset on Fly), so `/health` says `calls: "off"` and the office shows "Calls
    unavailable". It stays that way unless the owner creates a LiveKit Cloud project (decision D9);
