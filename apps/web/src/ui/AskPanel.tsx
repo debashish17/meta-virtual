@@ -79,7 +79,7 @@ export default function AskPanel() {
         <button type="submit" className="pan-btn" disabled={pending || question.trim().length === 0}>
           {pending ? "Asking…" : "Ask"}
         </button>
-        <button type="button" className="pan-collapse pan-ask-close" aria-label="Close ask the office" onClick={close}>
+        <button type="button" className="pan-collapse pan-ask-close" aria-label="Close" title="Close" onClick={close}>
           ×
         </button>
       </form>

@@ -136,6 +136,9 @@ pnpm dev                              # walk Maya with WASD and by clicking; com
 
 ## Open questions
 
+All three were closed the same day, at the owner's request; see `FIX-office-glitches.md`. The
+turbo failure was transient; the other two are fixed in `InputQueue` and `Avatar.onlineTick`.
+
 - `turbo` fails to start on the owner's machine (`spawn UNKNOWN`, even `npx turbo --version`).
   So `pnpm dev`, `pnpm test`, `pnpm lint` and `pnpm typecheck` fail there. The checks above ran
   per package. Likely Windows security blocking the turbo binary; not investigated.
@@ -150,4 +153,4 @@ pnpm dev                              # walk Maya with WASD and by clicking; com
 
 ## Next
 
-Nothing started. Ready for the lead to review and merge.
+Merged to `main` with FIX office-glitches, at the owner's request.

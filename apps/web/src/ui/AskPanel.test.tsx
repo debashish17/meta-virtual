@@ -33,7 +33,7 @@ describe("AskPanel", () => {
 
   it("closes to a small button and reopens without the old answer", async () => {
     await ask("What's the status of the Acme integration?");
-    fireEvent.click(screen.getByRole("button", { name: "Close ask the office" }));
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(screen.queryByLabelText("Your question")).toBeNull();
     expect(screen.queryByRole("status")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Ask the office" }));
