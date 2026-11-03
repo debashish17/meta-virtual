@@ -129,6 +129,81 @@ describe("Predictor", () => {
   });
 });
 
+describe("Predictor drawing", () => {
+  const spawn = { x: WORLD.spawn.x, z: WORLD.spawn.z };
+  const joined = (): Predictor => {
+    const p = new Predictor(spawn);
+    p.reconcile({ x: spawn.x, z: spawn.z, facing: 0, lastSeq: 0 }); // join snapshot
+    return p;
+  };
+
+  it("takes a small error into the prediction at once but eases the drawn avatar onto it", () => {
+    const p = joined();
+    const seq = p.nextSeq();
+    p.tick(INTENT, seq);
+    const before = p.draw(1);
+    expect(p.reconcile({ x: p.sim.x + 0.1, z: p.sim.z, facing: 0, lastSeq: seq })).toBe("smooth");
+    expect(p.pos().x).toBeCloseTo(before.x + 0.1, 9); // the prediction follows the server
+    expect(p.draw(1).x).toBeCloseTo(before.x, 9); // the avatar does not jump
+    p.decay(0.05);
+    expect(p.draw(1).x).toBeCloseTo(before.x + 0.05, 2);
+    for (let i = 0; i < 20; i += 1) p.decay(0.05);
+    expect(p.draw(1).x).toBeCloseTo(before.x + 0.1, 9); // and has arrived after ~100 ms
+  });
+
+  it("does not apply the same error again for inputs still in flight", () => {
+    // Three inputs in flight; the server is 0.1 m off from the first one on and stays
+    // consistent, so once the first is reconciled the later ones have nothing to add.
+    const p = joined();
+    const sent = [0, 1, 2].map(() => {
+      const seq = p.nextSeq();
+      p.tick(INTENT, seq);
+      return { seq, x: p.sim.x, z: p.sim.z };
+    });
+    p.reconcile({ x: sent[0].x + 0.1, z: sent[0].z, facing: 0, lastSeq: sent[0].seq });
+    const corrected = p.pos();
+    expect(corrected.x).toBeCloseTo(sent[2].x + 0.1, 9);
+    p.reconcile({ x: sent[1].x + 0.1, z: sent[1].z, facing: 0, lastSeq: sent[1].seq });
+    expect(p.pos()).toEqual(corrected);
+    p.reconcile({ x: sent[2].x + 0.1, z: sent[2].z, facing: 0, lastSeq: sent[2].seq });
+    expect(p.pos()).toEqual(corrected);
+  });
+
+  it("draws between the last two ticks", () => {
+    const p = joined();
+    p.tick(INTENT, p.nextSeq());
+    const a = { x: p.sim.x, z: p.sim.z };
+    p.tick(INTENT, p.nextSeq());
+    const b = { x: p.sim.x, z: p.sim.z };
+    expect(p.draw(0).x).toBeCloseTo(a.x, 9);
+    expect(p.draw(0.5).x).toBeCloseTo((a.x + b.x) / 2, 9);
+    expect(p.draw(0.5).z).toBeCloseTo((a.z + b.z) / 2, 9);
+    expect(p.draw(1).x).toBeCloseTo(b.x, 9);
+  });
+
+  it("moves the drawn avatar at once, by the whole error, on a snap", () => {
+    const p = joined();
+    const seq = p.nextSeq();
+    p.tick(INTENT, seq);
+    const alphas = [0, 0.5, 1];
+    const before = alphas.map((a) => p.draw(a));
+    expect(p.reconcile({ x: p.sim.x + 1, z: p.sim.z, facing: 0, lastSeq: seq })).toBe("snap");
+    alphas.forEach((a, i) => {
+      expect(p.draw(a).x).toBeCloseTo(before[i].x + 1, 9);
+      expect(p.draw(a).z).toBeCloseTo(before[i].z, 9);
+    });
+    expect(p.draw(1).x).toBeCloseTo(p.pos().x, 9); // on the server's position
+  });
+
+  it("stops drawing between ticks after a reset", () => {
+    const p = joined();
+    p.tick(INTENT, p.nextSeq());
+    p.reset(5, 6, 0);
+    expect(p.draw(0)).toEqual({ x: 5, z: 6 });
+    expect(p.draw(1)).toEqual({ x: 5, z: 6 });
+  });
+});
+
 describe("followSnapshot", () => {
   it("eases over small gaps and snaps over jumps", () => {
     const cur = { x: 0, z: 0, facing: 0 };

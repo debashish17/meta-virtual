@@ -23,7 +23,8 @@ import { useNet } from '../net/store'
  * Online (P2-B) the same gestures send inputs to the room instead (`move_intent` at TICK_HZ
  * while held plus once on release, `move_target` per click, `activity_start` / `activity_stop`
  * for chairs and the counter): the avatar predicts with the shared stepPlayer, reconciles
- * against the snapshot's lastSeq, and is drawn from snapshots while an activity runs.
+ * against the snapshot's lastSeq, is drawn between its last two prediction ticks (so it moves
+ * every frame, not 20 times a second), and is drawn from snapshots while an activity runs.
  * Offline the frame below is exactly as before.
  */
 
@@ -240,7 +241,7 @@ function onlineFrame(dt: number, refs: FrameRefs, setZone: (zone: Zone | null) =
   p.decay(dt)
   const m = refs.motion.current
   if (online.mode === 'free') {
-    const pos = p.pos()
+    const pos = p.draw(online.acc / TICK_DT)   // between the last two ticks, every frame
     avatar.x = pos.x
     avatar.z = pos.z
     const delta = Math.atan2(Math.sin(p.sim.facing - avatar.facing), Math.cos(p.sim.facing - avatar.facing))
