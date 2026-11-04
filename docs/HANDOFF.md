@@ -528,7 +528,7 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 | P6-0 contract and slots | lead + builder/reviewer/e2e | wp/P6-0-contract | merged (--no-ff aed9532; 1 review must-fix fixed by lead with regression test) | P6-0.md |
 | P6-A status, home desks, colleagues | builder/reviewer/e2e | wp/P6-A-status-desks | merged (--no-ff 0868819; reviewer PASS no must-fix; lead aligned offline Colleagues to 4 fefa8fc) | P6-A.md |
 | P6-R receipts (USP A Phase 0) | builder/reviewer/e2e | wp/P6-R-receipts | merged (--no-ff d388360; reviewer PASS no must-fix; lead approved WallDisplays wiring) | P6-R.md |
-| P6-B meetings in the rooms | | wp/P6-B-meetings | not started (needs P6-0) | |
+| P6-B meetings in the rooms | builder/reviewer/e2e | wp/P6-B-meetings | merged (--no-ff 2aa6b59; reviewer+e2e conditional pass on lead R1; lead wired R1-R4, meetings.spec 2/2) | P6-B.md |
 | P6-C personal notes | | wp/P6-C-notes | not started (needs P6-0) | |
 | P6-D free seating and board | | wp/P6-D-seating-board | not started (only if time; needs P6-A) | |
 | P6-E office-life demo | | wp/P6-E-demo | not started (needs P6-A, P6-B) | |
