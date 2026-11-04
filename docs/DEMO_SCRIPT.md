@@ -22,7 +22,7 @@ live; and the office answers with its sources, or says it doesn't know.
 3. **Join before you press record:** open the live URL in both, pick **Join as Maya**
    (left) and **Join as Arjun** (right), and wait until each sees the other under
    **People**. The take starts inside the office, so the loading screen and the
-   name card (which still say "Virtual Office") never appear.
+   name card stay out of the video.
 4. **Have the text ready to paste:** *Acme go-live sync*, *Review the Acme go-live
    checklist*, *What's the status of the Acme integration?*, *Who is Acme's CEO?*
 5. **Opening shot:** the whole-floor picture, `docs/screenshots/office-m2-overview.png`,

@@ -60,7 +60,7 @@ function DevNameScreen({ onJoin }: { onJoin: (name: string) => void }) {
   return (
     <div className="auth-screen">
       <div className="auth-card" role="dialog" aria-label="Who are you?">
-        <h1>Virtual Office</h1>
+        <h1>Commonplace</h1>
         <p>Who are you?</p>
         <form
           className="auth-form"
@@ -184,7 +184,7 @@ function SupabaseGate({ children }: { children: ReactNode }) {
   return (
     <div className="auth-screen">
       <div className="auth-card" role="dialog" aria-label="Sign in">
-        <h1>Virtual Office</h1>
+        <h1>Commonplace</h1>
         {busy ? (
           <p>Signing in…</p>
         ) : (

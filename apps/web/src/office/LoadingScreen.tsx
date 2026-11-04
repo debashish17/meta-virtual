@@ -28,7 +28,7 @@ export default function LoadingScreen() {
   return (
     <div className={shown ? 'office-loading leaving' : 'office-loading'} data-testid="office-loading">
       <div className="office-loading-body">
-        <p className="office-loading-name">Virtual Office</p>
+        <p className="office-loading-name">Commonplace</p>
         <div
           className="office-loading-track"
           role="progressbar"

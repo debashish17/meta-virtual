@@ -34,7 +34,7 @@ describe('loadingCopy', () => {
 describe('LoadingScreen', () => {
   it('replaces the blank screen with the name, a progress bar and the step', () => {
     render(<LoadingScreen />)
-    expect(screen.getByText('Virtual Office')).toBeTruthy()
+    expect(screen.getByText('Commonplace')).toBeTruthy()
     expect(screen.getByText('Opening the office')).toBeTruthy()
     expect(screen.getByRole('progressbar', { name: 'Loading the office' }).getAttribute('aria-valuenow')).toBe('0')
   })
