@@ -9,19 +9,19 @@ the finished work against it.
 
 ---
 
-## 0. Start here: the deadline sprint (updated 2026-11-04, midday, after Phase 6)
+## 0. Start here: the deadline sprint (updated 2026-11-04, afternoon, Phase 6 deployed)
 
 **Deadline: 2026-11-04, 21:00 (the owner's local time).** What gets judged is the public demo:
 the Acme script (`PROJECT_BRIEF.md` section 5) in two browsers on the deployed URL. The new work
 for the deadline is Phase 6 (`WORK_PACKAGES.md` Phase 6; shared design in `ARCHITECTURE.md` 12.10;
 order, feature freeze and cut list in `IMPLEMENTATION_PLAN.md` 3.1). The rest of this file still
-applies. **Phase 6 (P6-0 to P6-E) is merged on local `main` and checked (below). It is not pushed
-and not deployed: the live site still runs `95e408f`, from before Phase 6.**
+applies. **Phase 6 (P6-0 to P6-E) is merged, checked (below), pushed and deployed: the live site
+runs `dabc622`.** One open decision before the judging: the live model's meeting step (decision 4).
 
 **State right now**
-- GitHub `debashish17/meta-virtual` (private) holds `main` through `105f3a9` (the handoff after
-  the refresh-ghost fix). Everything newer is local only: Phase 6 and the post-Phase-6 check below.
-  `git log origin/main..main` lists it. Before pushing: `git fetch` and
+- GitHub `debashish17/meta-virtual` (private) holds `main` through `dabc622` (Phase 6 and the
+  post-Phase-6 check, pushed at the owner's request) and this handoff update.
+  `git log origin/main..main` lists anything newer that is local only. Before pushing: `git fetch` and
   `git rev-list --left-right --count main...origin/main` must show `N 0` (never force-push; the
   history was rewritten on 2026-11-03, so any older copy must be reset to `origin/main` first).
 - Checks before Phase 6, on `95e408f`: `pnpm typecheck`, `pnpm lint` and `pnpm test` pass (server
@@ -33,11 +33,23 @@ and not deployed: the live site still runs `95e408f`, from before Phase 6.**
 - `docs/USP_A_IMPLEMENTATION_PLAN.md` is the owner's plan for after the deadline. Only its Phase 0
   runs now, as P6-R.
 
-**Live now (P4-A, fast mode, deployed with the owner's OK; Phase 6 not live yet)**
-- Web: `https://meta-virtual-office.vercel.app`, built from `95e408f`. Server:
-  `https://meta-virtual-office.fly.dev`, one machine in Fly region `sin`, image built from
-  `95e408f` (`/health` reports the version). Roll back with `fly deploy --image` and the previous
-  image tag (`fly releases -a meta-virtual-office` lists them).
+**Live now (P4-A, fast mode, deployed with the owner's OK; Phase 6 deployed 2026-11-04)**
+- Web: `https://meta-virtual-office.vercel.app`, built from `dabc622`. Server:
+  `https://meta-virtual-office.fly.dev`, one machine in Fly region `sin`, image
+  `registry.fly.io/meta-virtual-office:deployment-01M6JZ2ESCVM4KM91KECTA3E3X` built from `dabc622`
+  (`/health` reports the version). Roll back with `fly deploy --image` and the previous image tag
+  (`fly releases -a meta-virtual-office --image` lists them). The release before Phase 6 (`95e408f`)
+  is `deployment-01M6HD8CD5DHRBBPVGKFYR6K56`. Phase 6 raised `PROTOCOL_VERSION`, so web and server
+  roll back **together** (an old web cannot join a new server, nor the other way round).
+- Verified live after the Phase 6 deploy (a Node probe on the real WebSocket and API, then a
+  headless browser): two players join in 2 s and see each other; four colleagues; Check in walks
+  Maya to her desk (status working, seated, typing); booking the Acme room is 201, the invitee gets
+  the invite live, a second booking is 409, ending frees it; "Process meeting" with the booking,
+  four approvals, the milestone receipt is 15 Nov → 22 Nov by Maya, the second player's room hears
+  `records_changed`; notes private (Maya 1, Arjun 0); board pin shared; Ask cites 9 sources (6 s)
+  and abstains on the CEO (3 s); the web app loads the name card, joins online with no protocol
+  error, and shows Check in, Book a room and the Notes tab. Then the server was restarted, so it
+  holds the seeded start (no receipts, notes or pins; go-live 15 Nov).
 - Sign-in, fast mode: `AUTH_MODE=dev`, so the server trusts `dev:<name>`. A first visit to the
   deployed site shows a "Who are you?" card before the office loads: type your own name, or Join as
   Maya / Join as Arjun for the demo script. The choice is kept in that browser (`office.me` in
@@ -202,6 +214,17 @@ it does not match the server. That only matters for the full deploy; see decisio
    instead of a task, once as both. Rehearse the meeting step on the live model. The fallback is
    one command (step 4 of "Live model" below). A fix worth a small package: keep the scripted
    `acme-sync` fixture meeting on `FixtureLlm` while questions and real transcripts use the model.
+   **Seen again on the deployed Phase 6 build (2026-11-04), now on the wall too:** the live model
+   (13.5 s) proposed `milestone_date`, `commitment_create`, `task_reassign`, `task_create` (no
+   commitment update; the notice as both a commitment and a task). And every receipt's meeting
+   label came out as "Payments Integration go-live cannot meet 15 Nove": P6-R takes the summary's
+   head before the first colon, truncated mid-word, and only the fixture's summary starts with
+   "Acme sync:". So the hero line on the Acme wall reads "Go-live 15 Nov → 22 Nov · Payments
+   Integration go-live cannot meet 15 Nove · Maya". **Owner to choose before the judging:** (a)
+   the small fix above (scripted meeting on `FixtureLlm`; Ask stays on the live model), which
+   restores "Acme sync" and the exact demo changes; (b) unset `LLM_API_KEY` (everything on the
+   fixture, step 4 of "Live model"); or (c) keep it as is. Independent of that, a label from the
+   booking title (or cut at a word) would fix live transcripts too.
 5. **LiveKit (calls, live captions):** no LiveKit project exists (the `LIVEKIT_*` names are empty
    locally and unset on Fly), so `/health` says `calls: "off"` and the office shows "Calls
    unavailable". It stays that way unless the owner creates a LiveKit Cloud project (decision D9);
@@ -209,13 +232,12 @@ it does not match the server. That only matters for the full deploy; see decisio
 
 **What to do next, in order** (Phase 6 is built and merged; the remaining steps are about the
 public URL)
-1. **Push `main`** (owner's OK; decision 3).
-2. **Redeploy server and web from that commit** (owner's OK; "How to redeploy" above). Fast mode
-   needs no hosted migration: the three Phase 6 migrations (bookings, notes, board) only matter
-   for the full deploy, where they are applied after the first two. Keep the previous image tag
-   to roll back with `fly deploy --image`. Then check `/health` for the new `version`, and run
-   the join snippet in `DEPLOY.md` 1.2 (it now sends `protocol: 2`; 1 is refused).
-3. **Gate G8's last item, on the public URL:** restart the server first
+1. ~~Push `main`~~ and 2. ~~redeploy server and web~~: **done** 2026-11-04 (`dabc622`, verified
+   live; "Live now" above). Fast mode needs no hosted migration: the three Phase 6 migrations
+   (bookings, notes, board) only matter for the full deploy, where they are applied after the
+   first two. The join snippet in `DEPLOY.md` 1.2 now sends `protocol: 2` (1 is refused).
+3. **Decision 4 first** (the live model on the Acme meeting step; it changes the wall's receipt
+   line). Then **Gate G8's last item, on the public URL:** restart the server first
    (`fly apps restart meta-virtual-office`: the records are in memory, and only a restart gives
    the seeded go-live 15 Nov), then walk the office-life story and the Acme demo in two browsers
    (`docs/DEMO_VIDEO.md`, "Owner steps"). Restart again before every later run, including the
@@ -265,8 +287,8 @@ public URL)
 > `C:\Users\devd9\muse-sandbox\meta-virtual`. Read `AGENTS.md`, then `docs/HANDOFF.md` section 0
 > (start here), then `docs/IMPLEMENTATION_PLAN.md` section 3.1, Gate G8 in
 > `docs/WORK_PACKAGES.md`, and `docs/ARCHITECTURE.md` 12.10. The deadline is 2026-11-04 at 21:00.
-> Phase 6 is merged on local `main` and checked; the live site still runs the build from before
-> it. Do not redeploy, change a hosted service or push without the owner's OK in this session.
+> Phase 6 is merged, pushed and deployed (`dabc622`); decision 4 (the live model's meeting step)
+> is open. Do not redeploy, change a hosted service or push without the owner's OK in this session.
 > Ask the owner the open decisions in section 0 when a step needs them. Work through "What to do
 > next" in section 0, keep the status board (section 7) current, and keep `e2e/demo.spec.ts`
 > unchanged and `pnpm test:e2e` green after every change.
@@ -549,7 +571,7 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 | P6-C personal notes | builder/reviewer/e2e | wp/P6-C-notes | merged (--no-ff e8df186; reviewer+e2e PASS; lead wired Postgres notes store; hosted migration deferred to owner OK) | P6-C.md |
 | P6-D free seating and board | builder/reviewer/e2e | wp/P6-D-seating-board | merged (--no-ff 91176be; reviewer+e2e conditional pass on lead L1; lead applied L1+L2, dropped dead dark-chair line, live seat probe 3/3) | P6-D.md |
 | P6-E office-life demo | builder/reviewer/e2e | wp/P6-E-demo | merged (--no-ff a4ffbff; reviewer conditional pass, deployed-URL + manual pass are owner steps) | P6-E.md |
-| FIX Phase 6 check (owner request) | lead | main | merged 2026-11-04: full check found 3 of 13 e2e red and raw ids in wall receipts; fixed (captions protocol, fresh stack per seeded-state spec, receipt names, docs); checks green, e2e 13/13; G8 open only on the deployed URL | section 0 |
+| FIX Phase 6 check (owner request) | lead | main | merged 2026-11-04: full check found 3 of 13 e2e red and raw ids in wall receipts; fixed (captions protocol, fresh stack per seeded-state spec, receipt names, docs); checks green, e2e 13/13; pushed and deployed (`dabc622`), verified live; G8 open on the two-browser walk on the public URL, after decision 4 | section 0 |
 
 States: not started, in progress, blocked (say why), in review, merged.
 
