@@ -30,10 +30,11 @@ primary_region = "sin"
 [http_service]
   internal_port = 8080
   force_https = true
-  # Always on (owner, 2026-11-04): Fly's idle check does not count the open WebSocket
-  # connections, so auto-stop killed the machine every ~5 minutes with people online and
-  # wiped the in-memory demo. One machine stays up; reset the demo with
-  # `fly apps restart meta-virtual-office`.
+  # Always on (owner, 2026-11-04): one machine stays up, so the in-memory demo survives and
+  # no visitor waits for a cold start; reset the demo with `fly apps restart meta-virtual-office`.
+  # The stops seen every 5 minutes on 2026-11-04 were Fly's trial limit ("Trial machine
+  # stopping. To run for longer than 5m0s, add a credit card"), not auto-stop: they end only
+  # once the account has a card (https://fly.io/trial).
   auto_stop_machines = "off"
   min_machines_running = 1
 

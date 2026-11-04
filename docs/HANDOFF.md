@@ -9,18 +9,21 @@ the finished work against it.
 
 ---
 
-## 0. Start here: the deadline sprint (updated 2026-11-04, afternoon, Phase 6 deployed)
+## 0. Start here: the deadline sprint (updated 2026-11-04, evening: new overlay, scripted meeting, Fly trial limit)
 
-**Deadline: 2026-11-04, 21:00 (the owner's local time).** What gets judged is the public demo:
+**Deadline: 2026-11-04, 21:00 US Eastern = 2026-11-05, 07:30 IST** (the owner corrected this on 2026-11-04; it is not 21:00 IST). What gets judged is the public demo:
 the Acme script (`PROJECT_BRIEF.md` section 5) in two browsers on the deployed URL. The new work
 for the deadline is Phase 6 (`WORK_PACKAGES.md` Phase 6; shared design in `ARCHITECTURE.md` 12.10;
 order, feature freeze and cut list in `IMPLEMENTATION_PLAN.md` 3.1). The rest of this file still
-applies. **Phase 6 (P6-0 to P6-E) is merged, checked (below), pushed and deployed: the live site
-runs `dabc622`.** One open decision before the judging: the live model's meeting step (decision 4).
+applies. **Phase 6 (P6-0 to P6-E) is merged, checked (below), pushed and deployed.** Since then, with
+the owner's OK: the overlay frame (`c006ba3`), and the scripted meeting plus an always-on Fly config
+(`0ded29c`). **The live site runs `0ded29c`; decision 4 is settled.** **Blocker for the judging: the
+Fly account is on the free trial and stops the machine every 5 minutes** (decision 2 below): only the
+owner adding a card ends it.
 
 **State right now**
-- GitHub `debashish17/meta-virtual` (private) holds `main` through `dabc622` (Phase 6 and the
-  post-Phase-6 check, pushed at the owner's request) and this handoff update.
+- GitHub `debashish17/meta-virtual` (private) holds `main` through `0ded29c` and this handoff update
+  (all pushed at the owner's request).
   `git log origin/main..main` lists anything newer that is local only. Before pushing: `git fetch` and
   `git rev-list --left-right --count main...origin/main` must show `N 0` (never force-push; the
   history was rewritten on 2026-11-03, so any older copy must be reset to `origin/main` first).
@@ -34,13 +37,23 @@ runs `dabc622`.** One open decision before the judging: the live model's meeting
   runs now, as P6-R.
 
 **Live now (P4-A, fast mode, deployed with the owner's OK; Phase 6 deployed 2026-11-04)**
-- Web: `https://meta-virtual-office.vercel.app`, built from `dabc622`. Server:
-  `https://meta-virtual-office.fly.dev`, one machine in Fly region `sin`, image
-  `registry.fly.io/meta-virtual-office:deployment-01M6JZ2ESCVM4KM91KECTA3E3X` built from `dabc622`
-  (`/health` reports the version). Roll back with `fly deploy --image` and the previous image tag
-  (`fly releases -a meta-virtual-office --image` lists them). The release before Phase 6 (`95e408f`)
-  is `deployment-01M6HD8CD5DHRBBPVGKFYR6K56`. Phase 6 raised `PROTOCOL_VERSION`, so web and server
-  roll back **together** (an old web cannot join a new server, nor the other way round).
+- Web: `https://meta-virtual-office.vercel.app`, built from `c006ba3` (the overlay frame,
+  `DESIGN_SPEC.md` 9). Server: `https://meta-virtual-office.fly.dev`, one machine in Fly region `sin`,
+  image `registry.fly.io/meta-virtual-office:deployment-01M6KCW2DX0D3TMY3Q9JEF5G1V` built from
+  `0ded29c` (`/health` reports the version). Roll back with `fly deploy --image` and the previous image
+  tag (`fly releases -a meta-virtual-office --image` lists them): `dabc622` is
+  `deployment-01M6JZ2ESCVM4KM91KECTA3E3X`; before Phase 6 (`95e408f`),
+  `deployment-01M6HD8CD5DHRBBPVGKFYR6K56`. Phase 6 raised `PROTOCOL_VERSION`, so rolling back past it
+  takes web and server **together**; `c006ba3` and `0ded29c` did not change the protocol.
+- Verified live on `0ded29c` (2026-11-04, two headless browsers with a GPU, product UI only, 25 of 27
+  checks): name card, both online and in People, check in to the home desks, booking with a live
+  invite, both in the Acme room, a real click on the Acme wall (Acme Corp, go-live 15 Nov), Process
+  meeting in 1.0 s with exactly the four scripted changes and the "Acme sync:" summary, the drawer
+  receipt "Go-live 15 Nov → 22 Nov · Acme sync · Maya" live on the second browser, Ask on the live
+  model (8 sources, 12 s) and the CEO abstention, End meeting, reload keeps 22 Nov. Not passed: the
+  second browser's scripted click on the wall missed the screen by about 50 px (the overlay never
+  opened; check by hand), and one check of the walk script itself was wrong. An earlier run also
+  passed notes (private, kept on reload) and break / back to work.
 - Verified live after the Phase 6 deploy (a Node probe on the real WebSocket and API, then a
   headless browser): two players join in 2 s and see each other; four colleagues; Check in walks
   Maya to her desk (status working, seated, typing); booking the Acme room is 201, the invitee gets
@@ -56,10 +69,14 @@ runs `dabc622`.** One open decision before the judging: the live model's meeting
   local storage) and the "Name — switch" chip changes it. Development builds (local dev, e2e,
   screenshots) skip the card and join as before; `?name=` links skip it too. Two people who pick
   the same name still share one identity; only the full deploy (real accounts) fixes that.
-- Data: the in-memory repo (no `DATABASE_URL`). It resets whenever the machine stops; the machine
-  stops when idle and starts on the next visit in a few seconds.
-- AI: the live model, Muse Spark `muse-spark-1.3` (decision 4 below, with its known risk on the
-  meeting step).
+- Data: the in-memory repo (no `DATABASE_URL`). It resets whenever the machine stops. `fly.toml`
+  now keeps one machine always on (`auto_stop_machines = "off"`, `min_machines_running = 1`), but
+  **the trial account still stops it every 5 minutes** (decision 2): everyone is disconnected, the
+  records reset, and the next request restarts it (the first one gets a 503).
+- AI: Ask uses the live model, Muse Spark `muse-spark-1.3`. The scripted Acme meeting (Process
+  meeting, `fixture: "acme-sync"`) always extracts with `FixtureLlm` (decision 4, settled), so it
+  proposes the same four changes and its receipts read "Acme sync". Real call transcripts use the
+  live model.
 - Verified live: `/health`; two players join over the internet in under 0.4 s and see each other;
   a fresh browser gets the name card, joins as its own player, and skips the card after a reload;
   `/me/day`; `/ask` answers the Acme question with six sources and abstains on the CEO question;
@@ -199,12 +216,18 @@ it does not match the server. That only matters for the full deploy; see decisio
    password sign-in, data kept in Postgres). If full: the owner creates a new Supabase project in
    **Singapore** (Dashboard, New project, region "Southeast Asia (Singapore)") so the database sits
    next to the server, and fills in `.env.hosted.local`. The steps are under "Full mode" below.
-2. **Keep one machine always on for judging day** (`min_machines_running = 1` in `fly.toml`,
-   roughly USD 2 a month): no cold start, and the in-memory demo data survives idle periods.
+2. **Fly trial limit: the owner adds a credit card at https://fly.io/trial.** Until then Fly stops
+   the machine 5 minutes after every start (the runner logs "Trial machine stopping. To run for
+   longer than 5m0s, add a credit card"), disconnecting everyone and wiping the demo. Seen every
+   5 minutes on 2026-11-04, also after the always-on config (`0ded29c`, about USD 2 a month once
+   billing is on). The lead first misread it as auto-stop ignoring WebSockets; the log line settled
+   it. After the card: no redeploy needed; hold a client connected for 7+ minutes to verify
+   (`fly machine status` must show no stop).
 3. **Pushing `main`** to the remote: only when the owner asks. The owner asked on 2026-11-04 for
    `5a02fe6` and again for `9b0ae0d` and this update, each pushed as a fast-forward; each later
    push needs its own OK. Check `main...origin/main` first (state above).
-4. **The live AI model: wired 2026-11-03 at the owner's request.** Fly holds `LLM_API_KEY` (from
+4. **Settled 2026-11-04: option (a) below, deployed in `0ded29c`** (the scripted meeting on
+   `FixtureLlm`, Ask on the live model). History: **The live AI model: wired 2026-11-03 at the owner's request.** Fly holds `LLM_API_KEY` (from
    the root `.env`); `/health` says `llm: "meta"`: Muse Spark `muse-spark-1.3` through
    `https://api.meta.ai/v1`, reasoning effort `low` (defaults; `LLM_MODEL` is set nowhere). Checked
    on the live site: the Acme status question is answered with six sources (5 s), the CEO question
@@ -236,8 +259,8 @@ public URL)
    live; "Live now" above). Fast mode needs no hosted migration: the three Phase 6 migrations
    (bookings, notes, board) only matter for the full deploy, where they are applied after the
    first two. The join snippet in `DEPLOY.md` 1.2 now sends `protocol: 2` (1 is refused).
-3. **Decision 4 first** (the live model on the Acme meeting step; it changes the wall's receipt
-   line). Then **Gate G8's last item, on the public URL:** restart the server first
+3. ~~Decision 4~~ (settled and deployed). **The owner adds a card to Fly (decision 2)**, or every
+   demo run has a 5-minute window. Then **Gate G8's last item, on the public URL:** restart the server first
    (`fly apps restart meta-virtual-office`: the records are in memory, and only a restart gives
    the seeded go-live 15 Nov), then walk the office-life story and the Acme demo in two browsers
    (`docs/DEMO_VIDEO.md`, "Owner steps"). Restart again before every later run, including the
@@ -286,9 +309,9 @@ public URL)
 > You are the lead agent for the Virtual Office repository at
 > `C:\Users\devd9\muse-sandbox\meta-virtual`. Read `AGENTS.md`, then `docs/HANDOFF.md` section 0
 > (start here), then `docs/IMPLEMENTATION_PLAN.md` section 3.1, Gate G8 in
-> `docs/WORK_PACKAGES.md`, and `docs/ARCHITECTURE.md` 12.10. The deadline is 2026-11-04 at 21:00.
-> Phase 6 is merged, pushed and deployed (`dabc622`); decision 4 (the live model's meeting step)
-> is open. Do not redeploy, change a hosted service or push without the owner's OK in this session.
+> `docs/WORK_PACKAGES.md`, and `docs/ARCHITECTURE.md` 12.10. The deadline is 2026-11-04 at 21:00
+> US Eastern (07:30 IST on 5 Nov). The live site runs `0ded29c`; decision 4 is settled. The Fly
+> trial stops the machine every 5 minutes until the owner adds a card (decision 2). Do not redeploy, change a hosted service or push without the owner's OK in this session.
 > Ask the owner the open decisions in section 0 when a step needs them. Work through "What to do
 > next" in section 0, keep the status board (section 7) current, and keep `e2e/demo.spec.ts`
 > unchanged and `pnpm test:e2e` green after every change.
