@@ -35,6 +35,7 @@ import { mountNoteRoutes } from "../notes/routes.js";
 import { mountReceiptRoutes } from "../receipts/routes.js";
 import { NotFoundError, NotPendingError, type Repo } from "../db/repo.js";
 import type { MeetingContext } from "../llm/types.js";
+import { FixtureLlm } from "../llm/fixture.js";
 import { processMeeting } from "../meetings/pipeline.js";
 import type { RecordsSnapshot } from "../meetings/map.js";
 import { accountStatus } from "../status/accountStatus.js";
@@ -49,6 +50,9 @@ export interface Health {
   llm: string;
   calls: "on" | "off";
 }
+
+/** Extracts the scripted demo transcripts (POST /meetings with `fixture`), whatever model is configured. */
+const SCRIPTED_MEETING_LLM = new FixtureLlm();
 
 export interface HttpRoutesOptions {
   /** Per-user limiter; tests inject a small one, production uses the default. */
@@ -290,7 +294,11 @@ export function httpRoutes(app: Application, deps: Deps, options: HttpRoutesOpti
         }
         const snapshot = await readSnapshot(deps.repo, claims);
         const { extraction, changes } = await processMeeting({
-          llm: deps.llm,
+          // Owner decision 4 (2026-11-04): a scripted demo transcript (`fixture`) always
+          // extracts through the deterministic FixtureLlm, so the demo's changes and its
+          // "Acme sync" receipt never vary with the live model. Real transcripts (calls,
+          // captions) and Ask keep the configured client.
+          llm: "fixture" in body ? SCRIPTED_MEETING_LLM : deps.llm,
           transcript,
           context: meetingContext(body.zoneId, snapshot),
           snapshot,
