@@ -273,18 +273,36 @@ export function httpRoutes(app: Application, deps: Deps, options: HttpRoutesOpti
         const body = parsed.data;
         const transcript = "fixture" in body ? FIXTURE_TRANSCRIPTS[body.fixture] : body.transcript;
         const claims = claimsOf(req);
+        // P6-B: a booked meeting stores the booking's agenda with the meeting, and the
+        // extraction sees it. No bookingId: exactly the unbooked path as before.
+        let agenda: string | undefined;
+        let bookingId: string | undefined;
+        if (body.bookingId) {
+          const booking = deps.bookings ? await deps.bookings.get(claims, body.bookingId) : null;
+          if (!booking) {
+            throw new BadRequestError(`unknown booking ${body.bookingId}`);
+          }
+          if (booking.zoneId !== body.zoneId) {
+            throw new BadRequestError(`booking ${body.bookingId} is for another room`);
+          }
+          agenda = booking.agenda;
+          bookingId = booking.id;
+        }
         const snapshot = await readSnapshot(deps.repo, claims);
         const { extraction, changes } = await processMeeting({
           llm: deps.llm,
           transcript,
           context: meetingContext(body.zoneId, snapshot),
           snapshot,
+          agenda,
         });
         const meeting = await deps.repo.createMeeting(claims, {
           zoneId: body.zoneId,
           transcript,
           summary: extraction.summary,
           decisions: extraction.decisions,
+          agenda,
+          bookingId,
         });
         const tagged: ProposedChange[] = changes.map((change) => ({
           ...change,

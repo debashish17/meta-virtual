@@ -193,10 +193,11 @@ function extractionSystem(context: MeetingContext): string {
   ]
     .filter((part): part is string => part !== null)
     .join(", ");
+  const agenda = context.agenda ? `\nMeeting agenda: ${context.agenda}\n` : "";
   return (
     "You extract structured meeting outcomes. Reply with JSON only, matching this JSON schema:\n" +
     `${JSON.stringify(ExtractionResult.toJSONSchema())}\n` +
-    `Meeting scope: ${scope}.\n` +
+    `Meeting scope: ${scope}.\n${agenda}` +
     "Rules: summary is one or two sentences; decisions are what was decided; tasks use " +
     'action "create" for new work and "update" with matchHint for existing work; commitments ' +
     "name their account; milestoneChanges carry ISO dates (YYYY-MM-DD). " +

@@ -337,4 +337,48 @@ describe("http routes", () => {
     const laneMissing = await fetch(`${base}/bookings/nope`);
     expect(laneMissing.status).toBe(401);
   });
+
+  it("stores the booking agenda with the meeting", async () => {
+    const { base } = await boot();
+    const booked = await fetch(`${base}/bookings`, {
+      method: "POST",
+      headers: { ...MAYA, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        zoneId: "acme_room",
+        title: "Acme sync",
+        agenda: "Review the go-live checklist",
+        inviteeIds: ["dev-arjun"],
+      }),
+    });
+    expect(booked.status).toBe(201);
+    const booking = (await booked.json()) as { id: string };
+    const processed = await fetch(`${base}/meetings`, {
+      method: "POST",
+      headers: { ...MAYA, "Content-Type": "application/json" },
+      body: JSON.stringify({ zoneId: "acme_room", fixture: "acme-sync", bookingId: booking.id }),
+    });
+    expect(processed.status).toBe(201);
+    const result = (await processed.json()) as { meetingId: string };
+    const meeting = (await (
+      await fetch(`${base}/meetings/${result.meetingId}`, { headers: MAYA })
+    ).json()) as { agenda?: string };
+    expect(meeting.agenda).toBe("Review the go-live checklist");
+    // An unknown booking, or one for another room, is a 400.
+    const unknown = await fetch(`${base}/meetings`, {
+      method: "POST",
+      headers: { ...MAYA, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        zoneId: "acme_room",
+        fixture: "acme-sync",
+        bookingId: "00000000-0000-0000-0000-000000000000",
+      }),
+    });
+    expect(unknown.status).toBe(400);
+    const otherRoom = await fetch(`${base}/meetings`, {
+      method: "POST",
+      headers: { ...MAYA, "Content-Type": "application/json" },
+      body: JSON.stringify({ zoneId: "project_room", fixture: "acme-sync", bookingId: booking.id }),
+    });
+    expect(otherRoom.status).toBe(400);
+  });
 });

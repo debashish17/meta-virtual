@@ -16,6 +16,13 @@ export interface ProcessMeetingInput {
   /** Assigned to the changes as `sourceMeetingId`; random when omitted. */
   meetingId?: string;
   nextId?: () => string;
+  /**
+   * Phase 6 (P6-B): the booking's agenda, from `POST /meetings` with a
+   * `bookingId`. It rides on the extraction context (the typed `MeetingContext`
+   * gains the field when the lead wires the route); `FixtureLlm` ignores the
+   * context, so the fixture output is unchanged.
+   */
+  agenda?: string;
 }
 
 export interface ProcessMeetingResult {
@@ -96,8 +103,10 @@ function mapped(
  */
 export async function processMeeting(input: ProcessMeetingInput): Promise<ProcessMeetingResult> {
   const meetingId = input.meetingId ?? randomUUID();
+  const context =
+    input.agenda === undefined ? input.context : { ...input.context, agenda: input.agenda };
 
-  const first = await attempt(input.llm, input.transcript, input.context, null);
+  const first = await attempt(input.llm, input.transcript, context, null);
   let feedback: string | null = null;
   if ("value" in first) {
     const parsed = ExtractionResult.safeParse(first.value);
@@ -109,7 +118,7 @@ export async function processMeeting(input: ProcessMeetingInput): Promise<Proces
     feedback = first.failure;
   }
 
-  const second = await attempt(input.llm, input.transcript, input.context, feedback);
+  const second = await attempt(input.llm, input.transcript, context, feedback);
   if ("value" in second) {
     const parsed = ExtractionResult.safeParse(second.value);
     if (parsed.success) {

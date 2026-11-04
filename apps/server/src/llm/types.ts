@@ -8,6 +8,8 @@ export interface MeetingContext {
   zoneId: string;
   accountName?: string;
   projectName?: string;
+  /** Phase 6 (P6-B): the booking's agenda, so extraction weighs what the meeting was for. */
+  agenda?: string;
 }
 
 export interface LlmClient {

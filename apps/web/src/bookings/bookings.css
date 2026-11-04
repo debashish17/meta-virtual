@@ -1,0 +1,132 @@
+/* "Book a room" (DESIGN_SPEC 9): a compact pill at the top centre, left of the zone
+ * pill to mirror the check-in bar, never over the centre of the floor. The form
+ * and the invites stack under the button. */
+.pan-booking {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(calc(-50% - 190px));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  z-index: 30;
+  max-width: 320px;
+}
+
+.pan-booking > .pan-btn {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 18px rgba(30, 33, 38, 0.12);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pan-booking-invite,
+.pan-booking-form {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 18px rgba(30, 33, 38, 0.12);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.pan-booking-invite p {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.pan-booking-invite-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pan-booking-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 300px;
+}
+
+.pan-booking-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a4d52;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.pan-booking-field legend {
+  padding: 0;
+}
+
+.pan-booking-field input[type="text"],
+.pan-booking-field select,
+.pan-booking-field textarea {
+  font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #1e2126;
+  border: 1px solid #d5d8dc;
+  border-radius: 6px;
+  padding: 5px 8px;
+  resize: vertical;
+}
+
+.pan-booking-invitee {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 400;
+  color: #1e2126;
+}
+
+.pan-booking-hint {
+  margin: 0;
+  font-weight: 400;
+  color: #6b6e73;
+}
+
+.pan-booking-open h3 {
+  margin: 4px 0;
+  font-size: 12px;
+  color: #4a4d52;
+}
+
+.pan-booking-open ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pan-booking-open li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+/* Narrow windows (and the 640 px e2e viewport): a centred pill lands inside the
+ * drawer's x-range and swallows its clicks (demo.spec's second approval died
+ * exactly that way). Dock left instead, in the free strip below the
+ * participants and above the chat; the drawer starts at x304, chat at y200. */
+@media (max-width: 1279px) {
+  .pan-booking {
+    top: 148px;
+    left: 16px;
+    transform: none;
+    align-items: flex-start;
+  }
+  /* The form opens downwards from the pill: keep it inside the viewport with
+   * its own scroll, or the invitees fall below the fold unreachable. */
+  .pan-booking-form {
+    max-height: calc(100vh - 164px);
+    overflow-y: auto;
+  }
+}

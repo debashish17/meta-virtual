@@ -9,6 +9,7 @@ import {
 } from "./auth/supabase.js";
 import { createInMemoryRepo, type Repo } from "./db/repo.js";
 import { createInMemoryBoardStore, type BoardStore } from "./board/store.js";
+import { createPostgresBookingStore } from "./bookings/postgres.js";
 import { createInMemoryBookingStore, type BookingStore } from "./bookings/store.js";
 import { createPostgresRepo, PostgresRepo } from "./db/postgres.js";
 import type { Env } from "./env.js";
@@ -97,7 +98,10 @@ export function buildDeps(env: Env): Deps {
     // The live bus: approvals reach the workspace's room (nobody online: no-op).
     bus: new RegistryBus(),
     chat: new DatabaseChatStore(repo, lookup),
-    bookings: createInMemoryBookingStore(),
+    bookings:
+      repo instanceof PostgresRepo
+        ? createPostgresBookingStore(repo)
+        : createInMemoryBookingStore(),
     notes: createInMemoryNoteStore(),
     board: createInMemoryBoardStore(),
     receipts: createReceiptStore(repo),
