@@ -38,8 +38,9 @@ to Fly on 2026-11-04, so the trial's 5-minute stops are over (verified below).
   runs now, as P6-R.
 
 **Live now (P4-A, fast mode, deployed with the owner's OK; Phase 6 deployed 2026-11-04)**
-- Web: `https://meta-virtual-office.vercel.app`, built from `21ef87e` (with the overlay frame of
-  `c006ba3`, `DESIGN_SPEC.md` 9). Server: `https://meta-virtual-office.fly.dev`, one machine in Fly
+- Web: `https://meta-virtual-office.vercel.app`, built from `95525a6` (the loading screen, on top of
+  the overlay frame of `c006ba3`, `DESIGN_SPEC.md` 9). The README names the product Commonplace
+  (owner); the app itself still says Virtual Office. Server: `https://meta-virtual-office.fly.dev`, one machine in Fly
   region `sin`, built from `21ef87e` (`/health` reports the version; `fly releases --image` gives the
   tag). Before it: `0ded29c` is `deployment-01M6KCW2DX0D3TMY3Q9JEF5G1V`. Roll back with `fly deploy --image` and the previous image
   tag (`fly releases -a meta-virtual-office --image` lists them): `dabc622` is
