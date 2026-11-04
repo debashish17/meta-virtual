@@ -530,7 +530,7 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 | P6-R receipts (USP A Phase 0) | builder/reviewer/e2e | wp/P6-R-receipts | merged (--no-ff d388360; reviewer PASS no must-fix; lead approved WallDisplays wiring) | P6-R.md |
 | P6-B meetings in the rooms | builder/reviewer/e2e | wp/P6-B-meetings | merged (--no-ff 2aa6b59; reviewer+e2e conditional pass on lead R1; lead wired R1-R4, meetings.spec 2/2) | P6-B.md |
 | P6-C personal notes | builder/reviewer/e2e | wp/P6-C-notes | merged (--no-ff e8df186; reviewer+e2e PASS; lead wired Postgres notes store; hosted migration deferred to owner OK) | P6-C.md |
-| P6-D free seating and board | | wp/P6-D-seating-board | not started (only if time; needs P6-A) | |
+| P6-D free seating and board | builder/reviewer/e2e | wp/P6-D-seating-board | merged (--no-ff 91176be; reviewer+e2e conditional pass on lead L1; lead applied L1+L2, dropped dead dark-chair line, live seat probe 3/3) | P6-D.md |
 | P6-E office-life demo | | wp/P6-E-demo | not started (needs P6-A, P6-B) | |
 
 States: not started, in progress, blocked (say why), in review, merged.
