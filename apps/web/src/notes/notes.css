@@ -1,0 +1,113 @@
+/* Personal notes (DESIGN_SPEC 9, P6-C): sticky-note cards in the right drawer's
+ * Notes tab. Cream and oak tints from the panel palette; dark text throughout. */
+.pan-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pan-notes-add {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pan-notes-add textarea,
+.pan-note textarea {
+  font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #1e2126;
+  border: 1px solid #d5d8dc;
+  border-radius: 6px;
+  padding: 5px 8px;
+  resize: vertical;
+  background: #fff;
+}
+
+.pan-notes-add-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pan-notes-colors {
+  display: flex;
+  gap: 6px;
+}
+
+.pan-notes-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(30, 33, 38, 0.25);
+  cursor: pointer;
+  padding: 0;
+}
+
+.pan-notes-dot.on {
+  outline: 2px solid #8a5a2b;
+  outline-offset: 2px;
+}
+
+.pan-notes-dot input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.pan-notes-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pan-note {
+  border-radius: 8px;
+  padding: 8px 10px;
+  box-shadow: 0 2px 8px rgba(30, 33, 38, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pan-note-text {
+  margin: 0;
+  font-size: 13px;
+  color: #1e2126;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.pan-note.done .pan-note-text {
+  text-decoration: line-through;
+  color: #6b6e73;
+}
+
+.pan-note-tick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #4a4d52;
+}
+
+.pan-note-tick input {
+  width: 14px;
+  height: 14px;
+  accent-color: #8a5a2b;
+}
+
+.pan-notes-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.pan-notes-actions .pan-btn {
+  padding: 2px 8px;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.7);
+}

@@ -16,6 +16,7 @@ import type { Env } from "./env.js";
 import { DatabaseChatStore } from "./http/chatStore.js";
 import { createLlm } from "./llm/factory.js";
 import type { LlmClient } from "./llm/types.js";
+import { createPostgresNoteStore } from "./notes/postgres.js";
 import { createInMemoryNoteStore, type NoteStore } from "./notes/store.js";
 import { createReceiptStore, type ReceiptStore } from "./receipts/store.js";
 import { RegistryBus, type RoomBus } from "./room/bus.js";
@@ -102,7 +103,8 @@ export function buildDeps(env: Env): Deps {
       repo instanceof PostgresRepo
         ? createPostgresBookingStore(repo)
         : createInMemoryBookingStore(),
-    notes: createInMemoryNoteStore(),
+    notes:
+      repo instanceof PostgresRepo ? createPostgresNoteStore(repo) : createInMemoryNoteStore(),
     board: createInMemoryBoardStore(),
     receipts: createReceiptStore(repo),
   };
