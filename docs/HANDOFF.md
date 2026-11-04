@@ -17,9 +17,8 @@ for the deadline is Phase 6 (`WORK_PACKAGES.md` Phase 6; shared design in `ARCHI
 order, feature freeze and cut list in `IMPLEMENTATION_PLAN.md` 3.1). The rest of this file still
 applies. **Phase 6 (P6-0 to P6-E) is merged, checked (below), pushed and deployed.** Since then, with
 the owner's OK: the overlay frame (`c006ba3`), and the scripted meeting plus an always-on Fly config
-(`0ded29c`). **The live site runs `0ded29c`; decision 4 is settled.** **Blocker for the judging: the
-Fly account is on the free trial and stops the machine every 5 minutes** (decision 2 below): only the
-owner adding a card ends it.
+(`0ded29c`). **The live site runs `0ded29c`; decisions 2 and 4 are settled:** the owner added a card
+to Fly on 2026-11-04, so the trial's 5-minute stops are over (verified below).
 
 **State right now**
 - GitHub `debashish17/meta-virtual` (private) holds `main` through `0ded29c` and this handoff update
@@ -69,10 +68,11 @@ owner adding a card ends it.
   local storage) and the "Name — switch" chip changes it. Development builds (local dev, e2e,
   screenshots) skip the card and join as before; `?name=` links skip it too. Two people who pick
   the same name still share one identity; only the full deploy (real accounts) fixes that.
-- Data: the in-memory repo (no `DATABASE_URL`). It resets whenever the machine stops. `fly.toml`
-  now keeps one machine always on (`auto_stop_machines = "off"`, `min_machines_running = 1`), but
-  **the trial account still stops it every 5 minutes** (decision 2): everyone is disconnected, the
-  records reset, and the next request restarts it (the first one gets a 503).
+- Data: the in-memory repo (no `DATABASE_URL`). One machine is always on (`auto_stop_machines =
+  "off"`, `min_machines_running = 1`, and a card on the account since 2026-11-04), so the records
+  persist until someone restarts it: run `fly apps restart meta-virtual-office` before every demo run.
+  Verified: after the card, a client stayed connected for 8 minutes with no stop and no "Trial
+  machine" log line (restarted 14:02 UTC, seeded start).
 - AI: Ask uses the live model, Muse Spark `muse-spark-1.3`. The scripted Acme meeting (Process
   meeting, `fixture: "acme-sync"`) always extracts with `FixtureLlm` (decision 4, settled), so it
   proposes the same four changes and its receipts read "Acme sync". Real call transcripts use the
@@ -216,7 +216,7 @@ it does not match the server. That only matters for the full deploy; see decisio
    password sign-in, data kept in Postgres). If full: the owner creates a new Supabase project in
    **Singapore** (Dashboard, New project, region "Southeast Asia (Singapore)") so the database sits
    next to the server, and fills in `.env.hosted.local`. The steps are under "Full mode" below.
-2. **Fly trial limit: the owner adds a credit card at https://fly.io/trial.** Until then Fly stops
+2. **Settled 2026-11-04: the owner added a card; checked with an 8-minute connection.** History: Fly stopped
    the machine 5 minutes after every start (the runner logs "Trial machine stopping. To run for
    longer than 5m0s, add a credit card"), disconnecting everyone and wiping the demo. Seen every
    5 minutes on 2026-11-04, also after the always-on config (`0ded29c`, about USD 2 a month once
@@ -259,8 +259,7 @@ public URL)
    live; "Live now" above). Fast mode needs no hosted migration: the three Phase 6 migrations
    (bookings, notes, board) only matter for the full deploy, where they are applied after the
    first two. The join snippet in `DEPLOY.md` 1.2 now sends `protocol: 2` (1 is refused).
-3. ~~Decision 4~~ (settled and deployed). **The owner adds a card to Fly (decision 2)**, or every
-   demo run has a 5-minute window. Then **Gate G8's last item, on the public URL:** restart the server first
+3. ~~Decisions 2 and 4~~ (settled and deployed). **Gate G8's last item, on the public URL:** restart the server first
    (`fly apps restart meta-virtual-office`: the records are in memory, and only a restart gives
    the seeded go-live 15 Nov), then walk the office-life story and the Acme demo in two browsers
    (`docs/DEMO_VIDEO.md`, "Owner steps"). Restart again before every later run, including the
@@ -310,8 +309,8 @@ public URL)
 > `C:\Users\devd9\muse-sandbox\meta-virtual`. Read `AGENTS.md`, then `docs/HANDOFF.md` section 0
 > (start here), then `docs/IMPLEMENTATION_PLAN.md` section 3.1, Gate G8 in
 > `docs/WORK_PACKAGES.md`, and `docs/ARCHITECTURE.md` 12.10. The deadline is 2026-11-04 at 21:00
-> US Eastern (07:30 IST on 5 Nov). The live site runs `0ded29c`; decision 4 is settled. The Fly
-> trial stops the machine every 5 minutes until the owner adds a card (decision 2). Do not redeploy, change a hosted service or push without the owner's OK in this session.
+> US Eastern (07:30 IST on 5 Nov). The live site runs `0ded29c`; decisions 2 and 4 are settled
+> (the Fly machine is always on; restart it before every demo run). Do not redeploy, change a hosted service or push without the owner's OK in this session.
 > Ask the owner the open decisions in section 0 when a step needs them. Work through "What to do
 > next" in section 0, keep the status board (section 7) current, and keep `e2e/demo.spec.ts`
 > unchanged and `pnpm test:e2e` green after every change.
