@@ -17,11 +17,13 @@ for the deadline is Phase 6 (`WORK_PACKAGES.md` Phase 6; shared design in `ARCHI
 order, feature freeze and cut list in `IMPLEMENTATION_PLAN.md` 3.1). The rest of this file still
 applies. **Phase 6 (P6-0 to P6-E) is merged, checked (below), pushed and deployed.** Since then, with
 the owner's OK: the overlay frame (`c006ba3`), and the scripted meeting plus an always-on Fly config
-(`0ded29c`). **The live site runs `0ded29c`; decisions 2 and 4 are settled:** the owner added a card
+(`0ded29c`), then three small fixes (`21ef87e`: "Meeting in Acme room" instead of the zone id, the host
+is in the meeting after booking, the strip says "In a meeting · Back to work"). **The live site runs
+`21ef87e` (web and server); decisions 2 and 4 are settled:** the owner added a card
 to Fly on 2026-11-04, so the trial's 5-minute stops are over (verified below).
 
 **State right now**
-- GitHub `debashish17/meta-virtual` (private) holds `main` through `0ded29c` and this handoff update
+- GitHub `debashish17/meta-virtual` (private) holds `main` through `21ef87e` and this handoff update
   (all pushed at the owner's request).
   `git log origin/main..main` lists anything newer that is local only. Before pushing: `git fetch` and
   `git rev-list --left-right --count main...origin/main` must show `N 0` (never force-push; the
@@ -36,10 +38,10 @@ to Fly on 2026-11-04, so the trial's 5-minute stops are over (verified below).
   runs now, as P6-R.
 
 **Live now (P4-A, fast mode, deployed with the owner's OK; Phase 6 deployed 2026-11-04)**
-- Web: `https://meta-virtual-office.vercel.app`, built from `c006ba3` (the overlay frame,
-  `DESIGN_SPEC.md` 9). Server: `https://meta-virtual-office.fly.dev`, one machine in Fly region `sin`,
-  image `registry.fly.io/meta-virtual-office:deployment-01M6KCW2DX0D3TMY3Q9JEF5G1V` built from
-  `0ded29c` (`/health` reports the version). Roll back with `fly deploy --image` and the previous image
+- Web: `https://meta-virtual-office.vercel.app`, built from `21ef87e` (with the overlay frame of
+  `c006ba3`, `DESIGN_SPEC.md` 9). Server: `https://meta-virtual-office.fly.dev`, one machine in Fly
+  region `sin`, built from `21ef87e` (`/health` reports the version; `fly releases --image` gives the
+  tag). Before it: `0ded29c` is `deployment-01M6KCW2DX0D3TMY3Q9JEF5G1V`. Roll back with `fly deploy --image` and the previous image
   tag (`fly releases -a meta-virtual-office --image` lists them): `dabc622` is
   `deployment-01M6JZ2ESCVM4KM91KECTA3E3X`; before Phase 6 (`95e408f`),
   `deployment-01M6HD8CD5DHRBBPVGKFYR6K56`. Phase 6 raised `PROTOCOL_VERSION`, so rolling back past it
@@ -309,7 +311,7 @@ public URL)
 > `C:\Users\devd9\muse-sandbox\meta-virtual`. Read `AGENTS.md`, then `docs/HANDOFF.md` section 0
 > (start here), then `docs/IMPLEMENTATION_PLAN.md` section 3.1, Gate G8 in
 > `docs/WORK_PACKAGES.md`, and `docs/ARCHITECTURE.md` 12.10. The deadline is 2026-11-04 at 21:00
-> US Eastern (07:30 IST on 5 Nov). The live site runs `0ded29c`; decisions 2 and 4 are settled
+> US Eastern (07:30 IST on 5 Nov). The live site runs `21ef87e`; decisions 2 and 4 are settled
 > (the Fly machine is always on; restart it before every demo run). Do not redeploy, change a hosted service or push without the owner's OK in this session.
 > Ask the owner the open decisions in section 0 when a step needs them. Work through "What to do
 > next" in section 0, keep the status board (section 7) current, and keep `e2e/demo.spec.ts`
