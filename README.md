@@ -6,7 +6,7 @@
 [Issues][issues-url]
 
 <div align="center">
-  <h3 align="center">Virtual Office</h3>
+  <h3 align="center">Commonplace</h3>
 
   <p align="center">
     A shared 3D office where meetings update the team's records, and the office answers with receipts.
@@ -49,7 +49,7 @@
 
 ## About The Project
 
-[![The whole Virtual Office floor][product-screenshot]](https://meta-virtual-office.vercel.app)
+[![The whole Commonplace office floor][product-screenshot]](https://meta-virtual-office.vercel.app)
 
 Walk into a shared 3D office with your team. Check in and your avatar walks to
 your desk; book the Acme room and your colleague gets the invite live. Hold the
