@@ -8,7 +8,8 @@ import "./officeLife.css";
 /**
  * Check-in bar (P6-A, DESIGN_SPEC 9): top centre beside the zone pill, compact, never
  * over the centre of the floor. After joining, "Check in" (`go_to desk`); while working,
- * "Take a break" (`go_to break`); on a break, "Back to work" (`go_to desk`). Offline it
+ * "Take a break" (`go_to break`); on a break or in a meeting, "Back to work" (`go_to desk`);
+ * away, "Check in". The label always names the status (never "Available" in a meeting). Offline it
  * walks to the home desk through the local activity path; anything beyond Check in
  * offline is cut first (WORK_PACKAGES.md P6-A).
  */
@@ -48,7 +49,11 @@ export default function OfficeLifeBar() {
       ? (["Working", "Take a break"] as const)
       : mine === "on_break"
         ? (["On a break", "Back to work"] as const)
-        : (["Available", "Check in"] as const);
+        : mine === "in_meeting"
+          ? (["In a meeting", "Back to work"] as const)
+          : mine === "away"
+            ? (["Away", "Check in"] as const)
+            : (["Available", "Check in"] as const);
   return (
     <div className="pan-officelife" data-testid="office-life-bar">
       <span className="pan-officelife-status">{label}</span>

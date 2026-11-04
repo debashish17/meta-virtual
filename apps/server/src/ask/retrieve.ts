@@ -8,6 +8,7 @@ import type {
   Project,
   Task,
 } from "@office/shared";
+import { zoneDisplayName } from "@office/shared";
 import type { Repo } from "../db/repo.js";
 import type { ClassifiedQuestion } from "./classify.js";
 
@@ -54,7 +55,7 @@ async function myDayRecords(repo: Repo, claims: AuthClaims, userId: string): Pro
     found.push({
       type: "meeting",
       id: meeting.id,
-      label: label(meeting.summary, `Meeting in ${meeting.zoneId}`),
+      label: label(meeting.summary, `Meeting in ${zoneDisplayName(meeting.zoneId)}`),
       record: meeting,
     });
   }
@@ -101,7 +102,7 @@ async function projectRecords(
     found.push({
       type: "meeting",
       id: meeting.id,
-      label: label(meeting.summary, `Meeting in ${meeting.zoneId}`),
+      label: label(meeting.summary, `Meeting in ${zoneDisplayName(meeting.zoneId)}`),
       record: meeting,
     });
   }
@@ -154,7 +155,7 @@ async function accountRecords(
     found.push({
       type: "meeting",
       id: meeting.id,
-      label: label(meeting.summary, `Meeting in ${meeting.zoneId}`),
+      label: label(meeting.summary, `Meeting in ${zoneDisplayName(meeting.zoneId)}`),
       record: meeting,
     });
   }
@@ -168,7 +169,7 @@ async function decisionRecords(repo: Repo, claims: AuthClaims): Promise<Retrieve
     .map((meeting) => ({
       type: "meeting" as const,
       id: meeting.id,
-      label: label(meeting.summary, `Meeting in ${meeting.zoneId}`),
+      label: label(meeting.summary, `Meeting in ${zoneDisplayName(meeting.zoneId)}`),
       record: meeting,
     }));
 }

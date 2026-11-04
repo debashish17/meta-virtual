@@ -97,12 +97,8 @@ export default function BookingPanel({ deps }: { deps?: BookingPanelDeps }) {
         agenda,
         inviteeIds,
       });
-      if (booking.zoneId) {
-        const entry = ROOM_ENTRY[booking.zoneId];
-        if (entry) {
-          walkTo(entry);
-        }
-      }
+      // The host walks in and is in the meeting, the same way as an invitee who joins.
+      joinRoom(booking.zoneId);
       setExpanded(false);
       setZoneId("");
       setTitle("");

@@ -43,6 +43,21 @@ describe("BookingPanel", () => {
     expect(mockedWalkTo).toHaveBeenCalledWith(ROOM_ENTRY["acme_room"]);
   });
 
+  it("puts the host in the meeting too, like an invitee who joins", async () => {
+    const status = vi.fn();
+    useNet.setState({ send: { chat: () => undefined, status } });
+    const api = createMockBookingsApi();
+    render(<BookingPanel deps={{ api }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Book a room" }));
+    fireEvent.change(screen.getByLabelText("Room"), { target: { value: "acme_room" } });
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Acme sync" } });
+    fireEvent.click(screen.getByText("Arjun"));
+    fireEvent.click(screen.getByRole("button", { name: "Book" }));
+
+    await waitFor(() => expect(status).toHaveBeenCalledWith("in_meeting"));
+    expect(mockedWalkTo).toHaveBeenCalledWith(ROOM_ENTRY["acme_room"]);
+  });
+
   it("needs a room, a title and an invitee", () => {
     render(<BookingPanel deps={{ api: createMockBookingsApi() }} />);
     fireEvent.click(screen.getByRole("button", { name: "Book a room" }));

@@ -44,6 +44,11 @@ export function zoneAt(x: number, z: number): Zone | null {
   return ZONES.find((zone) => x >= zone.x && x <= zone.x + zone.w && z >= zone.z && z <= zone.z + zone.d) ?? null;
 }
 
+/** A zone's name for people ("Acme room"); the id only for a zone the layout does not have. */
+export function zoneDisplayName(zoneId: string): string {
+  return ZONES.find((zone) => zone.id === zoneId)?.name ?? zoneId;
+}
+
 /** Measured size of a built part, (w, d, h) in metres. */
 export const partSize = (id: string): [number, number, number] | undefined => SIZES[id];
 

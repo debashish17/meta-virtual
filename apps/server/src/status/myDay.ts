@@ -1,4 +1,4 @@
-import { MyDay, type AuthClaims, type Commitment, type DayItem, type Meeting, type MyDay as MyDayType, type Task } from "@office/shared";
+import { MyDay, zoneDisplayName, type AuthClaims, type Commitment, type DayItem, type Meeting, type MyDay as MyDayType, type Task } from "@office/shared";
 import type { Repo } from "../db/repo.js";
 
 /** Everything `buildMyDay` shapes; `myDay` reads it from the `Repo`. */
@@ -45,7 +45,7 @@ export function buildMyDay(input: MyDayInput): MyDayType {
     items.push({
       id: meeting.id,
       kind: "meeting",
-      title: `Meeting in ${meeting.zoneId}`,
+      title: `Meeting in ${zoneDisplayName(meeting.zoneId)}`,
       reason: meeting.summary,
       dueDate: null,
     });

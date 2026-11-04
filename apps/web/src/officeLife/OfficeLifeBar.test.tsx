@@ -48,6 +48,21 @@ describe("OfficeLifeBar", () => {
     expect(screen.getByRole("button", { name: "Take a break" })).toBeTruthy();
   });
 
+  it("says In a meeting with Back to work, never Available, while in a meeting", () => {
+    onlineAs("in_meeting");
+    render(<OfficeLifeBar />);
+    expect(screen.getByText("In a meeting")).toBeTruthy();
+    expect(screen.queryByText("Available")).toBeNull();
+    expect(screen.getByRole("button", { name: "Back to work" })).toBeTruthy();
+  });
+
+  it("says Away with Check in while away", () => {
+    onlineAs("away");
+    render(<OfficeLifeBar />);
+    expect(screen.getByText("Away")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Check in" })).toBeTruthy();
+  });
+
   it("shows Back to work on a break", () => {
     onlineAs("on_break");
     render(<OfficeLifeBar />);

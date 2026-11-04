@@ -5,6 +5,7 @@ import {
   Milestone,
   Project,
   Task,
+  zoneDisplayName,
   type AskSourceType,
 } from "@office/shared";
 import type { AnswerFn } from "../llm/fixture.js";
@@ -224,7 +225,8 @@ export const fixtureAnswer: AnswerFn = (question: string, records: unknown[]) =>
   const wantsDecisions = DECISION_HINT.some((pattern) => pattern.test(text));
   for (const entry of byType("meeting")) {
     const zoneId = str(entry.record, "zoneId");
-    sentences.push(`Meeting in ${zoneId}: ${str(entry.record, "summary")}`);
+    const room = zoneId ? zoneDisplayName(zoneId) : "the office";
+    sentences.push(`Meeting in ${room}: ${str(entry.record, "summary")}`);
     if (wantsDecisions) {
       const decisions = entry.record["decisions"];
       if (Array.isArray(decisions) && decisions.length > 0) {

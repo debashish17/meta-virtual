@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { OFFICE_WALK, WORLD, ZONES, findPath, zoneAt } from "./index.js";
+import { OFFICE_WALK, WORLD, ZONES, findPath, zoneAt, zoneDisplayName } from "./index.js";
 import { BOOKABLE_ZONES, ROOM_ENTRY, isBookableZone } from "./rooms.js";
 
 describe("bookable rooms", () => {
@@ -42,5 +42,16 @@ describe("bookable rooms", () => {
     expect(isBookableZone("acme_room")).toBe(true);
     expect(isBookableZone("tea_point")).toBe(false);
     expect(isBookableZone("no_such_room")).toBe(false);
+  });
+});
+
+describe("zone display names", () => {
+  it("names a room for people, never by its id", () => {
+    expect(zoneDisplayName("acme_room")).toBe("Acme room");
+    expect(zoneDisplayName("project_room")).not.toContain("_");
+  });
+
+  it("falls back to the id for a zone the layout does not have", () => {
+    expect(zoneDisplayName("nowhere")).toBe("nowhere");
   });
 });

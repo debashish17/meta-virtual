@@ -1,4 +1,5 @@
 import {
+  zoneDisplayName,
   DEMO_ACCOUNT,
   DEMO_COMMITMENT,
   DEMO_CONTACT,
@@ -81,7 +82,7 @@ export class MockOfficeApi implements OfficeApi {
       items.push({
         id: meeting.id,
         kind: "meeting",
-        title: `Meeting in ${meeting.zoneId}`,
+        title: `Meeting in ${zoneDisplayName(meeting.zoneId)}`,
         reason: meeting.summary,
         dueDate: null,
       });
