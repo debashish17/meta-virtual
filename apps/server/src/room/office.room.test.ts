@@ -6,6 +6,7 @@ import {
   CLIENT_MESSAGE,
   COUNTERS,
   DESK_SEATS,
+  FREE_SEATS,
   OFFICE_WALK,
   PROTOCOL_VERSION,
   SERVER_MESSAGE,
@@ -799,5 +800,37 @@ describe("OfficeRoom", () => {
       if (prev === undefined) delete process.env.AUTH_MODE;
       else process.env.AUTH_MODE = prev;
     }
+  });
+
+  it("lets anyone sit on a free seat, with no owner check", { timeout: 90000 }, async () => {
+    const { testServer } = await setup();
+    const maya = await join(testServer, "Maya");
+    const arjun = await join(testServer, "Arjun");
+    const seat = FREE_SEATS.map((s) => ({ id: s.id, d: OFFICE_WALK.findPath(SPAWN, s.aisle).length }))
+      .filter((s) => s.d > 0).sort((a, b) => a.d - b.d)[0];
+    expect(isHomeDeskSeat(seat.id)).toBe(false);
+    maya.send(CLIENT_MESSAGE.activityStart, { seq: 1, targetId: seat.id });
+    await waitFor(
+      () => serverPlayer(maya.sessionId)?.activity.targetId === seat.id,
+      45000, "Maya's arrival at the lounge seat");
+    await waitFor(() => serverPlayer(maya.sessionId)?.pose === "sit_talk", 30000, "chatting");
+    const waiting = arjun.waitForMessage(SERVER_MESSAGE.error, 5000);
+    arjun.send(CLIENT_MESSAGE.activityStart, { seq: 1, targetId: seat.id });
+    expect((await waiting).code).toBe("target_taken");
+    maya.send(CLIENT_MESSAGE.activityStop, { seq: 2 });
+    await waitFor(
+      () => serverPlayer(maya.sessionId)?.activity.kind === "", 30000, "Maya standing up");
+    // Maya walks away first: standing beside the chair she keeps Arjun PERSON_GAP away
+    // from the approach point, so his arrival could never trigger, as in the office.
+    maya.send(CLIENT_MESSAGE.moveTarget, { seq: 3, ...SPAWN });
+    const seatXZ = seat.id.slice("seat:".length).split(",").map(Number) as [number, number];
+    await waitFor(() => {
+      const p = serverPlayer(maya.sessionId);
+      return !!p && Math.hypot(p.x - seatXZ[0], p.z - seatXZ[1]) > 1.5;
+    }, 30000, "Maya walking away from the seat");
+    arjun.send(CLIENT_MESSAGE.activityStart, { seq: 2, targetId: seat.id });
+    await waitFor(
+      () => serverPlayer(arjun.sessionId)?.activity.targetId === seat.id,
+      45000, "Arjun's arrival at the same seat");
   });
 });

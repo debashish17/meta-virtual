@@ -1,10 +1,14 @@
 import { FURNITURE, OFFICE_WALK, zoneAt, type Point } from "../world/index.js";
 import type { Pose } from "./pose.js";
 import { OFFICE_SPOTS, besideOf, roundTheChair, seatFor, type Seat, type Spot } from "./routine.js";
+import { FREE_SEATS, seatKey } from "./seats.js";
+
+export { seatKey };
 
 /**
- * What someone can do besides walking: sit at a free desk chair and type, or make a drink at the
- * tea counter. Clicking a chair or the counter (or pressing E beside one) walks them to it; moving
+ * What someone can do besides walking: sit at a free desk chair and type, take a lounge,
+ * café or meeting-room seat for a chat (seats.ts), or make a drink at the tea counter.
+ * Clicking a chair or the counter (or pressing E beside one) walks them to it; moving
  * off stands them up again. People sit down as the colleagues do (routine.ts): round beside the
  * chair, back onto it, swivel to the desk; and stand up the same way in reverse. Seats and counter
  * spots are reserved in a set passed in by the caller (one per server room; the web keeps its own
@@ -12,13 +16,13 @@ import { OFFICE_SPOTS, besideOf, roundTheChair, seatFor, type Seat, type Spot } 
  * it can be tested.
  */
 
-/** Seats (`seat:x,z`) and spots (their id) that someone holds, colleagues and players alike. */
-export const seatKey = (p: Point) => `seat:${p.x.toFixed(2)},${p.z.toFixed(2)}`
-
 /** Every desk chair in the team areas, as a seat. */
 export const DESK_SEATS: readonly (Seat & { id: string })[] = FURNITURE
   .filter((p) => p.part === 'seating.task-chair-black' && zoneAt(p.x, p.z)?.id.startsWith('team_'))
   .map((c) => ({ ...seatFor(c, 'type', OFFICE_WALK), id: seatKey(c) }))
+
+/** Every seat anyone can sit on: the desk seats plus the free seating (seats.ts). */
+export const ALL_SEATS: readonly (Seat & { id: string })[] = [...DESK_SEATS, ...FREE_SEATS]
 export const COUNTERS: readonly Spot[] = OFFICE_SPOTS.filter((s) => s.pose === 'interact')
 
 export type Target = { kind: 'seat'; id: string; seat: Seat } | { kind: 'counter'; id: string; spot: Spot }
@@ -30,10 +34,10 @@ const TURN = 8
 const SWIVEL = 0.8                           // seconds turning in the chair between the desk and the side
 const STEADY = 0.4                           // ... standing still after getting up
 
-/** The free chair or counter a floor point (a click, or where you stand) is meant for, if any. */
+/** The free chair, lounge seat or counter a floor point (a click, or where you stand) is meant for, if any. */
 export function targetNear(p: Point, taken: ReadonlySet<string>, scale = 1): Target | null {
   const d = (q: Point) => Math.hypot(q.x - p.x, q.z - p.z)
-  const seat = DESK_SEATS.filter((s) => !taken.has(s.id) && d(s) < REACH.seat * scale).sort((a, b) => d(a) - d(b))[0]
+  const seat = ALL_SEATS.filter((s) => !taken.has(s.id) && d(s) < REACH.seat * scale).sort((a, b) => d(a) - d(b))[0]
   if (seat) return { kind: 'seat', id: seat.id, seat }
   const spot = COUNTERS.filter((s) => !taken.has(s.id) && d(s) < REACH.counter * scale).sort((a, b) => d(a) - d(b))[0]
   return spot ? { kind: 'counter', id: spot.id, spot } : null
@@ -108,13 +112,13 @@ export function advanceActivity(a: Activity, me: Body, dt: number, wantsToMove: 
       turn(me, a.to === 'desk' ? seat.facing : away, dt)
       const left = a.left - dt
       if (left > 0) return { activity: { ...a, left }, pose: 'seated', speed: 0 }
-      return a.to === 'desk' ? { activity: { kind: 'seated', target: a.target }, pose: 'type', speed: 0 }
+      return a.to === 'desk' ? { activity: { kind: 'seated', target: a.target }, pose: seat.pose, speed: 0 }
         : { activity: { kind: 'standing_up', target: a.target, left: moves.stand_up }, pose: 'stand_up', speed: 0 }
     }
     case 'seated':
       turn(me, seat.facing, dt)
       if (wantsToMove) return { activity: { kind: 'swivelling', target: a.target, left: SWIVEL, to: 'side' }, pose: 'seated', speed: 0 }
-      return { activity: a, pose: 'type', speed: 0 }
+      return { activity: a, pose: seat.pose, speed: 0 }
     case 'standing_up': {
       const left = a.left - dt
       if (left > 0) return { activity: { ...a, left }, pose: 'stand_up', speed: 0 }
