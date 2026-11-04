@@ -6,9 +6,29 @@
     <meta name="theme-color" content="#e9e7e0" />
     <meta name="description" content="A walkable, isometric virtual office prototype." />
     <title>Commonplace — Virtual Office</title>
+    <!-- Shown while the app's JavaScript downloads (owner, 2026-11-04: never a blank screen); React
+         replaces it. The same look as the in-app loading screen (office.css, .office-loading). -->
+    <style>
+      .boot { position: fixed; inset: 0; display: grid; place-items: center; background: #dfe5ea; color: #1e2126; font: 13px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; }
+      .boot-body { width: min(300px, calc(100vw - 48px)); }
+      .boot-name { margin: 0 0 16px; font-size: 24px; font-weight: 650; letter-spacing: -0.01em; }
+      .boot-track { position: relative; height: 4px; border-radius: 999px; background: rgba(30, 33, 38, 0.1); overflow: hidden; }
+      .boot-track span { position: absolute; inset: 0 auto 0 0; width: 35%; border-radius: inherit; background: #8a5a2b; animation: boot-slide 1.3s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
+      .boot-step { margin: 10px 0 0; color: #4a4d52; font-size: 12px; }
+      @keyframes boot-slide { from { transform: translateX(-100%); } to { transform: translateX(290%); } }
+      @media (prefers-reduced-motion: reduce) { .boot-track span { animation: none; width: 100%; opacity: 0.35; } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot" role="status" aria-live="polite">
+        <div class="boot-body">
+          <p class="boot-name">Virtual Office</p>
+          <div class="boot-track" aria-hidden="true"><span></span></div>
+          <p class="boot-step">Opening the office</p>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

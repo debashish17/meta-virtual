@@ -2,6 +2,8 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { BrightnessContrast, EffectComposer, HueSaturation, N8AO, TiltShift2, ToneMapping, Vignette } from '@react-three/postprocessing'
 import { ToneMappingMode } from 'postprocessing'
 import { Suspense, useRef } from 'react'
+import LoadingScreen from './LoadingScreen'
+import { useLoading } from './loading'
 import Architecture from './Architecture'
 import Avatar, { hoverAt, walkTo } from './Avatar'
 import CameraRig from './CameraRig'
@@ -34,15 +36,22 @@ const PARAMS = new URLSearchParams(typeof window !== 'undefined' ? window.locati
 const AO = !(import.meta.env.DEV && PARAMS.has('noao'))
 const SHADOWS = !(import.meta.env.DEV && PARAMS.has('noshadow'))
 
-/** Sets window.__officeReady a few frames after everything has loaded (used by the screenshot script). */
+/** Lifts the loading screen once the floor has rendered, then sets window.__officeReady (used by the
+ * screenshot script and the e2e specs) once the screen is gone, so neither ever catches it fading. */
 function ReadySignal() {
   const frames = useRef(0)
+  const ready = useRef(false)
   const gl = useThree((s) => s.gl)
   if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__officeGl = gl   // renderer stats for profiling
   useFrame(() => {
     frames.current += 1
     if (frames.current === 2) refreshShadows()   // furniture has just mounted
-    if (frames.current === 20) (window as unknown as { __officeReady?: boolean }).__officeReady = true
+    if (frames.current === 3) useLoading.setState({ shown: true })   // the floor is drawn: fade the loading screen
+    // Ready after 20 frames and the loading screen's fade (a cap keeps it from ever waiting forever).
+    if (!ready.current && frames.current >= 20 && (useLoading.getState().gone || frames.current >= 300)) {
+      ready.current = true;
+      (window as unknown as { __officeReady?: boolean }).__officeReady = true
+    }
   })
   return null
 }
@@ -86,6 +95,7 @@ export default function OfficeScene() {
       </Canvas>
       <Hud />
       <Panels />
+      <LoadingScreen />
     </div>
   )
 }
