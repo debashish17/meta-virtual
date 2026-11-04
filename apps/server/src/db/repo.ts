@@ -71,6 +71,10 @@ export interface MeetingInput {
   transcript: string;
   summary: string;
   decisions: Decision[];
+  /** Phase 6 (P6-B): the booking's agenda, stored with the meeting when booked. */
+  agenda?: string;
+  /** Phase 6 (P6-B): the booking this meeting was processed from, if any. */
+  bookingId?: string;
 }
 
 /**
@@ -260,6 +264,7 @@ export class InMemoryRepo implements Repo {
       transcript: input.transcript,
       summary: input.summary,
       decisions: structuredClone(input.decisions),
+      ...(input.agenda !== undefined ? { agenda: input.agenda } : {}),
     };
     this.meetingsById.set(meeting.id, meeting);
     return structuredClone(meeting);

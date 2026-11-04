@@ -23,6 +23,7 @@ import {
   type Task,
 } from "@office/shared";
 import type { OfficeApi } from "./types.js";
+import { MockBookingsApi, bookingsApi } from "./bookings.js";
 
 function people(): PersonRef[] {
   return DEMO_PEOPLE.map((p) => ({ id: p.key, name: p.name }));
@@ -143,6 +144,13 @@ export class MockOfficeApi implements OfficeApi {
       summary: "",
       decisions: [],
     };
+    // P6-B offline parity: a booked meeting stores the mock booking's agenda.
+    if (created.bookingId && bookingsApi instanceof MockBookingsApi) {
+      const booking = (await bookingsApi.listOpen()).find((item) => item.id === created.bookingId);
+      if (booking?.agenda) {
+        meeting.agenda = booking.agenda;
+      }
+    }
     let proposedChanges: ProposedChange[] = [];
     if ("fixture" in created) {
       meeting.summary = "Acme sync: go-live moves to 22 Nov, the webhook fix moves to Arjun, Maya notifies Acme.";

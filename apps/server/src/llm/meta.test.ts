@@ -130,4 +130,13 @@ describe("MetaLlm", () => {
     expect(debug.join("\n")).not.toContain("secret-key");
     expect(debug.join("\n")).not.toContain("Maya: hi");
   });
+
+  it("adds the booking agenda to the extraction prompt when present", async () => {
+    const captured: CapturedRequest[] = [];
+    const llm = new MetaLlm({ ...OPTIONS, fetch: stubTransport("{}", captured) });
+    await llm.extractMeeting("Maya: hi", { zoneId: "acme_room", agenda: "Review the go-live checklist" });
+    expect(captured).toHaveLength(1);
+    const messages = captured[0].body["messages"] as { role: string; content: string }[];
+    expect(messages[0].content).toContain("Meeting agenda: Review the go-live checklist");
+  });
 });

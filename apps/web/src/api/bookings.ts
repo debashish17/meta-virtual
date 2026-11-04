@@ -3,6 +3,7 @@ import {
   BookingCreate,
   BookingList,
   WORKSPACE_ID,
+  isBookableZone,
   type Booking as BookingData,
   type BookingCreate as BookingCreateData,
 } from "@office/shared";
@@ -31,6 +32,18 @@ export class MockBookingsApi implements BookingsApi {
 
   async create(input: BookingCreateData): Promise<BookingData> {
     const created = BookingCreate.parse(input);
+    if (created.zoneId === null) {
+      throw new ApiError(400, "bad_request", "virtual meetings are not available yet");
+    }
+    if (!isBookableZone(created.zoneId)) {
+      throw new ApiError(400, "bad_request", `zone ${created.zoneId} cannot be booked`);
+    }
+    const busy = this.bookings.some(
+      (item) => item.zoneId === created.zoneId && item.status === "open",
+    );
+    if (busy) {
+      throw new ApiError(409, "room_busy", `zone ${created.zoneId} already has an open booking`);
+    }
     const booking = Booking.parse({
       id: crypto.randomUUID(),
       workspaceId: WORKSPACE_ID,

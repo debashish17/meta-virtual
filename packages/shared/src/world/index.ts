@@ -7,6 +7,7 @@ import { World, type Obstacle, type Zone } from "./schema.js";
 import { WalkMap, type Point } from "./walk.js";
 
 export * from "./schema.js";
+export * from "./rooms.js";
 export { isoWidth, wallPieces } from "./compose.js";
 export { AVATAR_RADIUS, CELL, WalkMap, type Point } from "./walk.js";
 

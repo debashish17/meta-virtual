@@ -151,6 +151,9 @@ function mapMeeting(row: Row): MeetingType {
     transcript: row["transcript"],
     summary: row["summary"],
     decisions: row["decisions"],
+    // The shared Meeting has no bookingId (P6-0's contract): the link lives in
+    // the database only, for traceability; the client ends bookings directly.
+    ...(row["agenda"] === null || row["agenda"] === undefined ? {} : { agenda: row["agenda"] }),
   });
 }
 
@@ -375,9 +378,11 @@ export class PostgresRepo implements Repo {
     return this.withService(async (tx) => {
       await this.requireMember(tx, claims);
       const rows = await tx`
-        INSERT INTO meetings (id, workspace_id, zone_id, started_at, transcript, summary, decisions)
+        INSERT INTO meetings (id, workspace_id, zone_id, started_at, transcript, summary, decisions,
+          agenda, booking_id)
         VALUES (${randomUUID()}, ${claims.workspaceId}, ${input.zoneId}, ${Date.now()},
-          ${input.transcript}, ${input.summary}, ${asJson(tx, input.decisions)})
+          ${input.transcript}, ${input.summary}, ${asJson(tx, input.decisions)},
+          ${input.agenda ?? null}, ${input.bookingId ?? null})
         RETURNING *
       `;
       return mapMeeting(rows[0]);
