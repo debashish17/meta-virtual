@@ -13,6 +13,7 @@ import RightDrawer from "./RightDrawer.js";
 import BookingPanel from "../bookings/BookingPanel.js";
 import BoardOverlay from "../board/BoardOverlay.js";
 import OfficeLifeBar from "../officeLife/OfficeLifeBar.js";
+import ZonePill from "../office/ZonePill.js";
 import { isMovementKey } from "./format.js";
 import "./panels.css";
 
@@ -51,17 +52,29 @@ export default function Panels() {
         if (isMovementKey(e.code)) e.stopPropagation();
       }}
     >
+      {/* The overlay frame (panels.css): top strip (where you are, your status, booking)
+          with the room's action and notices under it; the left column (people, call,
+          chat); the ask bar; the right drawer. Under 1280 px the wrappers dissolve
+          (display: contents) and each panel keeps its own narrow docking. */}
+      <div className="pan-strip">
+        <ZonePill />
+        <OfficeLifeBar />
+        <BookingPanel />
+      </div>
       <div className="pan-topstack">
         <Notices loadError={loadError} onRetry={() => void load()} />
         <MeetingBar />
       </div>
-      <Participants />
-      <ChatPanel />
+      <div className="pan-left">
+        <Participants />
+        <div className="pan-left-end">
+          <div className="pan-call-slot" />
+          <ChatPanel />
+        </div>
+      </div>
+      <CallPanel />
       <AskPanel />
       <RightDrawer />
-      <CallPanel />
-      <OfficeLifeBar />
-      <BookingPanel />
       <BoardOverlay />
     </div>
   );

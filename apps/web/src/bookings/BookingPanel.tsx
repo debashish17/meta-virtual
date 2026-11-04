@@ -155,142 +155,145 @@ export default function BookingPanel({ deps }: { deps?: BookingPanelDeps }) {
         Book a room
       </button>
 
-      {invites.map((invite) => (
-        <div className="pan-booking-invite" key={invite.bookingId} role="alert">
-          <p>
-            {invite.hostName} invited you to {invite.title} in {roomName(invite.zoneId)}
-          </p>
-          <div className="pan-booking-invite-actions">
-            <button type="button" className="pan-btn pan-btn-primary" onClick={() => joinInvite(invite)}>
-              Join
-            </button>
-            <button
-              type="button"
-              className="pan-btn"
-              onClick={() => useBookingsStore.getState().dismissInvite(invite.bookingId)}
-            >
-              Not now
-            </button>
-          </div>
-        </div>
-      ))}
-
-      {expanded && (
-        <form
-          className="pan-booking-form"
-          aria-label="Book a room"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void create();
-          }}
-        >
-          <label className="pan-booking-field">
-            Room
-            <select
-              aria-label="Room"
-              value={zoneId}
-              onChange={(e) => setZoneId(e.target.value)}
-            >
-              <option value="">Pick a room…</option>
-              {BOOKABLE_ZONES.map((zone) => {
-                const busy = busyByZone.get(zone.id);
-                return (
-                  <option
-                    key={zone.id}
-                    value={zone.id}
-                    disabled={busy !== undefined}
-                    title={busy ? `Busy — ${busy.title}` : zone.name}
-                  >
-                    {busy ? `${zone.name} — busy (${busy.title})` : zone.name}
-                  </option>
-                );
-              })}
-            </select>
-          </label>
-          <label className="pan-booking-field">
-            Title
-            <input
-              aria-label="Title"
-              type="text"
-              value={title}
-              maxLength={120}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </label>
-          <label className="pan-booking-field">
-            Agenda
-            <textarea
-              aria-label="Agenda"
-              value={agenda}
-              maxLength={2000}
-              rows={3}
-              onChange={(e) => setAgenda(e.target.value)}
-            />
-          </label>
-          <fieldset className="pan-booking-field">
-            <legend>Invite</legend>
-            {candidates.length === 0 && (
-              <p className="pan-booking-hint">Nobody else is in the office yet.</p>
-            )}
-            {candidates.map((candidate) => (
-              <label className="pan-booking-invitee" key={candidate.id}>
-                <input
-                  type="checkbox"
-                  checked={inviteeIds.includes(candidate.id)}
-                  onChange={() => toggleInvitee(candidate.id)}
-                />
-                {candidate.name}
-              </label>
-            ))}
-          </fieldset>
-          {error && (
-            <p className="pan-error" role="alert">
-              {error}
+      {/* Invites and the form drop down under the top strip (bookings.css). */}
+      <div className="pan-booking-pop">
+        {invites.map((invite) => (
+          <div className="pan-booking-invite" key={invite.bookingId} role="alert">
+            <p>
+              {invite.hostName} invited you to {invite.title} in {roomName(invite.zoneId)}
             </p>
-          )}
-          <div className="pan-booking-invite-actions">
-            <button type="submit" className="pan-btn pan-btn-primary" disabled={!canBook || pending}>
-              {pending ? "Booking…" : "Book"}
-            </button>
-            <button type="button" className="pan-btn" onClick={() => setExpanded(false)}>
-              Cancel
-            </button>
+            <div className="pan-booking-invite-actions">
+              <button type="button" className="pan-btn pan-btn-primary" onClick={() => joinInvite(invite)}>
+                Join
+              </button>
+              <button
+                type="button"
+                className="pan-btn"
+                onClick={() => useBookingsStore.getState().dismissInvite(invite.bookingId)}
+              >
+                Not now
+              </button>
+            </div>
           </div>
+        ))}
 
-          {open.length > 0 && (
-            <div className="pan-booking-open">
-              <h3>Open meetings</h3>
-              <ul>
-                {open.map((booking) => (
-                  <li key={booking.id}>
-                    <span>
-                      {booking.title} · {roomName(booking.zoneId)}
-                    </span>
-                    <span className="pan-booking-invite-actions">
-                      <button
-                        type="button"
-                        className="pan-btn"
-                        onClick={() => joinRoom(booking.zoneId)}
-                      >
-                        Join
-                      </button>
-                      {isHost(booking) && (
+        {expanded && (
+          <form
+            className="pan-booking-form"
+            aria-label="Book a room"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void create();
+            }}
+          >
+            <label className="pan-booking-field">
+              Room
+              <select
+                aria-label="Room"
+                value={zoneId}
+                onChange={(e) => setZoneId(e.target.value)}
+              >
+                <option value="">Pick a room…</option>
+                {BOOKABLE_ZONES.map((zone) => {
+                  const busy = busyByZone.get(zone.id);
+                  return (
+                    <option
+                      key={zone.id}
+                      value={zone.id}
+                      disabled={busy !== undefined}
+                      title={busy ? `Busy — ${busy.title}` : zone.name}
+                    >
+                      {busy ? `${zone.name} — busy (${busy.title})` : zone.name}
+                    </option>
+                  );
+                })}
+              </select>
+            </label>
+            <label className="pan-booking-field">
+              Title
+              <input
+                aria-label="Title"
+                type="text"
+                value={title}
+                maxLength={120}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </label>
+            <label className="pan-booking-field">
+              Agenda
+              <textarea
+                aria-label="Agenda"
+                value={agenda}
+                maxLength={2000}
+                rows={3}
+                onChange={(e) => setAgenda(e.target.value)}
+              />
+            </label>
+            <fieldset className="pan-booking-field">
+              <legend>Invite</legend>
+              {candidates.length === 0 && (
+                <p className="pan-booking-hint">Nobody else is in the office yet.</p>
+              )}
+              {candidates.map((candidate) => (
+                <label className="pan-booking-invitee" key={candidate.id}>
+                  <input
+                    type="checkbox"
+                    checked={inviteeIds.includes(candidate.id)}
+                    onChange={() => toggleInvitee(candidate.id)}
+                  />
+                  {candidate.name}
+                </label>
+              ))}
+            </fieldset>
+            {error && (
+              <p className="pan-error" role="alert">
+                {error}
+              </p>
+            )}
+            <div className="pan-booking-invite-actions">
+              <button type="submit" className="pan-btn pan-btn-primary" disabled={!canBook || pending}>
+                {pending ? "Booking…" : "Book"}
+              </button>
+              <button type="button" className="pan-btn" onClick={() => setExpanded(false)}>
+                Cancel
+              </button>
+            </div>
+
+            {open.length > 0 && (
+              <div className="pan-booking-open">
+                <h3>Open meetings</h3>
+                <ul>
+                  {open.map((booking) => (
+                    <li key={booking.id}>
+                      <span>
+                        {booking.title} · {roomName(booking.zoneId)}
+                      </span>
+                      <span className="pan-booking-invite-actions">
                         <button
                           type="button"
                           className="pan-btn"
-                          onClick={() => void endBooking(booking)}
+                          onClick={() => joinRoom(booking.zoneId)}
                         >
-                          End meeting
+                          Join
                         </button>
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </form>
-      )}
+                        {isHost(booking) && (
+                          <button
+                            type="button"
+                            className="pan-btn"
+                            onClick={() => void endBooking(booking)}
+                          >
+                            End meeting
+                          </button>
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </form>
+        )}
+      </div>
     </div>
   );
 }

@@ -79,8 +79,14 @@ function Tile({ testid, label, video, muted }: { testid: string; label: string; 
  *
  * The panel portals to `document.body`: inside the panels root its z-index is
  * trapped by a fixed-position ancestor and the dev name chip (same corner)
- * would eat the Share and Leave clicks.
+ * would eat the Share and Leave clicks. From 1280 px the overlay frame gives it
+ * its own slot in the left column, clear of the chip, so it portals there.
  */
+function portalTarget(): Element {
+  const wide = typeof window.matchMedia === "function" && window.matchMedia("(min-width: 1280px)").matches;
+  return (wide && document.querySelector(".pan-call-slot")) || document.body;
+}
+
 export default function CallPanel() {
   const phase = useCalls((s) => s.phase);
   const zoneId = useCalls((s) => s.zoneId);
@@ -166,7 +172,7 @@ export default function CallPanel() {
       >
         Call{phase === "live" ? ` (${peers.length + 1})` : ""}
       </button>,
-      document.body,
+      portalTarget(),
     );
   }
 
@@ -277,6 +283,6 @@ export default function CallPanel() {
         </>
       )}
     </section>,
-    document.body,
+    portalTarget(),
   );
 }

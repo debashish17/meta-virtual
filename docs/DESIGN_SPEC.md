@@ -91,20 +91,30 @@ The depth buffer handles most occlusion. For avatars standing behind the north a
 
 ## 9. UI overlay placement
 
-The scene is the hero. Overlays are compact and never cover the centre of the floor.
+The scene is the hero. Overlays are compact and never cover the centre of the floor. Each screen edge
+has one job (owner, 2026-11-04): top centre is where you are and what you are doing, the left column
+is people and talk, the right column is your work, bottom centre is ask, bottom right is you. From
+1280 px the panels share one frame: 16 px from every edge, 12 px between neighbours, a 288 px left
+column, a 320 px drawer. Narrower windows keep each panel's own docking (the e2e viewport is 640 x 360).
 
 | Element | Position |
 |---|---|
-| Participants and presence | Top-left, collapsible |
+| Participants and presence | Top-left, collapsible; the head of the left column |
 | Ask-the-office input | Bottom-centre, single line, expands upward |
 | My day panel | Right drawer, collapsible |
 | Approval drawer | Right drawer, replaces My day when changes are pending |
-| Chat | Bottom-left, collapsible |
-| Status and room label | Top-centre pill (for example "Acme room") |
+| Chat | Bottom-left, collapsible; the foot of the left column |
+| Call panel (in a meeting room) | Left column, above the chat |
+| Status and room label | One top-centre strip: room label, your status with its next step (Check in, Take a break, Back to work), Book a room. Booking invites and the form drop down under it |
+| The room's action (Process meeting) and notices | Directly under the strip |
+| You: Customise look, name switch | Bottom-right, side by side, under the drawer |
+| Movement hint | None (removed by the owner, 2026-11-04) |
 | Wall displays | Rendered on in-scene screens (canvas textures), with a larger overlay view on click |
 | What E does (sit down, get a drink, cancel, stand up, step away) | In-scene chip under the avatar's feet, clickable, with the oak key cap; a halo marks the chair or counter it means |
 
 Style: white and light-grey panels, dark text, oak accent for primary buttons, small radius, subtle shadow. System font stack.
+Controls floating on the scene (the strip, Process meeting, ask, you) are pills; panels are 12 px cards and
+the controls inside them 8 px. One shadow everywhere.
 
 ## 10. Visual acceptance checklist (gate for Milestone 1)
 

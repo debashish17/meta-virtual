@@ -13,9 +13,9 @@
   max-height: calc(100vh - 220px);
   overflow-y: auto;
   padding: 10px 12px 12px;
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 4px 18px rgba(30, 33, 38, 0.12);
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 1px 2px rgba(30, 33, 38, 0.06), 0 8px 24px rgba(30, 33, 38, 0.12);
+  border-radius: 12px;
   font: 13px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif;
   color: #1e2126;
 }
@@ -157,4 +157,10 @@
 .call-btn:focus-visible, .call-tab:focus-visible, .call-collapse:focus-visible {
   outline: 2px solid #c9803f;
   outline-offset: 2px;
+}
+
+/* From 1280 px the call sits in the left column, above the chat (panels.css). */
+@media (min-width: 1280px) {
+  .pan-left .call-panel { position: static; width: auto; max-height: 40vh; z-index: auto; }
+  .pan-left .call-tab { position: static; align-self: flex-start; z-index: auto; }
 }

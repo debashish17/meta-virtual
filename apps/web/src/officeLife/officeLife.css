@@ -41,3 +41,19 @@
     display: none;
   }
 }
+
+/* From 1280 px the bar is the top strip's middle segment (panels.css). */
+@media (min-width: 1280px) {
+  .pan-strip .pan-officelife {
+    position: static;
+    transform: none;
+    z-index: auto;
+    height: 100%;
+    padding: 0 10px 0 14px;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    gap: 10px;
+    font-size: 13px;
+  }
+}

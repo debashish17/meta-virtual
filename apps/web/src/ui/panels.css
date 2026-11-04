@@ -11,9 +11,9 @@
 .pan-root > * { pointer-events: auto; }
 
 .pan-participants, .pan-chat, .pan-ask-result, .pan-drawer, .pan-mini, .pan-drawer-tab, .pan-error {
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 4px 18px rgba(30, 33, 38, 0.12);
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 1px 2px rgba(30, 33, 38, 0.06), 0 8px 24px rgba(30, 33, 38, 0.12);
+  border-radius: 12px;
 }
 
 .pan-participants {
@@ -127,24 +127,28 @@
 .pan-meeting { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 
 .pan-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-.pan-head h2 { margin: 0; font-size: 14px; }
+.pan-head h2 { margin: 0; font-size: 14px; font-weight: 650; }
 .pan-collapse { border: 0; background: none; color: #6b6e73; font-size: 20px; line-height: 1; cursor: pointer; }
-.pan-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+/* The drawer tabs read as one segmented control. */
+.pan-tabs { display: flex; gap: 4px; margin-bottom: 10px; padding: 3px; border-radius: 10px; background: #f2f1ef; }
 .pan-tab {
   flex: 1;
   padding: 5px 8px;
-  border: 1px solid #d9dadc;
-  border-radius: 6px;
-  background: #fff;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #4a4d52;
   font: inherit;
   font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
 }
-.pan-tab.on { border-color: #1e2126; background: #1e2126; color: #fff; }
+.pan-tab:hover { color: #1e2126; }
+.pan-tab.on { background: #fff; color: #1e2126; box-shadow: 0 1px 3px rgba(30, 33, 38, 0.12); }
 
 .pan-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .pan-chat-list { overflow-y: auto; min-height: 60px; max-height: 22vh; margin-bottom: 8px; }
-.pan-item { margin: 0; padding: 8px 10px; border: 1px solid #ececed; border-radius: 8px; background: #fff; }
+.pan-item { margin: 0; padding: 8px 10px; border: 1px solid #ececed; border-radius: 10px; background: #fff; }
 .pan-item p { margin: 0 0 4px; }
 .pan-item p:last-child { margin-bottom: 0; }
 .pan-item-title { font-weight: 600; }
@@ -196,7 +200,7 @@
 .pan-btn {
   padding: 6px 14px;
   border: 1px solid #d9dadc;
-  border-radius: 6px;
+  border-radius: 8px;
   background: #fff;
   color: #1e2126;
   font: inherit;
@@ -216,7 +220,7 @@
 .pan-ask-form input, .pan-chat-form input, .pan-status select {
   padding: 6px 8px;
   border: 1px solid #d9dadc;
-  border-radius: 6px;
+  border-radius: 8px;
   font: inherit;
 }
 .pan-muted { color: #6b6e73; font-size: 12px; margin: 6px 0 0; }
@@ -233,4 +237,78 @@
   background: #fdf0dc;
   color: #8a5a2b;
   font-size: 12px;
+}
+
+/* ---- The overlay frame (DESIGN_SPEC 9): each screen edge has one job ----
+ * Top centre: one strip (room, your status and its next step, Book a room), with the
+ * room's own action (Process meeting) and notices hanging under it. Left: people, the
+ * call, chat. Right: the drawer. Bottom centre: ask. Bottom right: you (look, name).
+ * The wrappers exist from 1280 px up; narrower, they dissolve and every panel keeps
+ * the docking the e2e specs were tuned against at 640 x 360. */
+.pan-strip, .pan-left, .pan-left-end, .pan-call-slot { display: contents; }
+.pan-root > .pan-left, .pan-left > .pan-left-end { pointer-events: none; }
+.pan-strip > *, .pan-left > *, .pan-left-end > * { pointer-events: auto; }
+/* The room label is a label: clicks pass through it, as before it joined the strip. */
+.pan-strip > .office-pill { pointer-events: none; }
+
+@media (min-width: 1280px) {
+  .pan-strip {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    height: 44px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 1px 2px rgba(30, 33, 38, 0.06), 0 8px 24px rgba(30, 33, 38, 0.12);
+    white-space: nowrap;
+  }
+  /* Segments sit side by side with a hairline between them. */
+  .pan-strip > * + * { border-left: 1px solid #ececed; }
+  .pan-strip > .office-pill:not(.on) + * { border-left: 0; }
+  /* Controls floating on the scene are pills. */
+  .pan-strip .pan-btn { height: 30px; padding: 0 14px; border-radius: 999px; font-size: 12px; }
+
+  /* The room's action and notices hang under the strip. */
+  .pan-topstack { top: 72px; }
+  .pan-meeting .pan-btn { height: 36px; padding: 0 20px; border-radius: 999px; box-shadow: 0 1px 2px rgba(30, 33, 38, 0.06), 0 8px 24px rgba(30, 33, 38, 0.12); }
+
+  .pan-left {
+    position: fixed;
+    top: 16px;
+    bottom: 16px;
+    left: 16px;
+    width: 288px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .pan-left-end { margin-top: auto; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+  .pan-call-slot { display: block; }
+  .pan-call-slot:empty { display: none; }
+  .pan-left .pan-participants, .pan-left .pan-chat { position: static; width: auto; }
+  .pan-left .pan-participants { flex: 0 1 auto; min-height: 0; }
+  .pan-left .pan-mini { position: static; align-self: flex-start; transform: none; }
+
+  /* Ask the office: one bar (question, Ask, close). */
+  /* Centred, and 16 px clear of the left column and the drawer at 1280 px. */
+  .pan-ask { width: min(600px, calc(100vw - 704px)); min-width: 0; }
+  .pan-ask-form {
+    gap: 6px;
+    padding: 6px 6px 6px 18px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 1px 2px rgba(30, 33, 38, 0.06), 0 8px 24px rgba(30, 33, 38, 0.12);
+  }
+  .pan-ask-form input { padding: 7px 0; border: 0; background: transparent; font-size: 14px; }
+  .pan-ask-form input:focus-visible { outline: none; }
+  .pan-ask-form:focus-within { box-shadow: 0 0 0 2px #c9803f, 0 8px 24px rgba(30, 33, 38, 0.12); }
+  .pan-ask-form .pan-btn { height: 36px; padding: 0 18px; border-radius: 999px; }
+  .pan-ask-form .pan-ask-close { width: 36px; height: 36px; background: transparent; box-shadow: none; }
+  .pan-ask-form .pan-ask-close:hover { background: #f2f1ef; }
 }
