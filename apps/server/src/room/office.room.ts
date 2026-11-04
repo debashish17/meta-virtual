@@ -9,7 +9,7 @@ import {
   CLIENT_MESSAGE,
   COUNTERS,
   ChatSend,
-  DESK_SEATS,
+  ALL_SEATS,
   GoTo,
   HistoryRequest,
   TeleportAdmin,
@@ -141,7 +141,7 @@ function homeDeskOf(displayName: string): Target | null {
 }
 
 function targetById(targetId: string): Target | null {
-  const seat = DESK_SEATS.find((s) => s.id === targetId);
+  const seat = ALL_SEATS.find((s) => s.id === targetId);
   if (seat) return { kind: "seat", id: seat.id, seat };
   const spot = COUNTERS.find((s) => s.id === targetId);
   if (spot) return { kind: "counter", id: spot.id, spot };

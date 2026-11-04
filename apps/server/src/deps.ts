@@ -8,6 +8,7 @@ import {
   type WorkspaceMembership,
 } from "./auth/supabase.js";
 import { createInMemoryRepo, type Repo } from "./db/repo.js";
+import { createPostgresBoardStore } from "./board/postgres.js";
 import { createInMemoryBoardStore, type BoardStore } from "./board/store.js";
 import { createPostgresBookingStore } from "./bookings/postgres.js";
 import { createInMemoryBookingStore, type BookingStore } from "./bookings/store.js";
@@ -105,7 +106,8 @@ export function buildDeps(env: Env): Deps {
         : createInMemoryBookingStore(),
     notes:
       repo instanceof PostgresRepo ? createPostgresNoteStore(repo) : createInMemoryNoteStore(),
-    board: createInMemoryBoardStore(),
+    board:
+      repo instanceof PostgresRepo ? createPostgresBoardStore(repo) : createInMemoryBoardStore(),
     receipts: createReceiptStore(repo),
   };
 }
