@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PersonRef, Receipt } from "@office/shared";
+import { DEMO_ACCOUNT, DEMO_PROJECT, type PersonRef, type Receipt } from "@office/shared";
 import { formatDecisionLine, formatReceiptChange, formatReceiptLine } from "./format";
 
 const PEOPLE: PersonRef[] = [
@@ -61,6 +61,47 @@ describe("formatReceiptLine", () => {
     expect(line).toContain("+ Notify Acme of new date");
     expect(line).toContain("Maya");
     expect(line).toContain("Acme sync");
+  });
+
+  it("names the project and account of a create, never their ids (the Acme wall)", () => {
+    const line = formatReceiptLine(
+      receipt({
+        kind: "task_create",
+        recordType: "task",
+        recordLabel: "Notify Acme of new date",
+        before: null,
+        after: {
+          title: "Notify Acme of new date",
+          ownerId: "maya",
+          projectId: DEMO_PROJECT.id,
+          accountId: DEMO_ACCOUNT.id,
+          status: "todo",
+        },
+      }),
+      PEOPLE,
+    );
+    expect(line).toBe(
+      "+ Notify Acme of new date (Owner: Maya; Project: Acme Payments Integration; " +
+        "Account: Acme Corp; Status: todo) · Acme sync · Maya",
+    );
+  });
+
+  it("leaves out a linked record it cannot name rather than print its id", () => {
+    const line = formatReceiptLine(
+      receipt({
+        kind: "commitment_create",
+        recordType: "commitment",
+        recordLabel: "Send the revised plan",
+        before: null,
+        after: {
+          text: "Send the revised plan",
+          linkedMilestoneId: "ac0e0004-0004-4004-8004-000000000004",
+          dueDate: "2026-11-20",
+        },
+      }),
+      PEOPLE,
+    );
+    expect(line).toBe("+ Send the revised plan (Due: 20 Nov) · Acme sync · Maya");
   });
 });
 

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { Client } from "../apps/web/node_modules/@colyseus/sdk/build/index.mjs";
 import { test, expect } from "./helpers/twoUsers";
 import {
@@ -18,6 +19,15 @@ import {
 // exact fixture text extracts changes — the first test reads that text back from a
 // fixture meeting and re-posts it as the "captured" transcript.
 test.setTimeout(900_000);
+
+// The room's protocol, read from the shared source so this probe follows every bump (a
+// literal 1 broke it when P6-0 moved to 2). Importing the module instead would load the
+// whole shared package, whose JSON imports Node refuses here.
+const PROTOCOL_VERSION = Number(
+  /export const PROTOCOL_VERSION = (\d+);/.exec(
+    readFileSync(new URL("../packages/shared/src/net/index.ts", import.meta.url), "utf8"),
+  )?.[1],
+);
 
 const LOOK = {
   body: "casual",
@@ -124,7 +134,7 @@ test(
     clientA.auth.token = "dev:CapA";
     clientB.auth.token = "dev:CapB";
     const options = (displayName: string) => ({
-      protocol: 1,
+      protocol: PROTOCOL_VERSION,
       displayName,
       workspaceId: "northwind-demo",
       look: { ...LOOK },

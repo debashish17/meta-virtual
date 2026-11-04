@@ -56,12 +56,13 @@ curl -s https://<server-host>/health
 fly logs
 # → [server] office listening on :8080 (auth=dev)
 
-# WebSocket join works (from the repo root; any name after `dev:`):
+# WebSocket join works (from the repo root; any name after `dev:`). `protocol` must equal
+# PROTOCOL_VERSION in packages/shared/src/net/index.ts (2 since P6-0), else protocol_mismatch:
 node --input-type=module -e "
 import('@colyseus/sdk').then(async ({ Client }) => {
   const client = new Client('wss://<server-host>');
   client.auth.token = 'dev:Maya';
-  const room = await client.joinOrCreate('office', { protocol: 1,
+  const room = await client.joinOrCreate('office', { protocol: 2,
     displayName: 'Maya', workspaceId: 'northwind-demo',
     look: { body: 'casual', top: '#f2f2ef', accent: '#f2f2ef',
       bottom: '#34495e', shoes: '#24262a', height: 1.68 } });

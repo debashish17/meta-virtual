@@ -115,6 +115,12 @@ the seeded state, so scenes can be recorded out of order and edited together.
 1. **Deployed-URL run (owner, with P4-A):** run this same story on the public
    URL after the final redeploy — the "Who are you?" card, check in, book,
    join, process, approve, the live wall receipt — and confirm each scene.
+   **Reset before every run there:** the deployed server (fast mode) keeps the
+   records in memory, and `pnpm demo:reset` only touches a database. Restart
+   the server with `fly apps restart meta-virtual-office`, wait for
+   `https://meta-virtual-office.fly.dev/health`, then reload both browsers. A
+   second run without the restart starts at go-live 22 Nov, so the wall shows
+   "Go-live 22 Nov → 22 Nov" instead of the 15 Nov → 22 Nov receipt.
 2. **Two-real-browsers manual pass (owner):** two people (or two devices) walk
    the story by hand on the deployed URL, including one reconnect (reload a
    tab mid-story: one avatar, state restored).

@@ -7,6 +7,12 @@ const SERVER_PORT = 2590;
 
 export default defineConfig({
   testDir: "./e2e",
+  // `pnpm test:e2e` (scripts/e2e.mjs) sets this for its shared run: the specs that need the
+  // seeded Acme records then run alone, each on a freshly booted server.
+  testIgnore: (process.env.E2E_IGNORE ?? "")
+    .split(",")
+    .filter(Boolean)
+    .map((spec) => `**/${spec}`),
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 2 : 0,

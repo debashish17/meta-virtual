@@ -1,4 +1,4 @@
-import type { PersonRef, Receipt } from "@office/shared";
+import { DEMO_ACCOUNT, DEMO_PROJECT, type PersonRef, type Receipt } from "@office/shared";
 import { shortDate } from "../office/displays/screens.js";
 
 /**
@@ -20,14 +20,30 @@ const FIELD_LABELS: Record<string, string> = {
   linkedMilestoneId: "Linked milestone",
 };
 
+/** Fields that point at another record. A receipt names them, never prints their ids. */
+const REFERENCE_FIELDS = new Set(["projectId", "accountId", "linkedTaskId", "linkedMilestoneId"]);
+
+/** The records the office can name, as the approval cards do (`ui/format.ts`). */
+const RECORD_NAMES: Record<string, string> = {
+  [DEMO_PROJECT.id]: DEMO_PROJECT.name,
+  [DEMO_ACCOUNT.id]: DEMO_ACCOUNT.name,
+};
+
+function recordName(value: unknown): string | undefined {
+  return typeof value === "string" ? RECORD_NAMES[value] : undefined;
+}
+
 function personName(people: PersonRef[], id: string): string {
   return people.find((person) => person.id === id)?.name ?? id;
 }
 
-/** One changed value, readable: dates shorten, owners resolve, the rest stringifies. */
+/** One changed value, readable: dates shorten, owners and records resolve, the rest stringifies. */
 export function formatReceiptValue(field: string, value: unknown, people: PersonRef[]): string {
   if (value === null || value === undefined) {
     return "—";
+  }
+  if (REFERENCE_FIELDS.has(field)) {
+    return recordName(value) ?? String(value);
   }
   if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) {
     return shortDate(value);
@@ -49,6 +65,8 @@ export function formatReceiptChange(receipt: Receipt, people: PersonRef[] = []):
     const labelFields = new Set(["title", "text"]);
     const rest = fields
       .filter((field) => !labelFields.has(field))
+      // A link the office cannot name is left out: the line reads as a sentence, not ids.
+      .filter((field) => !REFERENCE_FIELDS.has(field) || recordName(receipt.after[field]) !== undefined)
       .map(
         (field) =>
           `${FIELD_LABELS[field] ?? field}: ${formatReceiptValue(field, receipt.after[field], people)}`,
