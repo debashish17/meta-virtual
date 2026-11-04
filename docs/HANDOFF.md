@@ -9,31 +9,31 @@ the finished work against it.
 
 ---
 
-## 0. Start here: the deadline sprint (updated 2026-11-04, just after midnight)
+## 0. Start here: the deadline sprint (updated 2026-11-04, midday, after Phase 6)
 
 **Deadline: 2026-11-04, 21:00 (the owner's local time).** What gets judged is the public demo:
 the Acme script (`PROJECT_BRIEF.md` section 5) in two browsers on the deployed URL. The new work
 for the deadline is Phase 6 (`WORK_PACKAGES.md` Phase 6; shared design in `ARCHITECTURE.md` 12.10;
 order, feature freeze and cut list in `IMPLEMENTATION_PLAN.md` 3.1). The rest of this file still
-applies. **Nothing in Phase 6 has been started.**
+applies. **Phase 6 (P6-0 to P6-E) is merged on local `main` and checked (below). It is not pushed
+and not deployed: the live site still runs `95e408f`, from before Phase 6.**
 
 **State right now**
-- `main` is **pushed**: GitHub `debashish17/meta-virtual` (private) holds everything through this
-  handoff update (code last changed in `95e408f`). `git log origin/main..main` lists anything
-  newer that is local only. Phases 1 to 5 are merged; the plan, the hosting setup, the deploy
-  config, the first-visit name card and the refresh-ghost fix are on `main`. Before pushing:
-  `git fetch` and
+- GitHub `debashish17/meta-virtual` (private) holds `main` through `105f3a9` (the handoff after
+  the refresh-ghost fix). Everything newer is local only: Phase 6 and the post-Phase-6 check below.
+  `git log origin/main..main` lists it. Before pushing: `git fetch` and
   `git rev-list --left-right --count main...origin/main` must show `N 0` (never force-push; the
   history was rewritten on 2026-11-03, so any older copy must be reset to `origin/main` first).
-- Checks on `95e408f` (2026-11-04): `pnpm typecheck`, `pnpm lint` and `pnpm test` pass (server
-  192, shared 123, web 192 tests); `pnpm test:e2e` 8 of 8, including `demo.spec` (2.0 min).
+- Checks before Phase 6, on `95e408f`: `pnpm typecheck`, `pnpm lint` and `pnpm test` pass (server
+  192, shared 123, web 192 tests); the e2e suite 8 of 8, including `demo.spec` (2.0 min). The
+  checks after Phase 6 are in the next block.
 - The owner keeps merging fixes from their own sessions (`fix/*` branches; the latest touched
   sitting, reservations, the E chip and "my day"). Fetch and rebase often, P6-A above all: it edits
   the same activity code.
 - `docs/USP_A_IMPLEMENTATION_PLAN.md` is the owner's plan for after the deadline. Only its Phase 0
   runs now, as P6-R.
 
-**Live now (P4-A, fast mode, deployed with the owner's OK)**
+**Live now (P4-A, fast mode, deployed with the owner's OK; Phase 6 not live yet)**
 - Web: `https://meta-virtual-office.vercel.app`, built from `95e408f`. Server:
   `https://meta-virtual-office.fly.dev`, one machine in Fly region `sin`, image built from
   `95e408f` (`/health` reports the version). Roll back with `fly deploy --image` and the previous
@@ -87,6 +87,34 @@ applies. **Nothing in Phase 6 has been started.**
 - Verified live: three quick refreshes keep one avatar; closing a real browser tab removes it in
   0.6 s. A connection that dies without any goodbye (a crash, a lost network) still lingers for
   20 s, by design, so a blip can reconnect.
+
+**Checked after Phase 6 (2026-11-04, lead, local `main`)**
+- `pnpm typecheck`, `pnpm lint`, `pnpm test` pass: shared 150, server 275 (+7 skipped), web 239
+  (+4 skipped), scripts 21. The live Postgres tests ran against local Supabase, including the
+  notes RLS isolation (G8: notes are private).
+- `pnpm test:e2e`: **13 of 13** (shared stack 10 in 15.7 min, then `demo` 2.2 min,
+  `office-life` 6.9 min, `receipts` 0.7 min). Gate G8 passes locally: check-in, break and back to
+  work; home desks and four colleagues; booking, invite, Join, agenda, busy room; the live wall
+  receipt and no receipt on a rejection; private notes; `demo.spec` unchanged (`git diff` empty).
+  Left for G8: the run on the deployed URL ("What to do next" step 3).
+- The first full run after the merges was 10 of 13. Fixed:
+  1. `e2e/live-meeting.spec.ts` captions joined with a literal `protocol: 1`; P6-0 raised
+     `PROTOCOL_VERSION` to 2, so the room refused the join. It now reads the constant from the
+     shared source. A probe with protocol 2 showed the captions themselves worked all along.
+  2. `office-life` and `receipts` assert the seeded "Go-live 15 Nov → 22 Nov", but the e2e server
+     keeps records in memory, so in one shared run an earlier spec had already moved go-live to
+     22 Nov. Both passed alone. `pnpm test:e2e` is now `scripts/e2e.mjs`: one run for the specs
+     that do not need the seeded state, then `demo`, `office-life` and `receipts` each on a
+     freshly booted stack (`FRESH_STATE_SPECS`; `playwright.config.ts` reads `E2E_IGNORE`).
+     `pnpm test:e2e -- <file or flags>` passes them to a single Playwright run (before, it ran
+     everything). A spec that needs the seeded state goes into `FRESH_STATE_SPECS`.
+  3. The Acme wall's receipts printed raw ids for a created task: "+ Notify Acme of new date
+     (Owner: Maya; Project: ac0e0003-…; Status: todo)". `apps/web/src/receipts/format.ts` now
+     names the project and account the way the approval cards do ("Acme Payments Integration"),
+     and leaves out a linked record it cannot name. Two tests in `format.test.ts`.
+  4. `docs/DEPLOY.md` 1.2's join snippet sent `protocol: 1` (now 2), and `docs/DEMO_VIDEO.md` says
+     to restart the deployed server before every run (a second run on the same server shows
+     "Go-live 22 Nov → 22 Nov").
 
 **Hosting accounts**
 
@@ -179,34 +207,23 @@ it does not match the server. That only matters for the full deploy; see decisio
    unavailable". It stays that way unless the owner creates a LiveKit Cloud project (decision D9);
    virtual meetings in P6-B are cut until then.
 
-**What to do next, in order**
-1. **P6-0 contract and slots** (lead agent; `WORK_PACKAGES.md` P6-0). Branch
-   `wp/P6-0-contract` from the newest `main`. It includes the receipt contract for P6-R. Done
-   when: checks pass, `e2e/demo.spec.ts` passes unchanged, and the office looks the same
-   (screenshot). Merge it with `--no-ff`. Do this first and fast: every lane waits for it.
-2. **Lanes, in parallel, once P6-0 is merged** (one agent each, own worktree, the lane prompt in
-   section 6, ports from section 5):
-   - P6-A status, home desks, four colleagues (slot lane 1);
-   - P6-R receipts (USP A Phase 0) (slot lane 2);
-   - P6-B meetings in the rooms (slot lane 3);
-   - P6-C notes when an agent is free (slot lane 4).
-
-   With fewer agents, the priority is P6-A, P6-R, P6-B, P6-C. P6-D only if P6-A and P6-B are
-   merged and green by about 12:00 on 2026-11-04.
-3. **The lead merges each lane** as its report comes in: rebase, checks, `e2e/demo.spec.ts`,
-   merge `--no-ff`, mark the status board. After a merge that works, redeploy (with the owner's OK)
-   so the live site follows `main`. Keep the previous image tag, to roll back with
-   `fly deploy --image`.
-4. **Feature freeze, 2026-11-04 between 15:00 and 16:00.** Unfinished cut-first tasks are dropped
-   and reported (cut order in `IMPLEMENTATION_PLAN.md` 3.1). Then:
-   1. final merge;
-   2. `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm test:e2e`;
-   3. redeploy;
-   4. P6-E (the office-life story, then the Acme demo) and P4-C (the rehearsal: two devices,
-      a reconnect, the LLM-unavailable case) on the public URL;
-   5. the owner records the backup video (`docs/DEMO_VIDEO.md`);
-   6. an hour of buffer before 21:00.
-5. **After the deadline:** the final review (Phase 7, section 8), then the USP A plan's Phases 1
+**What to do next, in order** (Phase 6 is built and merged; the remaining steps are about the
+public URL)
+1. **Push `main`** (owner's OK; decision 3).
+2. **Redeploy server and web from that commit** (owner's OK; "How to redeploy" above). Fast mode
+   needs no hosted migration: the three Phase 6 migrations (bookings, notes, board) only matter
+   for the full deploy, where they are applied after the first two. Keep the previous image tag
+   to roll back with `fly deploy --image`. Then check `/health` for the new `version`, and run
+   the join snippet in `DEPLOY.md` 1.2 (it now sends `protocol: 2`; 1 is refused).
+3. **Gate G8's last item, on the public URL:** restart the server first
+   (`fly apps restart meta-virtual-office`: the records are in memory, and only a restart gives
+   the seeded go-live 15 Nov), then walk the office-life story and the Acme demo in two browsers
+   (`docs/DEMO_VIDEO.md`, "Owner steps"). Restart again before every later run, including the
+   judging.
+4. **P4-C rehearsal** on the public URL: two devices, a reconnect, the LLM-unavailable case.
+   Rehearse "Process meeting" on the live model (decision 4's known risk).
+5. The owner records the backup video (`docs/DEMO_VIDEO.md`); then an hour of buffer before 21:00.
+6. **After the deadline:** the final review (Phase 7, section 8), then the USP A plan's Phases 1
    to 4, each behind its gate and the owner's approval.
 
 **Full mode (only if the owner chooses it in decision 1)**
@@ -246,13 +263,13 @@ it does not match the server. That only matters for the full deploy; see decisio
 
 > You are the lead agent for the Virtual Office repository at
 > `C:\Users\devd9\muse-sandbox\meta-virtual`. Read `AGENTS.md`, then `docs/HANDOFF.md` section 0
-> (start here), then `docs/IMPLEMENTATION_PLAN.md` section 3.1 and the Phase 6 packages in
+> (start here), then `docs/IMPLEMENTATION_PLAN.md` section 3.1, Gate G8 in
 > `docs/WORK_PACKAGES.md`, and `docs/ARCHITECTURE.md` 12.10. The deadline is 2026-11-04 at 21:00.
-> The demo is live in fast mode; do not redeploy, change a hosted service or push without the
-> owner's OK in this session. Ask the owner the open decisions in section 0 when a step needs them.
-> Build P6-0 yourself on `wp/P6-0-contract`, merge it, then hand P6-A, P6-R, P6-B (and P6-C) to
-> lane agents with the lane prompt in section 6. Keep the status board (section 7) current and
-> `e2e/demo.spec.ts` unchanged and green after every merge. Stop and report at the feature freeze.
+> Phase 6 is merged on local `main` and checked; the live site still runs the build from before
+> it. Do not redeploy, change a hosted service or push without the owner's OK in this session.
+> Ask the owner the open decisions in section 0 when a step needs them. Work through "What to do
+> next" in section 0, keep the status board (section 7) current, and keep `e2e/demo.spec.ts`
+> unchanged and `pnpm test:e2e` green after every change.
 
 ---
 
@@ -532,6 +549,7 @@ Half a day; it saves seven lanes from guessing the same thing seven ways.
 | P6-C personal notes | builder/reviewer/e2e | wp/P6-C-notes | merged (--no-ff e8df186; reviewer+e2e PASS; lead wired Postgres notes store; hosted migration deferred to owner OK) | P6-C.md |
 | P6-D free seating and board | builder/reviewer/e2e | wp/P6-D-seating-board | merged (--no-ff 91176be; reviewer+e2e conditional pass on lead L1; lead applied L1+L2, dropped dead dark-chair line, live seat probe 3/3) | P6-D.md |
 | P6-E office-life demo | builder/reviewer/e2e | wp/P6-E-demo | merged (--no-ff a4ffbff; reviewer conditional pass, deployed-URL + manual pass are owner steps) | P6-E.md |
+| FIX Phase 6 check (owner request) | lead | main | merged 2026-11-04: full check found 3 of 13 e2e red and raw ids in wall receipts; fixed (captions protocol, fresh stack per seeded-state spec, receipt names, docs); checks green, e2e 13/13; G8 open only on the deployed URL | section 0 |
 
 States: not started, in progress, blocked (say why), in review, merged.
 
